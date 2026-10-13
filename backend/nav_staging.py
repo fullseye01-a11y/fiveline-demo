@@ -13,7 +13,7 @@ from pathlib import Path
 COLUMNS = ("instrument_id", "nav_date", "nav_value", "currency", "share_class", "provider")
 ID_RE = re.compile(r"^[A-Za-z0-9:._-]{1,64}$")
 PROVIDER_RE = re.compile(r"^[A-Za-z0-9_.-]{2,80}$")
-DATE_RE = re.compile(r"^\\d{4}-\\d{2}-\\d{2}$")
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
 
 CREATE_SQL = """
