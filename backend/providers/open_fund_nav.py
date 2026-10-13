@@ -93,9 +93,16 @@ def inspect_csv(source: str, raw: bytes) -> dict:
     nav_field = next(k for k in config["nav_fields"] if k in fieldset)
     count=0
     recent=None
+    scanned=0
+    date_samples=[]
+    value_samples=[]
     for row in reader:
         if not row:
             continue
+        scanned+=1
+        if len(date_samples)<3:
+            date_samples.append(str(row.get(date_field,"") or "")[:40])
+            value_samples.append(str(row.get(nav_field,"") or "")[:40])
         raw_date=parse_nav_date(row.get(date_field,""))
         val=str(row.get(nav_field,"") or "").strip().replace(",","")
         if raw_date and val and re.match(r"^\d+(?:\.\d+)?$",val):
@@ -105,6 +112,9 @@ def inspect_csv(source: str, raw: bytes) -> dict:
     return {
         "source":source, "source_dataset":config["origin"],
         "schema_verified":True, "parsed_nav_rows":count,
+        "scanned_rows":scanned,
+        "first_date_samples":date_samples,
+        "first_nav_samples":value_samples,
         "most_recent_nav_date":recent.isoformat() if recent else None,
         "readiness":"source_schema_only_no_fund_mapping",
         "warning":"No ISIN/share-class matching, settlement checks, split adjustment, dividend reinvestment, or production NAV updates.",
