@@ -1,0 +1,6 @@
+﻿"分類","鍵值","筆數","說明"
+"日期完全吻合","date_matched","1325","按 Excel 歷史快照彙總；非最新來源"
+"NAV 期間內缺少對應日期","missing_nav_inside_range","15","按 Excel 歷史快照彙總；非最新來源"
+"配息日早於 NAV 起始","dividend_before_nav_start","1114","按 Excel 歷史快照彙總；非最新來源"
+"配息日晚於 NAV 截止","dividend_after_nav_end","2","按 Excel 歷史快照彙總；非最新來源"
+"完全沒有 NAV 的標的","instrument_without_nav","0","按 Excel 歷史快照彙總；非最新來源"
