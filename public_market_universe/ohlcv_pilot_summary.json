@@ -1,0 +1,125 @@
+{
+  "schema": "fiveline_ohlcv_history_pilot_v1",
+  "checked_at_utc": "2026-10-13T23:25:06.030164+00:00",
+  "requested_sources": 8,
+  "pilot_symbols": 4,
+  "pilot_quote_rows": 122,
+  "sources_verified": [
+    "TPEX_DAILY_QUOTES",
+    "TWSE_STOCK_DAY"
+  ],
+  "provenance": [
+    {
+      "market": "TWSE",
+      "effective_period": "20241001",
+      "payload_sha256": "f9fc715bf83872774c3dfb5fc80324b560a08959908716e8ec88db301a8151ed",
+      "source": "TWSE official monthly"
+    },
+    {
+      "market": "TWSE",
+      "effective_period": "20251001",
+      "payload_sha256": "5cd8f05d60e2a798192368b90919b6ca1d256f8f53c11ca439e94f36b1bae942",
+      "source": "TWSE official monthly"
+    },
+    {
+      "market": "TWSE",
+      "effective_period": "20260901",
+      "payload_sha256": "c556fb917676d81615b5c8e133c5f36dae52fba2efcfc8b9ab196c86ef1506ec",
+      "source": "TWSE official monthly"
+    },
+    {
+      "market": "TWSE",
+      "effective_period": "20241001",
+      "payload_sha256": "61c1a6f075623f838be5ddddfcf2311631af74dc7e837cb637e5d5cdef3e6106",
+      "source": "TWSE official monthly"
+    },
+    {
+      "market": "TWSE",
+      "effective_period": "20251001",
+      "payload_sha256": "a8d196bd6f20dc95406655ea8debf533a40be7482c5a22d88e8f6589a2e04b2c",
+      "source": "TWSE official monthly"
+    },
+    {
+      "market": "TWSE",
+      "effective_period": "20260901",
+      "payload_sha256": "bf757d6c5bdc5b4b1d8f659e697aa482b025dde1d5aa8bb0e9947882c2212470",
+      "source": "TWSE official monthly"
+    },
+    {
+      "market": "TPEX",
+      "effective_period": "2025/10/08",
+      "payload_sha256": "513edc9a585b531bec8e6592b132b246c3840c5618e4b194cb55e503be28ad0c",
+      "source": "TPEx official date-scoped"
+    },
+    {
+      "market": "TPEX",
+      "effective_period": "2026/09/30",
+      "payload_sha256": "347f7d027983353613ed008bf244d2e1f71900464db56ee849aa6f47b5889647",
+      "source": "TPEx official date-scoped"
+    }
+  ],
+  "currency": "TWD",
+  "production_coverage_complete": false,
+  "all_market_history_backfilled": false,
+  "continuous_trading_calendar_verified": false,
+  "raw_quotes_publicly_redistributed": false,
+  "price_adjustments_applied": false,
+  "dividend_adjustments_applied": false,
+  "original_excel_modified": false,
+  "production_analyses_modified": false,
+  "database_location": "ephemeral private research-stage SQLite artifact; not the public website",
+  "rights_and_reuse": "Commercial/public historical quote rights require per-source review before redistribution",
+  "missing_work": [
+    "Trading holiday calendar validation",
+    "Corporate actions and split history",
+    "ETF dividend/cash adjustment",
+    "Full historical exchange-data license check",
+    "Full market end-to-end backfill and incremental refresh"
+  ],
+  "instruments": [
+    {
+      "market": "TWSE",
+      "code": "2330",
+      "category": "listed_stock",
+      "price_days": 59,
+      "earliest_observed_date": "2024-10-01",
+      "latest_observed_date": "2026-09-30",
+      "continuous_calendar_coverage_verified": false,
+      "split_dividend_adjusted": false,
+      "historical_total_return_approved": false
+    },
+    {
+      "market": "TWSE",
+      "code": "0050",
+      "category": "etf",
+      "price_days": 59,
+      "earliest_observed_date": "2024-10-01",
+      "latest_observed_date": "2026-09-30",
+      "continuous_calendar_coverage_verified": false,
+      "split_dividend_adjusted": false,
+      "historical_total_return_approved": false
+    },
+    {
+      "market": "TPEX",
+      "code": "6488",
+      "category": "otc_stock",
+      "price_days": 2,
+      "earliest_observed_date": "2025-10-08",
+      "latest_observed_date": "2026-09-30",
+      "continuous_calendar_coverage_verified": false,
+      "split_dividend_adjusted": false,
+      "historical_total_return_approved": false
+    },
+    {
+      "market": "TPEX",
+      "code": "006201",
+      "category": "etf",
+      "price_days": 2,
+      "earliest_observed_date": "2025-10-08",
+      "latest_observed_date": "2026-09-30",
+      "continuous_calendar_coverage_verified": false,
+      "split_dividend_adjusted": false,
+      "historical_total_return_approved": false
+    }
+  ]
+}
