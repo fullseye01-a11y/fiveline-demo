@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1c3857">
+<title>官方最新基金 NAV 查詢｜五線譜</title>
+<style>
+:root{--ink:#1d314c;--sub:#52667c;--bg:#f2f5fa;--line:#dbe3ef;--navy:#1d3857;--blue:#1f618b;--white:#fff;--warn:#fff6e4}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.6}
+header{background:var(--navy);color:white;padding:25px 17px}
+.frame{max-width:1010px;margin:auto}
+header a{font-size:.89rem;color:#dbeaf6;text-decoration:none}
+h1{font-size:clamp(1.35rem,5.2vw,2rem);margin:9px 0 6px;line-height:1.35}
+header p{margin:0;color:#d1deea;font-size:.91rem}
+main{padding:18px 15px 40px}
+.alert{padding:14px;border:1px solid #eddaa9;border-left:4px solid #bd872f;border-radius:12px;background:var(--warn);font-size:.88rem;margin-bottom:16px;line-height:1.7}
+.alert strong{display:block}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;padding:17px;margin-bottom:17px;min-width:0}
+.status{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.85rem}
+.status span{color:var(--sub)}
+.status strong{color:#1f4c73}
+.grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+label{display:grid;gap:5px;color:var(--sub);font-size:.85rem}
+input,select{color:var(--ink);background:white;border:1px solid #c2cfdd;border-radius:10px;font:inherit;font-size:1rem;min-height:46px;padding:10px;width:100%;min-width:0}
+button{font:inherit;border:0;border-radius:10px;background:#215b86;color:white;min-height:46px;padding:10px 17px;font-weight:700;cursor:pointer}
+button[disabled]{opacity:.55;cursor:wait}
+a{color:#1f5b88}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #45a2d7;outline-offset:2px}
+.sourcerow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:11px}
+.source{background:#f5f8fb;border:1px solid var(--line);border-radius:11px;padding:12px}
+.source small{display:block;color:var(--sub);font-size:.76rem}
+.source b{font-size:.93rem;display:block;margin:5px 0;word-break:break-word}
+.source .note{font-size:.78rem;color:var(--sub)}
+h2{font-size:1.13rem;margin:0 0 8px}
+.help{color:var(--sub);font-size:.84rem;margin:7px 0 0}
+#results-meta{margin-bottom:12px;font-size:.88rem;color:var(--sub)}
+.cards{display:grid;grid-template-columns:1fr;gap:11px}
+.fund{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff}
+.fund h3{font-size:1rem;margin:0 0 7px;line-height:1.45;overflow-wrap:anywhere}
+.detail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:9px 0 0}
+.detail div{min-width:0}
+.detail small{color:var(--sub);display:block;font-size:.75rem}
+.detail b{font-size:.96rem;font-variant-numeric:tabular-nums;display:block;word-break:break-word}
+.warn{padding:9px 10px;border-radius:8px;background:var(--warn);font-size:.8rem;color:#875a18;margin-top:9px}
+.empty{padding:15px;border:1px dashed #bac9d6;border-radius:10px;color:var(--sub);font-size:.88rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions a{font-size:.87rem}
+.foot{color:var(--sub);font-size:.8rem;margin-top:17px}
+@media(min-width:680px){.grid{grid-template-columns:1fr 1.4fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.sourcerow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><div class="frame">
+<a href="index.html">← 返回五線譜智能財富平台</a>
+<h1>官方基金最新 NAV 查詢</h1>
+<p>境內基金每日淨值 · 境外全球型基金 · 唯讀資料</p>
+</div></header>
+<main class="frame">
+<div class="alert" role="note"><strong>最新淨值查詢與原五線譜分析尚未合併</strong>此處查詢官方公開的最新淨值快照，不代表完整歷史淨值或即時交易價格。基金級別、ISIN、幣別、除息／配息及分割資訊尚未與原 Excel 全部對帳，請勿用本頁直接判斷買賣點。</div>
+<div class="panel">
+<div class="status"><strong id="connection" aria-live="polite">檢查官方資料服務中…</strong><span>Render · 免費唯讀後端 · 1 小時快取</span></div>
+<div class="sourcerow" id="sources" aria-live="polite">
+<div class="source"><small>境內基金（SITCA）</small><b id="sitca-state">查詢中…</b><span class="note" id="sitca-date">—</span></div>
+<div class="source"><small>境外全球型基金（TDCC）</small><b id="tdcc-state">查詢中…</b><span class="note" id="tdcc-date">—</span></div>
+</div>
+<div class="actions" style="margin-top:11px"><button type="button" id="refresh-status" style="min-height:38px;font-size:.83rem;padding:7px 12px">重新檢查來源</button><a href="nav_status.html">68 檔歷史資料健康中心</a></div>
+</div>
+<section class="panel">
+<h2>搜尋官方基金淨值</h2>
+<form id="search-form" class="grid">
+<label>資料來源<select id="source" required><option value="sitca_domestic_daily">境內基金（投信投顧公會）</option><option value="tdcc_offshore_global">境外全球型基金（集保結算所）</option></select></label>
+<label>基金名稱／代碼／ISIN<input type="search" id="query" placeholder="例如 安聯、富達、全球" minlength="2" maxlength="60" required autocomplete="off"></label>
+<button type="submit" id="search-btn">搜尋 NAV</button>
+</form>
+<p class="help">請輸入至少 2 個字元。一次最多顯示 30 筆，若同名基金很多，請用完整基金代碼或 ISIN 確認級別。</p>
+</section>
+<section class="panel">
+<h2>查詢結果</h2>
+<div id="results-meta" aria-live="polite">尚未搜尋。</div>
+<div id="results" class="cards"><div class="empty">先選擇資料來源，再輸入基金名稱或代碼，即可查詢官方最新 NAV。</div></div>
+</section>
+<p class="foot">官方資料來源：<a href="https://data.gov.tw/dataset/11109">境內基金每日淨值</a>、<a href="https://data.gov.tw/dataset/37818">境外全球型基金資料</a>。本系統不接受客戶個資、不會修改原始 Excel 或將未驗證價格寫入回測引擎。免費後端初次喚醒可能較慢。</p>
+</main>
+<script>
+(function(){
+"use strict";
+const BASE="https://fiveline-nav-readonly.onrender.com";
+const sourceNames={sitca_domestic_daily:"境內基金",tdcc_offshore_global:"境外全球型基金"};
+const byId=id=>document.getElementById(id);
+const cache={status:null};
+function uiText(tag,text){const el=document.createElement(tag);el.textContent=text==null?"—":String(text);return el}
+function info(parent,label,value){const wrap=document.createElement("div");wrap.append(uiText("small",label),uiText("b",value));parent.append(wrap)}
+async function request(path,timeout=35000){
+  const ctrl=new AbortController();
+  const handle=setTimeout(()=>ctrl.abort(),timeout);
+  try{
+    const res=await fetch(BASE+path,{cache:"no-store",signal:ctrl.signal,headers:{Accept:"application/json"}});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    return await res.json();
+  }finally{clearTimeout(handle)}
+}
+async function loadStatus(){
+  byId("connection").textContent="檢查官方資料服務中…";
+  byId("refresh-status").disabled=true;
+  try{
+    const data=await request("/api/official-nav/status",65000);
+    if(data.mode!=="government_open_data_latest_only"||!Array.isArray(data.providers))throw new Error("回應格式不符");
+    cache.status=data;
+    let ok=0;
+    for(const p of data.providers){
+      const n=p.source==="sitca_domestic_daily"?"sitca":p.source==="tdcc_offshore_global"?"tdcc":null;
+      if(!n)continue;
+      byId(n+"-state").textContent=p.available?"已驗證 "+p.count.toLocaleString("zh-TW")+" 筆":"官方來源無法讀取";
+      byId(n+"-date").textContent=p.available?"來源最新 NAV："+p.latest_nav_date+"（取用 "+p.checked_at_utc.slice(0,10)+" UTC）":"可稍後重試；歷史圖表不受影響";
+      if(p.available)ok++;
+    }
+    byId("connection").textContent=ok===2?"官方來源連線正常 · 僅最新快照":ok?"部分來源可用 · 尚非完整行情":"官方來源目前無法取得";
+  }catch(e){
+    byId("connection").textContent="目前無法確認官方來源連線";
+    byId("sitca-state").textContent="請稍後重試";
+    byId("tdcc-state").textContent="請稍後重試";
+    byId("sitca-date").textContent=byId("tdcc-date").textContent="可能為免費後端喚醒中或資料源短暫異常";
+  }finally{byId("refresh-status").disabled=false}
+}
+function addResult(data){
+  const el=document.createElement("article");el.className="fund";
+  el.append(uiText("h3",data.name));
+  const details=document.createElement("div");details.className="detail";
+  info(details,"官方基金代碼",data.code);
+  info(details,"最新 NAV",data.nav);
+  info(details,"NAV 日期",data.nav_date);
+  info(details,"原始幣別",data.currency);
+  info(details,"ISIN",data.isin||"未提供");
+  info(details,"來源",sourceNames[data.source]||data.source);
+  el.append(details);
+  const note=document.createElement("div");note.className="warn";
+  note.textContent="尚未與五線譜既有基金級別、調整後價格及股利資料對帳。";
+  el.append(note);
+  return el;
+}
+byId("search-form").addEventListener("submit",async function(e){
+  e.preventDefault();
+  const source=byId("source").value, q=byId("query").value.trim(), btn=byId("search-btn");
+  if(!sourceNames[source]||q.length<2||q.length>60)return;
+  btn.disabled=true;
+  byId("results-meta").textContent="搜尋中…";
+  byId("results").replaceChildren();
+  try{
+    const response=await request("/api/official-nav/search?source="+encodeURIComponent(source)+"&q="+encodeURIComponent(q),65000);
+    if(response.source!==source||!Array.isArray(response.records)||response.matched_to_legacy_fiveline!==false)throw new Error("查詢資料驗證未通過");
+    byId("results-meta").textContent="符合 "+response.total_matches+" 筆；顯示前 "+response.records.length+" 筆。來源日期："+response.source_latest_nav_date;
+    if(!response.records.length){const el=uiText("div","找不到相符基金，請嘗試基金代碼或更完整的名稱。");el.className="empty";byId("results").append(el)}
+    else response.records.forEach(x=>byId("results").append(addResult(x)));
+  }catch(e){
+    byId("results-meta").textContent="目前無法取得官方基金資料";
+    const el=uiText("div","可能為來源暫時中斷或伺服器仍在喚醒。請稍後重新搜尋，勿使用舊快照代替最新淨值。");el.className="empty";byId("results").append(el);
+  }finally{btn.disabled=false}
+});
+byId("refresh-status").addEventListener("click",loadStatus);
+loadStatus();
+})();
+</script>
+</body></html>
