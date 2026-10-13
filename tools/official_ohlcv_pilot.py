@@ -12,6 +12,7 @@ from collections import Counter,defaultdict
 from datetime import datetime,date,timezone
 from decimal import Decimal,InvalidOperation
 from hashlib import sha256
+from http.client import HTTPException
 import json
 from pathlib import Path
 import re
@@ -25,7 +26,7 @@ SCHEMA="fiveline_ohlcv_history_pilot_v1"
 TWSE_URL="https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY"
 TPEX_URL="https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes"
 HEADERS={"User-Agent":"Mozilla/5.0 (compatible; FiveLineHistoricalResearch/0.1)",
-         "Accept":"application/json,text/plain,*/*"}
+         "Accept":"application/json,text/plain,*/*","Accept-Encoding":"identity","Connection":"close"}
 MAX_BYTES=7_000_000
 PILOTS=(("TWSE","2330","listed_stock"),("TWSE","0050","etf"),
         ("TPEX","6488","otc_stock"),("TPEX","006201","etf"))
@@ -122,7 +123,7 @@ def fetch_json(url):
  # Exchange web servers occasionally abort chunked HTTP transfers. Retry only
  # transport-level incomplete/invalid-body failures, never a schema mismatch.
  last=None
- for attempt in range(3):
+ for attempt in range(4):
   try:
    req=Request(url,headers=HEADERS)
    with urlopen(req,timeout=32,context=ssl.create_default_context()) as response:
@@ -130,10 +131,10 @@ def fetch_json(url):
     b=response.read(MAX_BYTES+1)
    if not b or len(b)>MAX_BYTES:raise ValueError("source response empty or too large")
    return json.loads(b.decode("utf-8-sig")),sha256(b).hexdigest()
-  except (OSError,ValueError,json.JSONDecodeError) as error:
+  except (OSError,HTTPException,ValueError,json.JSONDecodeError) as error:
    last=error
-   if attempt<2:time.sleep(1.25*(attempt+1))
- raise ValueError("official historical response unusable after three attempts") from last
+   if attempt<3:time.sleep(1.25*(attempt+1))
+ raise ValueError("official historical response unusable after four attempts") from last
 
 def requests_spec():
  spec=[]
