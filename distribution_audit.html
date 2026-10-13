@@ -1,1 +1,54 @@
-<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>五線譜 V1.6 配息診斷</title><style>body{font-family:system-ui,sans-serif;background:#f5f7fb;color:#16243b;max-width:1000px;margin:auto;padding:22px}main{background:white;border-radius:18px;padding:24px;box-shadow:0 4px 24px #0001}h1{font-size:26px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.card{border:1px solid #dbe2ed;border-radius:12px;padding:15px}.num{font-size:30px;font-weight:750}small{color:#617087}a{color:#155aa5}li{margin:10px 0} .warn{background:#fff9ed;padding:12px;border-radius:10px}</style><main><h1>五線譜投資平台 V1.6｜配息資料稽核</h1><p>原 Excel 不變；以下是真實資料庫的日期覆蓋分類，不代表已完成配息還原。</p><div class="cards"><div class="card"><div class="num">2,456</div><small>配息總筆數</small></div><div class="card"><div class="num">1,325</div><small>日期完全吻合</small></div><div class="card"><div class="num">15</div><small>期間內缺 NAV</small></div><div class="card"><div class="num">1,114</div><small>早於 NAV 起始</small></div><div class="card"><div class="num">2</div><small>晚於 NAV 截止</small></div><div class="card"><div class="num">0</div><small>無 NAV 標的</small></div></div><h2>報告下載</h2><ul><li><a href="data/phase16_distribution_diagnostic.csv">逐筆配息與 NAV 覆蓋診斷 CSV</a></li><li><a href="data/phase16_instrument_coverage.csv">按標的彙總 CSV</a></li><li><a href="data/phase16_summary.json">資料品質摘要 JSON</a></li></ul><p class="warn">提醒：未確認 NAV 是否包含配息還原前，含息總報酬與配息再投入結果均不得視為正式績效。登入、全市場基金、完整六策略尚未正式完成。</p><p><a href="index.html">返回前版基金圖表</a></p></main></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>五線譜 V1.6｜配息與 NAV 日期稽核（歷史快照）</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}
+body{font-family:system-ui,"Noto Sans TC",sans-serif;background:#f4f7fb;color:#172b43;margin:0}
+main{max-width:1000px;margin:24px auto;padding:clamp(18px,4vw,32px);background:white;border-radius:18px;box-shadow:0 4px 24px #0000000a}
+h1{font-size:clamp(1.45rem,4.3vw,2rem);line-height:1.35;margin:0 0 12px}
+h2{font-size:1.2rem;margin:30px 0 12px}
+p,li{line-height:1.75}.lede{color:#54677b;margin:0 0 16px}
+.notice{background:#fff8e8;border-left:4px solid #b48422;padding:14px 16px;border-radius:8px;margin:16px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.card{border:1px solid #dbe2ed;border-radius:12px;padding:15px}
+.num{font-size:clamp(1.7rem,6vw,2.2rem);font-weight:750;line-height:1.3;font-variant-numeric:tabular-nums}
+.label{color:#617087;font-size:.93rem;margin-top:5px}
+a{color:#155aa5;overflow-wrap:anywhere}li{margin:10px 0}
+.status{font-size:.95rem;padding:12px 14px;background:#eff3f9;border-radius:10px}
+footer{font-size:.92rem;color:#52657a;margin-top:22px}
+</style>
+</head>
+<body><main>
+<h1>五線譜投資平台｜配息資料稽核 V1.6</h1>
+<p class="lede">Excel 歷史快照的配息與 NAV 日期覆蓋情形；並非最新行情、配息還原或正式回測結果。</p>
+<div class="status" id="snapshot-status">現有 68 檔標的中，最近的 NAV 截止日為 <strong>2026-09-01</strong>；尚未連接 NAV 自動更新。</div>
+<div class="cards" aria-label="日期覆蓋統計">
+<div class="card"><div class="num">2,456</div><div class="label">配息總筆數</div></div>
+<div class="card"><div class="num">1,325</div><div class="label">配息日與 NAV 日期完全吻合</div></div>
+<div class="card"><div class="num">15</div><div class="label">配息日在 NAV 期間內，但當日 NAV 缺漏</div></div>
+<div class="card"><div class="num">1,114</div><div class="label">配息日早於 NAV 起始</div></div>
+<div class="card"><div class="num">2</div><div class="label">配息日晚於 NAV 截止</div></div>
+<div class="card"><div class="num">0</div><div class="label">沒有任何 NAV 的標的</div></div>
+</div>
+<h2>可下載報告</h2>
+<p>以下檔案已依既有網站的<strong>彙總數據</strong>及 68 檔標的資料產生；下載內容不含原始逐筆配息明細。</p>
+<ul>
+<li><a href="data/phase16_distribution_coverage_summary.csv" download>配息與 NAV 日期分類摘要（CSV）</a> — 5 種分類的筆數</li>
+<li><a href="data/phase16_instrument_coverage.csv" download>68 檔標的歷史 NAV／配息覆蓋表（CSV）</a> — 包含各檔 NAV 起訖日、配息起訖日及缺口統計</li>
+<li><a href="data/phase16_summary.json" download>資料品質彙總與限制說明（JSON）</a></li>
+</ul>
+<div class="notice"><strong>尚無法提供原始逐筆稽核 CSV。</strong> 目前公開專案只有統計結果及標的層級資料，缺乏每一筆配息和 NAV 的原始明細；不能用總數捏造 2,456 筆逐筆資料。取得來源檔後再產生正式逐筆稽核報告。</div>
+<div class="notice"><strong>投資資料風險提醒：</strong>必須確認各標的的幣別、配息級別、基金分割與價格調整口徑，才可計算含息總報酬及再投入績效。網站目前未提供客戶登入、行情自動更新或正式績效。</div>
+<footer><a href="index.html">返回五線譜 V2.6 展示首頁</a></footer>
+<script>
+(function(){
+ var e=document.querySelector('#snapshot-status');
+ var last='2026-09-01';
+ var age=Math.floor((Date.now()-Date.parse(last+'T00:00:00Z'))/86400000);
+ if(Number.isFinite(age)&&age>7){e.textContent='資料過期提醒：68 檔現有標的中最近的 NAV 截止日為 '+last+'，距今約 '+age+' 天。網站尚未連接行情自動更新；不可據此作即時投資判斷。'}
+})();
+</script>
+</main></body></html>
