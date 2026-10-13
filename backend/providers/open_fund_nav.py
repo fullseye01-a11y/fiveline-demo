@@ -59,10 +59,15 @@ def decode_csv(raw: bytes) -> str:
 
 def parse_nav_date(raw: str) -> date | None:
     s = str(raw or "").strip().replace("年","/").replace("月","/").replace("日","")
-    parts = re.match(r"^(\d{2,4})[-/]([01]?\d)[-/]([0-3]?\d)$", s)
-    if not parts:
-        return None
-    yy,mm,dd = (int(x) for x in parts.groups())
+    if re.fullmatch(r"\d{8}",s):
+        yy,mm,dd=int(s[:4]),int(s[4:6]),int(s[6:8])
+    elif re.fullmatch(r"\d{7}",s):
+        yy,mm,dd=int(s[:3]),int(s[3:5]),int(s[5:7])
+    else:
+        parts = re.match(r"^(\d{2,4})[-/]([01]?\d)[-/]([0-3]?\d)$", s)
+        if not parts:
+            return None
+        yy,mm,dd = (int(x) for x in parts.groups())
     if yy < 1911:
         if yy < 80:
             return None
