@@ -11,6 +11,7 @@ from datetime import date, timedelta
 from io import StringIO
 import json
 import re
+import ssl
 from urllib.request import Request, urlopen
 
 SOURCES = {
@@ -36,7 +37,13 @@ USER_AGENT = "FivelineNAVProvenanceCheck/0.1 (read-only; public open-data datase
 def download_source(source: str) -> bytes:
     url = SOURCES[source]["url"]
     request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/csv,application/octet-stream,*/*"})
-    with urlopen(request, timeout=20) as response:
+    context = ssl.create_default_context()
+    # SITCA's legacy CA chain omits an extension required by OpenSSL X509_STRICT.
+    # Relax this *specific* legacy extension check only; CA chain verification,
+    # hostname verification and certificate validity checking remain enabled.
+    if source == "sitca_domestic_daily" and hasattr(ssl, "VERIFY_X509_STRICT"):
+        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    with urlopen(request, timeout=20, context=context) as response:
         data = response.read(MAX_BYTES+1)
     if len(data) > MAX_BYTES:
         raise ValueError("Official CSV exceeds read-only probe size limit")
