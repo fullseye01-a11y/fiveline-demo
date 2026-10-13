@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#19314f">
+<title>NAV 資料健康中心｜五線譜 V2.6</title>
+<style>
+:root{--navy:#1a3452;--ink:#1c314c;--slate:#586b83;--bg:#f3f6fb;--line:#dce4ee;--orange:#a55b12;--warm:#fff7e9;--teal:#08756e}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--bg);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.55}
+a{color:#145a96}a:hover{text-decoration:underline}
+header{background:linear-gradient(115deg,#1d3656,#294867);color:white}
+.wrap{max-width:1160px;margin:0 auto;padding:0 18px}
+header .wrap{padding-top:24px;padding-bottom:29px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+.topnav a{color:#e5eff8;text-decoration:none;font-size:.9rem}
+.topnav .smalltag{border:1px solid #ffffff60;border-radius:999px;padding:6px 10px;color:#eaf2f9;font-size:.76rem}
+h1{font-size:clamp(1.6rem,5.2vw,2.45rem);line-height:1.25;margin:0 0 7px;letter-spacing:.015em}
+.lede{font-size:.96rem;color:#dbe5ef;margin:0;max-width:760px}
+main{padding-top:20px;padding-bottom:42px}
+.notice{background:var(--warm);border-left:4px solid #ca9444;border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:.92rem}
+.notice strong{display:block;font-size:1rem;margin-bottom:3px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi{background:white;border:1px solid var(--line);border-radius:15px;padding:14px;min-width:0}
+.kpi .value{font-size:clamp(1.55rem,5.4vw,2.25rem);font-weight:750;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .key{font-size:.8rem;color:var(--slate);margin-top:5px}
+.kpi .extra{font-size:.76rem;color:var(--slate);margin-top:3px}
+section h2{font-size:1.24rem;margin:28px 0 12px}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:14px}
+.controls{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+input,select{font:inherit;color:var(--ink);background:white;border:1px solid #c6d2e0;border-radius:10px;min-height:45px;width:100%;padding:9px 12px}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #267eb8;outline-offset:2px}
+.filters{display:flex;flex-wrap:wrap;gap:7px;margin:13px 0 4px}
+.filters button{font:inherit;font-size:.82rem;padding:9px 11px;min-height:40px;border:1px solid #cbd7e4;border-radius:999px;background:#f9fbfe;color:#243f5d;cursor:pointer}
+.filters button[aria-pressed="true"]{background:#244e73;color:white;border-color:#244e73}
+.meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 10px;flex-wrap:wrap;color:var(--slate);font-size:.88rem}
+.cards{display:grid;grid-template-columns:minmax(0,1fr);gap:11px}
+.fund{background:white;border:1px solid var(--line);border-radius:15px;padding:15px;min-width:0}
+.fund-head{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+.name{font-size:1rem;font-weight:730;line-height:1.4;overflow-wrap:anywhere;margin:0}
+.id{font-size:.76rem;color:var(--slate);margin-top:5px}
+.flag{white-space:nowrap;border:1px solid #dfceb3;color:#8a571a;background:#fff8ec;border-radius:999px;font-size:.73rem;font-weight:700;padding:4px 8px}
+.flag.ok{border-color:#b7d6cd;background:#f2f9f7;color:#08685e}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px;margin-top:13px}
+.facts>div{min-width:0}
+.fact-label{font-size:.77rem;color:var(--slate)}
+.fact-val{font-size:1rem;font-weight:670;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+details{border-top:1px solid #e5ebf1;margin-top:12px;padding-top:10px;font-size:.9rem}
+summary{cursor:pointer;font-weight:650;color:#23537d;padding:3px 0}
+.detailsgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.detailsgrid .fact-val{font-size:.87rem}
+.empty{border:1px dashed #b9c9d8;padding:24px;text-align:center;border-radius:12px;color:var(--slate)}
+.btnlink{display:inline-flex;align-items:center;border:1px solid #bed0e0;border-radius:11px;background:white;padding:10px 14px;text-decoration:none;font-weight:700;font-size:.88rem;color:#225982}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+.foot{color:var(--slate);font-size:.8rem;margin-top:24px;line-height:1.65}
+@media(min-width:620px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1fr 215px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:19px}.fund{padding:18px}}
+@media(min-width:1000px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+<nav class="topnav" aria-label="導覽"><a href="index.html">← 返回五線譜 V2.6</a><span class="smalltag">公開展示 · 僅供資料稽核</span></nav>
+<h1>NAV 資料健康中心</h1>
+<p class="lede">68 檔基金、ETF、股票｜資料截止、更新延遲、配息與 NAV 歷史覆蓋檢查</p>
+</div>
+</header>
+<main class="wrap">
+<div class="notice" role="note"><strong>這不是即時行情網站</strong>本頁使用 Excel 歷史快照。延遲天數是以「現在的台灣日期」與每檔最後 NAV 日期比較，並非網路成功更新的證明。原始 NAV 每日明細、正式配息還原與客戶資料尚未接入。</div>
+<div class="grid" aria-label="資料總覽">
+<div class="kpi"><div class="value" id="k-total">—</div><div class="key">既有標的數</div><div class="extra">Excel 歷史快照</div></div>
+<div class="kpi"><div class="value" id="k-stale">—</div><div class="key">逾 7 天未更新</div><div class="extra" id="k-date">以台灣日期計算</div></div>
+<div class="kpi"><div class="value" id="k-gap">—</div><div class="key">較早配息需補 NAV 的標的</div><div class="extra" id="k-early">— 筆配息日早於 NAV 起點</div></div>
+<div class="kpi"><div class="value" id="k-missing">15</div><div class="key">期間內配息日缺 NAV 筆數</div><div class="extra">僅全體彙總，無個別明細</div></div>
+</div>
+<section aria-labelledby="browseTitle">
+<h2 id="browseTitle">查詢標的資料</h2>
+<div class="panel">
+<div class="controls">
+<label><span class="fact-label">搜尋基金、ETF 或編號</span><input id="search" type="search" placeholder="例如 0050、台積電、安聯、Vanguard" autocomplete="off"></label>
+<label><span class="fact-label">排序方式</span><select id="sort"><option value="latest">NAV 截止較舊優先</option><option value="early">較早配息缺口最多</option><option value="name">標的編號順序</option><option value="newest">NAV 截止較新優先</option></select></label>
+</div>
+<div class="filters" role="group" aria-label="篩選條件">
+<button type="button" data-filter="all" aria-pressed="true">全部</button>
+<button type="button" data-filter="stale" aria-pressed="false">逾 7 天未更新</button>
+<button type="button" data-filter="early" aria-pressed="false">有早期配息缺口</button>
+<button type="button" data-filter="nodiv" aria-pressed="false">無配息紀錄</button>
+</div>
+<div class="meta"><span id="count" aria-live="polite">讀取資料中…</span><span id="source">資料來源：靜態快照</span></div>
+<div class="cards" id="cards" aria-live="off"></div>
+<div class="actions">
+<a class="btnlink" href="data/phase16_instrument_coverage.csv" download>下載 68 檔 CSV</a>
+<a class="btnlink" href="distribution_audit.html">查看配息診斷</a>
+<a class="btnlink" href="nav_quality.html">查看原始缺口表</a>
+</div>
+</div>
+</section>
+<section>
+<h2>這份報告可以與不能判斷的事情</h2>
+<div class="panel">
+<p><strong>可以：</strong>檢查每檔最後資料日期、現有 NAV 筆數及是否存在「配息日早於 NAV 起始日」的歷史覆蓋問題。</p>
+<p><strong>尚不能：</strong>確認交易日逐日無缺漏、驗證配息已正確還原、取得最新基金 NAV 或完成六策略正式回測。表格的「0 筆較早配息」不表示完整無缺。</p>
+<p><strong>後續開發：</strong>資料供應商授權 → 私有伺服器匯入暫存 → 逐筆驗證與人工審核 → 正式 NAV 更新 → Excel 公式逐筆對帳。公開 GitHub Pages 不儲存 API 金鑰或客戶持倉。</p>
+</div>
+</section>
+<p class="foot">資料來源：GitHub 已發布的 Excel 歷史快照（非自動更新）。此頁未向任何行情供應商請求資料；未確認 NAV 是否已含配息前，不得把示範數據當成真實投資績效。</p>
+</main>
+<script>
+(function(){
+"use strict";
+var funds=[], filter="all", today, container=document.getElementById("cards");
+function taiwanToday(){
+  var parts=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  var m={};parts.forEach(function(p){m[p.type]=p.value;});return m.year+"-"+m.month+"-"+m.day;
+}
+function daysBetween(a,b){return Math.round((Date.parse(a+"T00:00:00Z")-Date.parse(b+"T00:00:00Z"))/86400000)}
+function escapeHTML(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function fact(name,value){return '<div><div class="fact-label">'+escapeHTML(name)+'</div><div class="fact-val">'+escapeHTML(value)+'</div></div>'}
+function view(item){
+  var delta=daysBetween(today,item.nav_end);
+  var freshness=delta>7?"已過期":delta<0?"日期異常":delta===0?"當日":delta===1?"前一日":"待更新";
+  var hasGap=(item.dividends_before_nav_start||0)>0;
+  return '<article class="fund"><div class="fund-head"><div><h3 class="name">'+escapeHTML(item.name)+'</h3><div class="id">標的 '+escapeHTML(item.instrument_id)+' · '+escapeHTML(item.currency)+'</div></div><span class="flag '+(delta<=1&&delta>=0?'ok':'')+'">'+escapeHTML(freshness)+'</span></div>'+
+  '<div class="facts">'+fact("NAV 最後日期",item.nav_end||"未知")+fact("距今天數",delta>=0?delta+" 天":"資料日期異常")+fact("NAV 歷史筆數",item.nav_rows||0)+fact("較早配息缺口",hasGap?item.dividends_before_nav_start+" 筆":"0 筆")+'</div>'+
+  '<details><summary>檢視歷史覆蓋資訊</summary><div class="detailsgrid">'+fact("NAV 起始日",item.nav_start||"—")+fact("最早配息日",item.dividend_first||"—")+fact("配息紀錄總數",item.dividend_rows||0)+fact("晚於 NAV 截止配息",item.dividends_after_nav_end||0)+fact("建議補齊起點",item.suggested_backfill_start||"未列出")+fact("NAV 幣別",item.currency||"—")+'</div></details></article>';
+}
+function paint(){
+  var q=document.getElementById("search").value.trim().toLocaleLowerCase();
+  var order=document.getElementById("sort").value;
+  var list=funds.filter(function(x){
+    var match=String(x.instrument_id).includes(q)||x.name.toLocaleLowerCase().includes(q)||x.currency.toLocaleLowerCase().includes(q);
+    return match&&(filter==="all"||filter==="stale"&&daysBetween(today,x.nav_end)>7||filter==="early"&&x.dividends_before_nav_start>0||filter==="nodiv"&&x.dividend_rows===0);
+  });
+  list.sort(function(a,b){if(order==="early")return b.dividends_before_nav_start-a.dividends_before_nav_start||a.instrument_id-b.instrument_id;if(order==="name")return a.instrument_id-b.instrument_id;if(order==="newest")return b.nav_end.localeCompare(a.nav_end)||a.instrument_id-b.instrument_id;return a.nav_end.localeCompare(b.nav_end)||a.instrument_id-b.instrument_id;});
+  document.getElementById("count").textContent="符合條件："+list.length+" / "+funds.length+" 檔";
+  container.innerHTML=list.length?list.map(view).join(""):'<div class="empty">沒有符合條件的標的，請調整搜尋條件。</div>';
+}
+document.getElementById("search").addEventListener("input",paint);
+document.getElementById("sort").addEventListener("change",paint);
+document.querySelectorAll("[data-filter]").forEach(function(button){button.addEventListener("click",function(){filter=button.dataset.filter;document.querySelectorAll("[data-filter]").forEach(function(b){b.setAttribute("aria-pressed",String(b===button))});paint()})});
+today=taiwanToday();
+fetch("data/nav_freshness_68.json",{cache:"no-store"}).then(function(res){if(!res.ok)throw new Error("HTTP "+res.status);return res.json()}).then(function(j){
+  if(!j||j.is_realtime!==false||!Array.isArray(j.instruments)||j.instruments.length!==68)throw new Error("資料格式不符合預期");
+  funds=j.instruments;
+  document.getElementById("k-total").textContent=funds.length;
+  document.getElementById("k-stale").textContent=funds.filter(function(x){return daysBetween(today,x.nav_end)>7}).length;
+  document.getElementById("k-gap").textContent=funds.filter(function(x){return x.dividends_before_nav_start>0}).length;
+  document.getElementById("k-early").textContent=j.summary.dividend_early.toLocaleString("zh-TW")+" 筆配息早於 NAV 起點";
+  document.getElementById("k-missing").textContent=j.summary.missing_nav_on_distribution_dates.toLocaleString("zh-TW");
+  document.getElementById("k-date").textContent="今日："+today+"（台灣）";
+  document.getElementById("source").textContent="各檔 NAV 截止 ≤ "+j.data_as_of_max;
+  paint();
+}).catch(function(err){document.getElementById("count").textContent="資料讀取失敗";container.innerHTML='<div class="empty">無法讀取歷史快照，請稍後重新整理，或使用下方 CSV 下載連結。</div>';console.error("NAV snapshot load failed",err)});
+})();
+</script>
+</body></html>
