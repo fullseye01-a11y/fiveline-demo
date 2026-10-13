@@ -1,0 +1,43 @@
+name: Probe historic official TWSE and TPEx OHLCV
+on:
+  push:
+    branches: [feature/ohlcv-historical-pilot-20261014]
+    paths: [.github/workflows/ohlcv_sources_probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Probe official historical TWSE monthly and TPEx daily responses without publishing quotes
+        run: |
+          python - <<'PY'
+          import json,ssl
+          from urllib.request import Request,urlopen
+          from urllib.parse import urlencode
+          items=[
+            ('TWSE 2330 2026/09','https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY?'+urlencode({'date':'20260901','stockNo':'2330','response':'json'})),
+            ('TWSE ETF 0050 2026/09','https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY?'+urlencode({'date':'20260901','stockNo':'0050','response':'json'})),
+            ('TPEx 6488 2026/09/30','https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?'+urlencode({'date':'2026/09/30','response':'json'})),
+            ('TPEx 6488 2025/10/08','https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?'+urlencode({'date':'2025/10/08','response':'json'})),
+            ('TPEx monthly 6488 2026/09','https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock?'+urlencode({'code':'6488','date':'2026/09','response':'json'})),
+          ]
+          for tag,url in items:
+            try:
+              req=Request(url,headers={'User-Agent':'Mozilla/5.0 (compatible; FivelineHistoricReadOnly/0.1)','Accept':'application/json,text/plain,*/*'})
+              with urlopen(req,timeout=25,context=ssl.create_default_context()) as resp:
+                b=resp.read(7_000_000)
+              x=json.loads(b.decode('utf-8-sig'))
+              result={'toptype':type(x).__name__,'keys':list(x)[:24] if isinstance(x,dict) else [],
+                      'stat':x.get('stat') if isinstance(x,dict) else None,
+                      'data_len':len(x.get('data',[])) if isinstance(x,dict) else None,
+                      'fields':(x.get('fields') or [])[:22] if isinstance(x,dict) else [],
+                      'tables':[(t.get('title','')[:40],len(t.get('data',[]))) for t in x.get('tables',[])][:5] if isinstance(x,dict) else [],
+                      'sample':str(x.get('data',[None])[0])[:400] if isinstance(x,dict) and x.get('data') else '',
+                      'bodyhead':str(x)[:400] if isinstance(x,dict) and not x.get('data') else ''}
+              print('PROBE',tag,'bytes',len(b),json.dumps(result,ensure_ascii=False)[:2800],flush=True)
+            except Exception as e:
+              print('PROBE',tag,'ERROR',type(e).__name__,str(e)[:250],flush=True)
+          PY
