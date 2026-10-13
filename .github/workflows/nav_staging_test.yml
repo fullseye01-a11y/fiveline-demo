@@ -1,0 +1,22 @@
+name: NAV staging isolated tests
+on:
+  push:
+    branches:
+      - feature/nav-staging-backend-20261013
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Python syntax
+        run: python -m py_compile backend/nav_staging.py backend/tests/test_nav_staging.py
+      - name: Run staging unit tests
+        run: python -m unittest discover -s backend/tests -v
