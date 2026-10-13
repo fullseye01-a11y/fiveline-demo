@@ -1,0 +1,53 @@
+name: Probe official TPEx ETF directory schema
+on:
+  push:
+    branches: [feature/tpex-etf-and-dedup-20261014]
+    paths: [.github/workflows/tpex_etf_probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Probe public directory methods and inspect fields only
+        run: |
+          python - <<'PY'
+          import json,ssl
+          from urllib.request import Request,urlopen
+          from urllib.parse import urlencode
+          url='https://info.tpex.org.tw/api/etf'
+          candidates=[
+            ('GET',url+'?'+urlencode({'lang':'zh-tw','query':''}),None,None),
+            ('POST form',url,urlencode({'lang':'zh-tw','query':''}).encode(), 'application/x-www-form-urlencoded'),
+            ('POST JSON',url,json.dumps({'lang':'zh-tw','query':''}).encode(),'application/json'),
+            ('GET basic',url,None,None),
+            ('GET symbol',url+'?'+urlencode({'lang':'zh-tw','query':'006201'}),None,None)
+          ]
+          def inspect(root):
+            if isinstance(root,list):
+              return {'type':'list','total':len(root),'head_type':type(root[0]).__name__ if root else None,'first_keys':list(root[0])[:25] if root and isinstance(root[0],dict) else None,'first_item':str(root[0])[:300] if root else None}
+            if isinstance(root,dict):
+              out={'type':'dict','keys':list(root)[:35]}
+              for k,v in root.items():
+                if isinstance(v,list):
+                  out['list_'+k]={'count':len(v),'sample_keys':list(v[0])[:25] if v and isinstance(v[0],dict) else None,'sample':str(v[0])[:250] if v else ''}
+                elif isinstance(v,dict):out['nested_'+k]=list(v)[:20]
+              return out
+            return {'type':type(root).__name__,'sample':str(root)[:250]}
+          for label,url,data,ctype in candidates:
+            try:
+              h={'User-Agent':'Mozilla/5.0 (compatible; FivelineGovernmentETFCheck/1.0)','Accept':'application/json, text/plain, */*','Origin':'https://info.tpex.org.tw','Referer':'https://info.tpex.org.tw/ETF/zh/filter.html'}
+              if ctype:h['Content-Type']=ctype
+              req=Request(url,data=data,headers=h,method='POST' if data is not None else 'GET')
+              with urlopen(req,context=ssl.create_default_context(),timeout=14) as response:
+                b=response.read(8_000_000)
+                ct=response.headers.get('Content-Type')
+                code=response.status
+              try:description=inspect(json.loads(b.decode('utf-8-sig')))
+              except Exception:description={'unparsed_sample':b[:250].decode('utf-8','replace')}
+              print('PROBE',label,'HTTP',code,'bytes',len(b),'ctype',ct,json.dumps(description,ensure_ascii=False)[:2800],flush=True)
+            except Exception as exc:
+              print('PROBE',label,'ERROR',type(exc).__name__,str(exc)[:240],flush=True)
+          PY
