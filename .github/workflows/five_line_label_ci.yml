@@ -1,0 +1,28 @@
+name: Validate seven-level five-line chart
+on:
+  push:
+    branches:
+      - feature/fiveline-extreme-sd-labels-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -p test_five_line_labels.py -v
+      - name: Syntax check chart JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('five_line.html').read_text(encoding='utf-8')
+          chunks=re.findall(r'<script>([\s\S]*?)</script>',html)
+          assert len(chunks)==1
+          Path('/tmp/five_line_chart.js').write_text(chunks[0],encoding='utf-8')
+          PY
+          node --check /tmp/five_line_chart.js
