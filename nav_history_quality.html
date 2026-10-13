@@ -101,15 +101,19 @@ const el=id=>document.getElementById(id);
 const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=String(text);if(cls)n.className=cls;return n};
 let data=null;
 async function getData(){
- const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),35000);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),35000);
  try{
-   let response=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:controller.signal,headers:{Accept:"application/json"}});
-   if(response.ok)return await response.json();
-   response=await fetch(API,{cache:"no-store",signal:controller.signal,headers:{Accept:"application/vnd.github+json"}});
+   try{
+     const response=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:controller.signal,headers:{Accept:"application/json"}});
+     if(response.ok)return await response.json();
+   }catch(ignore){
+     /* Fall back to the GitHub public file API if raw.githubusercontent.com is unreachable. */
+   }
+   const response=await fetch(API,{cache:"no-store",signal:controller.signal,headers:{Accept:"application/vnd.github+json"}});
    if(!response.ok)throw Error("public quality report absent");
    const obj=await response.json();
    if(obj.encoding!=="base64"||!obj.content)throw Error("unusable source");
-   const bytes=Uint8Array.from(atob(obj.content.replace(/\s/g,"")),ch=>ch.charCodeAt(0));
+   const bytes=Uint8Array.from(atob(obj.content.replace(/\\s/g,"")),ch=>ch.charCodeAt(0));
    return JSON.parse(new TextDecoder("utf-8").decode(bytes));
  }finally{clearTimeout(timer)}
 }
