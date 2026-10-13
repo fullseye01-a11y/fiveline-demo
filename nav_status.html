@@ -117,12 +117,13 @@ function taiwanToday(){
 }
 function daysBetween(a,b){return Math.round((Date.parse(a+"T00:00:00Z")-Date.parse(b+"T00:00:00Z"))/86400000)}
 function escapeHTML(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+var tickers={"3":"2330","4":"0050","5":"00631L","6":"00685L"};
 function fact(name,value){return '<div><div class="fact-label">'+escapeHTML(name)+'</div><div class="fact-val">'+escapeHTML(value)+'</div></div>'}
 function view(item){
   var delta=daysBetween(today,item.nav_end);
   var freshness=delta>7?"已過期":delta<0?"日期異常":delta===0?"當日":delta===1?"前一日":"待更新";
   var hasGap=(item.dividends_before_nav_start||0)>0;
-  return '<article class="fund"><div class="fund-head"><div><h3 class="name">'+escapeHTML(item.name)+'</h3><div class="id">標的 '+escapeHTML(item.instrument_id)+' · '+escapeHTML(item.currency)+'</div></div><span class="flag '+(delta<=1&&delta>=0?'ok':'')+'">'+escapeHTML(freshness)+'</span></div>'+
+  return '<article class="fund"><div class="fund-head"><div><h3 class="name">'+escapeHTML(item.name)+'</h3><div class="id">標的 '+escapeHTML(item.instrument_id)+(tickers[String(item.instrument_id)]?" · "+escapeHTML(tickers[String(item.instrument_id)]):"")+" · "+escapeHTML(item.currency)+'</div></div><span class="flag '+(delta<=1&&delta>=0?'ok':'')+'">'+escapeHTML(freshness)+'</span></div>'+
   '<div class="facts">'+fact("NAV 最後日期",item.nav_end||"未知")+fact("距今天數",delta>=0?delta+" 天":"資料日期異常")+fact("NAV 歷史筆數",item.nav_rows||0)+fact("較早配息缺口",hasGap?item.dividends_before_nav_start+" 筆":"0 筆")+'</div>'+
   '<details><summary>檢視歷史覆蓋資訊</summary><div class="detailsgrid">'+fact("NAV 起始日",item.nav_start||"—")+fact("最早配息日",item.dividend_first||"—")+fact("配息紀錄總數",item.dividend_rows||0)+fact("晚於 NAV 截止配息",item.dividends_after_nav_end||0)+fact("建議補齊起點",item.suggested_backfill_start||"未列出")+fact("NAV 幣別",item.currency||"—")+'</div></details></article>';
 }
@@ -130,7 +131,7 @@ function paint(){
   var q=document.getElementById("search").value.trim().toLocaleLowerCase();
   var order=document.getElementById("sort").value;
   var list=funds.filter(function(x){
-    var match=String(x.instrument_id).includes(q)||x.name.toLocaleLowerCase().includes(q)||x.currency.toLocaleLowerCase().includes(q);
+    var match=String(x.instrument_id).includes(q)||(tickers[String(x.instrument_id)]||"").toLocaleLowerCase().includes(q)||x.name.toLocaleLowerCase().includes(q)||x.currency.toLocaleLowerCase().includes(q);
     return match&&(filter==="all"||filter==="stale"&&daysBetween(today,x.nav_end)>7||filter==="early"&&x.dividends_before_nav_start>0||filter==="nodiv"&&x.dividend_rows===0);
   });
   list.sort(function(a,b){if(order==="early")return b.dividends_before_nav_start-a.dividends_before_nav_start||a.instrument_id-b.instrument_id;if(order==="name")return a.instrument_id-b.instrument_id;if(order==="newest")return b.nav_end.localeCompare(a.nav_end)||a.instrument_id-b.instrument_id;return a.nav_end.localeCompare(b.nav_end)||a.instrument_id-b.instrument_id;});
