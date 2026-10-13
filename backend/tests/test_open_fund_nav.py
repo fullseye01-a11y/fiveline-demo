@@ -6,6 +6,8 @@ class ProbeTests(unittest.TestCase):
     def test_roc_and_gregorian_dates(self):
         self.assertEqual(parse_nav_date("115/10/13").isoformat(),"2026-10-13")
         self.assertEqual(parse_nav_date("2026-10-13").isoformat(),"2026-10-13")
+        self.assertEqual(parse_nav_date("20261013").isoformat(),"2026-10-13")
+        self.assertEqual(parse_nav_date("1151013").isoformat(),"2026-10-13")
         self.assertIsNone(parse_nav_date("115/02/30"))
 
     def test_domestic_big5_csv(self):
