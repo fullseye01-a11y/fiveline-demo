@@ -1,0 +1,53 @@
+name: Verify fund ISIN and dividend evidence mobile page
+on:
+  push:
+    branches: [feature/nav-identity-dividend-evidence-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m unittest discover -s tests -p test_nav_class_evidence_page.py -v
+      - name: Validate browser JavaScript
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('nav_class_evidence.html').read_text('utf-8')
+          blocks=re.findall(r'<script>(.*?)</script>',s,re.S)
+          assert len(blocks)==1
+          Path('/tmp/nav_class_ui.js').write_text(blocks[0],encoding='utf-8')
+          PY
+          node --check /tmp/nav_class_ui.js
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Confirm real Render evidence route and 0 formally approved classes
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import urlopen
+          url='https://fiveline-nav-readonly.onrender.com/api/official-nav/class-evidence'
+          with urlopen(url,timeout=120) as r:
+              assert r.status==200
+              x=json.load(r)
+          assert x['schema']=='fiveline_nav_identity_dividend_evidence_v1'
+          assert x['total_legacy']==68 and len(x['records'])==68
+          assert x['reviewed_approved']==0
+          assert not x['historical_nav_backfilled']
+          assert not x['cash_distributions_adjusted']
+          assert not x['splits_adjusted']
+          assert all(not v['approved'] and not v['share_class_approved'] for v in x['records'])
+          assert sum(x['status_counts'].values())==68
+          print(json.dumps({'status_counts':x['status_counts'],
+              'official_metadata_consistent_not_approved':x['official_metadata_consistent_not_approved'],
+              'official_basic_rows':x['official_basic_rows'],
+              'official_recent_nav_rows':x['official_recent_nav_rows'],
+              'official_dividend_metadata_rows':x['official_dividend_metadata_rows']},ensure_ascii=False))
+          PY
