@@ -1,0 +1,51 @@
+name: Verify 68-instrument NAV identity review
+on:
+  push:
+    branches:
+      - feature/nav-match-review-ui-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m unittest discover -s tests -p test_nav_match_review_ui.py -v
+      - name: JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          content=Path("nav_match_review.html").read_text("utf-8")
+          scripts=re.findall(r"<script>(.*?)</script>",content,re.S)
+          assert len(scripts)==1
+          Path("/tmp/match_review.js").write_text(scripts[0],encoding="utf-8")
+          PY
+          node --check /tmp/match_review.js
+  live-readonly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live Render report with government sources
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import urlopen
+          url="https://fiveline-nav-readonly.onrender.com/api/official-nav/match-report"
+          with urlopen(url,timeout=115) as res:
+            assert res.status==200
+            report=json.load(res)
+          assert report["mode"]=="read_only_matching_review"
+          assert report["legacy_count"]==68
+          assert len(report["records"])==68
+          assert len({x["id"] for x in report["records"]})==68
+          assert report["reviewed_and_approved_count"]==0
+          assert not report["any_legacy_nav_overwritten"]
+          assert not any(x["approved"] for x in report["records"])
+          assert sum(report["candidate_status_counts"].values())==68
+          assert "sitca_domestic_daily" in report["provider_success"]
+          assert "tdcc_offshore_global" in report["provider_success"]
+          print(json.dumps({"status_counts":report["candidate_status_counts"],"provider_success":report["provider_success"],"provider_errors":report["provider_errors"]},ensure_ascii=False))
+          PY
