@@ -1,0 +1,28 @@
+name: Verify seven five-line channel names
+on:
+  push:
+    branches: [feature/fiveline-seven-level-names-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check labels and regression functions
+        run: python -m unittest discover -s tests -p test_channel_labels.py -v
+      - name: Check chart JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text = Path('five_line.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script>([\s\S]*?)</script>', text)
+          assert scripts
+          Path('/tmp/fiveline-chart.js').write_text(scripts[-1], encoding='utf-8')
+          PY
+          node --check /tmp/fiveline-chart.js
