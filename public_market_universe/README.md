@@ -5,12 +5,17 @@
 - 來源一：證交所上市公司基本資料 <https://data.gov.tw/dataset/18419>
 - 來源二：櫃買中心上櫃公司基本資料 <https://data.gov.tw/dataset/25036>
 - 來源三：證交所基金基本資料（上市 ETF）<https://data.gov.tw/dataset/157399>
-- 來源四：投信投顧公會境內基金每日淨值清冊 <https://data.gov.tw/dataset/11109>
-- 來源五：集保在台核備境外基金基本資料 <https://data.gov.tw/dataset/11639>
+- 來源四：櫃買中心 ETF 官方名錄 <https://info.tpex.org.tw/ETF/zh/filter.html>（官方 ETF 建議清單 API；非歷史價格）
+- 來源五：投信投顧公會境內基金每日淨值清冊 <https://data.gov.tw/dataset/11109>
+- 來源六：集保在台核備境外基金基本資料 <https://data.gov.tw/dataset/11639>
 - 開放資料授權 <https://data.gov.tw/license>
 
 `public_market_universe/latest.json` 保存每次成功驗證後的最新全市場名錄。每檔的 `uid` 是來源、代碼、ISIN、幣別及名稱生成的指紋；**不代表正式級別對帳**。跨來源可能有重複的 ETF/基金，不能以名稱相似就合併。
 
-本階段：沒有多年歷史 NAV、完整個股日線行情、股息再投入、分割還原或正式投資績效。沒有單獨的櫃買 ETF 完整列表，亦不包括全球不在台核備的全部基金。
+本階段已加入櫃買中心的**上櫃 ETF 官方查詢名錄**（首次實測 118 筆），上市／上櫃 ETF 可分開搜尋。不代表下市歷史 ETF 的完整全集；亦不包括全球不在台核備的全部基金。
+
+`public_market_universe/identity_review.json` 保存每次批次更新的基金／ETF ISIN、官方代碼、名稱與幣別交叉檢查。它只產出疑似重複與級別核對候選，**不自動合併、不刪任何基金**。首次實測 11,196 筆市場名錄、9,208 筆基金/ETF 來源紀錄中，3,918 筆無 ISIN、3 筆 ISIN 格式或校驗未過、10 組同名但不同幣別。
+
+仍無多年歷史 NAV、完整個股日線行情、股息再投入、分割還原或正式投資績效。需逐步補足合法來源與歷史完整性驗證。
 
 此分支和網站主程式及五線譜原 Excel 完全分開。每日批次更新來源失敗時應停止寫入新名錄，避免以前一天的資料冒充當日更新。
