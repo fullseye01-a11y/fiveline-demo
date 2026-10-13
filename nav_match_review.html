@@ -50,6 +50,16 @@ summary{font-size:.84rem;color:#235f86;font-weight:650;cursor:pointer;padding:5p
 .empty{border:1px dashed #b3c5d5;border-radius:12px;text-align:center;color:var(--sub);padding:18px;font-size:.87rem}
 .foot{font-size:.8rem;color:var(--sub);margin:16px 0}
 @media(min-width:690px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.inputrow{grid-template-columns:1.3fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.backfill{margin-top:12px;border:1px solid #e8d8b9;background:#fff9ec;padding:11px 12px;border-radius:10px;font-size:.86rem}
+.backfill strong{display:block}
+.review-action{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.review-action small{color:var(--sub);font-size:.78rem}
+.review-action button{background:#f4f8fc;color:#21597c;border-color:#bcd0e0}
+.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.review-grid div{background:#f7f9fc;padding:8px;border-radius:8px}
+.review-grid small{display:block;color:var(--sub);font-size:.75rem}
+.review-grid b{display:block;font-size:.82rem;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -66,7 +76,9 @@ summary{font-size:.84rem;color:#235f86;font-weight:650;cursor:pointer;padding:5p
 <div class="stat"><strong id="need">—</strong><span>仍待核對／其他狀態</span></div>
 <div class="stat"><strong id="approved">0</strong><span>已正式核准配對</span></div>
 </div>
-<div class="actions"><button type="button" id="reload">重新執行對帳檢查</button><a href="official_nav_search.html">查看官方最新 NAV</a><a href="nav_status.html">歷史 NAV 健康中心</a></div>
+<div class="actions"><button type="button" id="reload">重新執行對帳檢查</button><button type="button" id="export-review" disabled>下載 68 檔 ISIN／級別待核對 CSV</button><a href="official_nav_search.html">查看官方最新 NAV</a><a href="nav_status.html">歷史 NAV 健康中心</a></div>
+<div class="backfill"><strong>歷史 NAV 回補計畫（尚未執行）</strong>候選資料與舊 NAV 截止日之間的日期差距，只是回補待辦區間，不代表該期間交易日真的缺資料。本階段每日官方快照可作為未來核對來源，但仍需授權的歷史 NAV 及基金級別確認才可正式回補。</div>
+<p class="status" id="export-hint">CSV 將包含 Excel 歷史名稱、官方候選代碼、ISIN、幣別、擬核對的歷史日期區間，以及人工核准欄位；所有核准欄位預設為「否」。</p>
 <p class="status" id="provider" style="margin-top:12px"></p>
 </section>
 <section class="panel">
@@ -107,6 +119,66 @@ function el(tag,text,cls){const a=document.createElement(tag);if(text!=null)a.te
 function field(parent,key,value){
  const block=el("div");block.append(el("small",key),el("b",value??"—"));parent.append(block);
 }
+
+function nextDay(iso){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||"")))return "";
+ const d=new Date(iso+"T00:00:00Z");
+ if(!Number.isFinite(d.getTime()))return "";
+ d.setUTCDate(d.getUTCDate()+1);
+ return d.toISOString().slice(0,10);
+}
+function calendarDays(a,b){
+ if(!a||!b||!/^\d{4}-\d{2}-\d{2}$/.test(a)||!/^\d{4}-\d{2}-\d{2}$/.test(b))return "";
+ const days=Math.floor((Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00:00:00Z"))/86400000)+1;
+ return days>=0?days:0;
+}
+function isinShape(value){
+ const isin=String(value||"").trim().toUpperCase();
+ if(!isin)return "官方未提供";
+ if(!/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(isin))return "格式待核對";
+ let digits="";
+ for(const c of isin)digits+=(c>="A"&&c<="Z")?String(c.charCodeAt(0)-55):c;
+ let sum=0,dbl=false;
+ for(let i=digits.length-1;i>=0;i--){
+   let n=Number(digits[i]);if(dbl){n*=2;if(n>9)n-=9}sum+=n;dbl=!dbl;
+ }
+ return sum%10===0?"格式及檢查碼符合（非身分核准）":"檢查碼未通過";
+}
+function candidateInfo(item){
+ return item.status==="single_unverified_candidate"&&item.candidates.length===1?item.candidates[0]:null;
+}
+function proposedBackfill(item,c){
+ if(!c||!item.nav_end||!c.nav_date)return {start:"",end:"",days:""};
+ const start=nextDay(item.nav_end);
+ const days=calendarDays(start,c.nav_date);
+ return {start:start,end:c.nav_date,days:days};
+}
+function csvCell(value){
+ let v=String(value==null?"":value);
+ if(/^[\s]*[=+\-@\t\r]/.test(v))v="'"+v;
+ return '"'+v.replace(/"/g,'""')+'"';
+}
+function exportReview(){
+ if(!report||report.legacy_count!==68)return;
+ const head=["歷史標的ID","歷史標的名稱","歷史幣別","舊NAV截止日期","目前狀態","官方來源",
+ "官方代碼","官方ISIN","ISIN格式驗證","官方基金名稱","官方幣別","官方最近NAV日期",
+ "擬回補起點_非交易日校正","擬回補截止日","日曆區間天數_非缺值筆數",
+ "Excel原始ISIN_人工填寫","基金級別確認_人工填寫","配息型態核對_人工填寫",
+ "分割與配息還原核對_人工填寫","是否正式核准","備註"];
+ const rows=report.records.map(function(item){
+   const c=candidateInfo(item),w=proposedBackfill(item,c);
+   return [item.id,item.name,item.currency,item.nav_end,LABELS[item.status]||item.status,
+     c?.source||"",c?.code||"",c?.isin||"",isinShape(c?.isin),c?.name||"",c?.currency||"",c?.nav_date||"",
+     w.start,w.end,w.days,"","","","","否","禁止僅因名稱/幣別相同而自動更新五線譜"];
+ });
+ const csv="\ufeff"+[head,...rows].map(r=>r.map(csvCell).join(",")).join("\r\n")+"\r\n";
+ const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement("a");link.href=url;link.download="fiveline_68_fund_identity_review.csv";
+ document.body.append(link);link.click();link.remove();
+ window.setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
 function renderCard(item){
  const card=el("article",null,"card");
  const top=el("div",null,"card-top");
@@ -120,6 +192,16 @@ function renderCard(item){
  const details=el("details");
  details.append(el("summary","查看原因及候選資料"));
  details.append(el("p",item.reason,"summary"));
+ if(item.status==="single_unverified_candidate"&&item.candidates.length===1){
+   const candidate=item.candidates[0],window=proposedBackfill(item,candidate);
+   const evidence=el("div",null,"review-grid");
+   field(evidence,"ISIN 格式檢查",isinShape(candidate.isin));
+   field(evidence,"人工級別核准","未核准");
+   field(evidence,"參考回補起點",window.start||"—");
+   field(evidence,"截至官方 NAV 日期",window.end||"—");
+   details.append(evidence);
+   details.append(el("p","歷史回補區間僅是日曆期間，不能推斷缺少幾個交易日。","summary"));
+ }
  if(!item.candidates?.length){details.append(el("p","沒有可以列出的同名候選資料。","summary"))}
  (item.candidates||[]).forEach(c=>{
    const box=el("div",null,"candidate");
@@ -149,6 +231,7 @@ async function load(){
   const j=await resp.json();
   if(j.mode!=="read_only_matching_review"||j.legacy_count!==68||j.reviewed_and_approved_count!==0||j.any_legacy_nav_overwritten!==false||!Array.isArray(j.records)||j.records.length!==68)throw Error("配對回應未通過保護檢查");
   report=j;
+  byId("export-review").disabled=false;
   const counts=j.candidate_status_counts||{};
   const single=counts.single_unverified_candidate||0;
   byId("total").textContent=68;
@@ -160,12 +243,14 @@ async function load(){
   draw();
  }catch(err){
   report=null;
+  byId("export-review").disabled=true;
   byId("state").textContent="無法取得正式來源對帳結果，請稍後重新檢查。";
   byId("provider").textContent="若政府資料來源或免費 Render 服務暫時異常，舊五線譜仍維持歷史快照。";
   byId("cards").replaceChildren(el("div","目前沒有已驗證的配對資料可顯示。","empty"));
   byId("count").textContent="尚無對帳結果";
  }finally{byId("reload").disabled=false}
 }
+byId("export-review").addEventListener("click",exportReview);
 byId("reload").addEventListener("click",load);
 byId("query").addEventListener("input",draw);
 byId("filter").addEventListener("change",draw);
