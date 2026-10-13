@@ -16,6 +16,7 @@ import threading
 import time
 from backend.providers.open_fund_nav import SOURCES, download_source, normalized_records
 from backend.fund_matching import get_legacy_rows, make_report
+from backend.class_dividend_audit import REGISTRY as CLASS_SOURCES, fetch_official, load_csv, evidence_review
 
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY_FILE = ROOT / "data" / "phase16_summary.json"
@@ -74,6 +75,30 @@ def matching_review() -> dict:
     rows=get_legacy_rows(COVERAGE_FILE)
     return make_report(rows,successes,failures)
 
+
+
+_class_evidence_cache = {}
+
+def class_dividend_evidence() -> dict:
+    """Isolated metadata review: no historical NAV writes or automatic class approval."""
+    with _cache_lock:
+        cached=_class_evidence_cache.get("report")
+        now=time.monotonic()
+        if cached and now-cached["since"]<OFFICIAL_CACHE_TTL_SEC:
+            return cached["value"]
+        original=matching_review()
+        source_rows={}
+        for source in CLASS_SOURCES:
+            _headers,rows=load_csv(source,fetch_official(source))
+            source_rows[source]=rows
+        result=evidence_review(
+            original,
+            source_rows["tdcc_offshore_basics"],
+            source_rows["tdcc_offshore_recent_nav"],
+            source_rows["tdcc_offshore_dividend"]
+        )
+        _class_evidence_cache["report"]={"since":time.monotonic(),"value":result}
+        return result
 
 def official_lookup(source: str, query: str, limit: int = 30) -> dict:
     if source not in SOURCES or len(query)<2 or len(query)>60:
@@ -153,6 +178,8 @@ class Handler(BaseHTTPRequestHandler):
                 data = official_summary()
             elif path == "/api/official-nav/match-report":
                 data = matching_review()
+            elif path == "/api/official-nav/class-evidence":
+                data = class_dividend_evidence()
             elif path == "/api/official-nav/search":
                 args=parse_qs(urlsplit(self.path).query,keep_blank_values=False)
                 source=(args.get("source") or [""])[0]
