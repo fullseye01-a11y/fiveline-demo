@@ -1,0 +1,43 @@
+name: Validate historical NAV observation quality report
+on:
+  push:
+    branches: [feature/public-nav-quality-monitor-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_public_nav_quality.py -v
+  real-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: app}
+      - uses: actions/checkout@v4
+        with:
+          ref: official-nav-history
+          path: archive
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify existing immutable snapshot history
+        working-directory: app
+        run: |
+          python -m tools.audit_public_nav_quality --snapshots ../archive/public_nav_history --coverage data/phase16_instrument_coverage.csv --output ../quality_report_test.json
+          python - <<'PY'
+          import json
+          x=json.load(open('../quality_report_test.json',encoding='utf-8'))
+          assert x['schema']=='public_nav_archive_quality_v1'
+          assert x['legacy_total']==68
+          assert x['archive_snapshot_files']>=1
+          assert x['approved_funds']==0
+          assert not x['historical_backfill_completed']
+          assert x['total_collection_observations']>=x['unique_fund_effective_date_pairs']
+          print('Historic real snapshots:',x['archive_snapshot_files'])
+          print('Distinct fund NAV effective dates:',x['unique_fund_effective_date_pairs'])
+          print('Repeat collection events:',x['repeated_collection_observations'])
+          PY
