@@ -1,0 +1,72 @@
+name: Preserve public official NAV snapshots
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/persistent_nav_history.yml
+  schedule:
+    # 21:55 Asia/Taipei, Monday-Friday. May be delayed by GitHub.
+    - cron: "55 13 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fiveline-public-gov-nav-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: application
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: official-nav-history
+          path: nav_history_branch
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build immutable open-data snapshot, not approved NAV history
+        working-directory: application
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python -m tools.public_nav_history --output-dir ../nav_history_branch/public_nav_history
+      - name: Rebuild temporary SQLite from versioned evidence (fail on NAV revision)
+        working-directory: application
+        run: |
+          python -m tools.rebuild_public_nav_sqlite --snapshots ../nav_history_branch/public_nav_history --output ../daily_public_nav_readonly.sqlite
+          python - <<'PY'
+          import sqlite3
+          db=sqlite3.connect('../daily_public_nav_readonly.sqlite')
+          funds=db.execute("select count(*) from official_funds where approval_status='UNAPPROVED'").fetchone()[0]
+          observations=db.execute("select count(*) from nav_raw_history where identity_review='PENDING'").fetchone()[0]
+          assert funds>0 and observations>0
+          assert db.execute("select count(*) from official_funds where approval_status!='UNAPPROVED'").fetchone()[0]==0
+          print('Unapproved public funds:',funds,'dated raw observations:',observations)
+          PY
+      - name: Append to official-nav-history branch only
+        working-directory: nav_history_branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public_nav_history/
+          if git diff --cached --quiet; then
+            echo "No new snapshot to archive"
+          else
+            git commit -m "Archive public government NAV candidates for run ${{ github.run_id }}"
+            git push origin HEAD:official-nav-history
+          fi
+      - name: Upload disposable SQLite materialized view
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-nav-staging-sqlite-${{ github.run_id }}
+          path: daily_public_nav_readonly.sqlite
+          retention-days: 30
+          if-no-files-found: error

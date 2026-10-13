@@ -1,0 +1,39 @@
+name: Validate versioned public NAV SQLite rebuild
+on:
+  push:
+    branches: [feature/persistent-public-nav-history-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -p test_public_nav_history.py -v
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Produce one validated public NAV snapshot from live official sources
+        run: |
+          python -m tools.public_nav_history --output-dir /tmp/test_public_nav_history
+          python -m tools.rebuild_public_nav_sqlite --snapshots /tmp/test_public_nav_history --output /tmp/test_nav.sqlite
+      - name: Verify 39 unapproved candidates and dated provider values in SQLite
+        run: |
+          python - <<'PY'
+          import json,sqlite3
+          from pathlib import Path
+          p=next(Path('/tmp/test_public_nav_history').glob('*/*/*.json'))
+          d=json.loads(p.read_text('utf-8'))
+          assert d['candidate_count']>0
+          assert not d['all_candidates_approved'] and not d['legacy_history_modified']
+          with sqlite3.connect('/tmp/test_nav.sqlite') as c:
+              n=c.execute('SELECT COUNT(*) FROM nav_raw_history').fetchone()[0]
+              assert n==d['candidate_count'],(n,d['candidate_count'])
+              assert c.execute("SELECT COUNT(*) FROM official_funds WHERE approval_status='UNAPPROVED'").fetchone()[0]==n
+          print('Live validated observations:',n)
+          PY
