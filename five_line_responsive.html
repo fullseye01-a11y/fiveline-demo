@@ -46,7 +46,7 @@ td:first-child,th:first-child{position:sticky;left:0;background:white}
 .scrub{border:1px solid var(--line);background:#f7f9fc;border-radius:12px;padding:12px;margin-top:9px}
 .scrub-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;font-size:.83rem;color:var(--muted)}
 .scrub-head strong{color:var(--ink);font-variant-numeric:tabular-nums}
-.scrub input[type=range]{appearance:auto;-webkit-appearance:auto;display:block;width:100%;height:34px;padding:0;margin:4px 0 9px;min-height:34px;touch-action:pan-y;accent-color:var(--price);cursor:pointer}
+.scrub input[type=range]{appearance:auto;-webkit-appearance:auto;display:block;width:100%;height:34px;padding:0;margin:4px 0 9px;min-height:34px;accent-color:var(--price);cursor:pointer}
 .scrub-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:7px}
 .scrub-value{min-width:0;background:white;border:1px solid #e2e8f0;border-radius:9px;padding:8px}
 .scrub-value small{display:block;font-size:.72rem;color:var(--muted)}
@@ -138,6 +138,7 @@ function updateTimeline(){
  ctx.tip1.setAttribute("x",tipX+10);ctx.tip1.setAttribute("y",tipY+21);
  ctx.tip2.setAttribute("x",tipX+10);ctx.tip2.setAttribute("y",tipY+42);
  ctx.tip1.textContent=a[0];ctx.tip2.textContent="NAV "+fmt(a[1]);
+ slider.setAttribute("aria-valuetext",a[0]+" NAV "+fmt(a[1]));
  byId("scrub-date").textContent=a[0];
  byId("scrub-nav").textContent=fmt(a[1]);
  byId("scrub-tl").textContent=fmt(a[2]);
