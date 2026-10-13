@@ -37,17 +37,17 @@ a:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{ou
 .provider b{display:inline-block;margin-right:9px}
 .warn{color:#91581d}
 footer{font-size:.78rem;color:var(--sub)}a{color:#1e668d}
-@media(min-width:700px){.stats{grid-template-columns:repeat(5,minmax(0,1fr))}.controls{grid-template-columns:1.4fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:700px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.controls{grid-template-columns:1.4fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head>
 <body>
 <header><div class="wrap"><a href="index.html">← 返回五線譜智能財富平台</a>
-<h1>全市場基金・股票・ETF 名錄</h1><p>臺灣證交所／櫃買中心／投信投顧公會／集保開放資料批次匯入</p>
+<h1>全市場基金・股票・上市上櫃ETF 名錄</h1><p>臺灣證交所／櫃買中心／投信投顧公會／集保開放資料批次匯入</p>
 </div></header>
 <main class="wrap">
 <div class="notice"><strong>全市場標的名錄 ≠ 完整歷史行情。</strong>
 此頁可搜尋已批次匯入的公開標的名稱和代碼，但不代表每檔都已取得多年日線、完整 NAV、配息還原或六策略回測。
 境內基金和 ETF 可能是同一經濟標的的不同交易單位或級別，不能直接合併。
-目前尚未涵蓋全部上櫃 ETF 及全球未在台核備基金；資料有缺口會如實標示。</div>
+已追加櫃買中心上櫃 ETF 官方名錄；全球未在台核備基金仍未涵蓋；資料有缺口會如實標示。</div>
 <section class="panel">
 <h2>已取得的市場名錄</h2>
 <p id="state" class="note" aria-live="polite">正在讀取官方全市場資料…</p>
@@ -55,11 +55,12 @@ footer{font-size:.78rem;color:var(--sub)}a{color:#1e668d}
 <div class="stat"><b id="listed">—</b><span>上市公司</span></div>
 <div class="stat"><b id="otc">—</b><span>上櫃公司</span></div>
 <div class="stat"><b id="etf">—</b><span>上市 ETF</span></div>
+<div class="stat"><b id="tpex-etf">—</b><span>上櫃 ETF</span></div>
 <div class="stat"><b id="domestic">—</b><span>境內基金級別紀錄</span></div>
 <div class="stat"><b id="offshore">—</b><span>在台核備境外基金紀錄</span></div>
 </div>
 <p id="meta" class="note">來源必須通過格式驗證，才會納入搜尋名單。</p>
-<div class="actions"><button id="reload" type="button">重新整理名錄</button><a href="nav_status.html">NAV 資料健康中心</a><a href="https://github.com/fullseye01-a11y/fiveline-demo/tree/market-universe/public_market_universe" target="_blank" rel="noopener noreferrer">查看來源與版本</a></div>
+<div class="actions"><button id="reload" type="button">重新整理名錄</button><a href="market_identity_review.html">基金跨來源與級別重複稽核</a><a href="nav_status.html">NAV 資料健康中心</a><a href="https://github.com/fullseye01-a11y/fiveline-demo/tree/market-universe/public_market_universe" target="_blank" rel="noopener noreferrer">查看來源與版本</a></div>
 </section>
 <section class="panel">
 <h2>搜尋全部已匯入標的</h2>
@@ -69,7 +70,9 @@ footer{font-size:.78rem;color:var(--sub)}a{color:#1e668d}
 <option value="all">全部已匯入類別</option>
 <option value="listed_stock">上市個股</option>
 <option value="otc_stock">上櫃個股</option>
-<option value="etf">上市 ETF</option>
+<option value="etf_twse">上市 ETF</option>
+<option value="etf_tpex">上櫃 ETF</option>
+<option value="etf">全部上市／上櫃 ETF</option>
 <option value="domestic_fund_share_class">境內基金</option>
 <option value="offshore_fund_share_class">在台核備境外基金</option>
 </select></label>
@@ -97,6 +100,7 @@ const TITLES={
  twse_listed_stocks:"證交所上市公司",
  tpex_otc_stocks:"櫃買中心上櫃公司",
  twse_etfs:"證交所上市 ETF",
+ tpex_etfs:"櫃買中心上櫃 ETF",
  sitca_domestic_funds:"投信投顧公會境內基金級別",
  tdcc_offshore_funds:"集保在台核備境外基金"
 };
@@ -138,14 +142,15 @@ function visible(){
 function query(){
  if(!data)return;
  const q=el("query").value.trim().toLocaleLowerCase(),kind=el("kind").value;
- filtered=data.instruments.filter(r=>(kind==="all"||r.category===kind)
+ filtered=data.instruments.filter(r=>(kind==="all"||r.category===kind||(kind==="etf_twse"&&r.source==="twse_etfs")||(kind==="etf_tpex"&&r.source==="tpex_etfs"))
    &&(!q||r.name.toLocaleLowerCase().includes(q)||r.code.toLocaleLowerCase().includes(q)||r.isin.toLocaleLowerCase().includes(q)));
  limit=PAGE_SIZE;visible();
 }
 function renderMeta(){
  const counts=data.category_counts;
  for(const [id,field] of [["listed","listed_stock"],["otc","otc_stock"],["etf","etf"],["domestic","domestic_fund_share_class"],["offshore","offshore_fund_share_class"]])
-  el(id).textContent=(counts[field]||0).toLocaleString("zh-TW");
+  el(id).textContent=(field==="etf" ? data.instruments.filter(x=>x.source==="twse_etfs").length : (counts[field]||0)).toLocaleString("zh-TW");
+ el("tpex-etf").textContent=(data.instruments.filter(x=>x.source==="tpex_etfs").length).toLocaleString("zh-TW");
  el("meta").textContent="名錄紀錄數："+data.total_rows.toLocaleString("zh-TW")+"；擷取時間："+data.checked_at_utc+"（UTC）。"+(data.catalog_complete_for_configured_sources?"五個已設定來源全部成功。":"部分來源取得失敗，請看下方狀態。");
  const root=el("providers");root.replaceChildren();
  Object.entries(data.providers).forEach(([key,v])=>{
@@ -174,7 +179,7 @@ async function load(){
   renderMeta();query();
  }catch(err){
   data=null;el("state").textContent="官方全市場名錄目前無法驗證，請稍後重試。";
-  ["listed","otc","etf","domestic","offshore"].forEach(k=>el(k).textContent="—");
+  ["listed","otc","etf","tpex-etf","domestic","offshore"].forEach(k=>el(k).textContent="—");
   el("count").textContent="尚無經驗證的名錄";
   el("cards").replaceChildren(mk("div","既有五線譜及 68 檔歷史資料不受影響。","empty"));
  }finally{el("reload").disabled=false}
