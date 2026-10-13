@@ -1,0 +1,29 @@
+name: Test slider and unchanged regression data
+on:
+  push:
+    branches:
+      - feature/fiveline-slider-minimal-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check slide dates, legend and numeric channel invariant
+        run: python -m unittest discover -s tests -p test_slider_chart.py -v
+      - name: Validate interactive JavaScript
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          h=Path("five_line_responsive.html").read_text(encoding="utf-8")
+          scripts=re.findall(r'<script>([\s\S]*?)</script>',h)
+          assert len(scripts)==1,len(scripts)
+          Path("/tmp/fiveline-slider.js").write_text(scripts[0],encoding="utf-8")
+          PY
+          node --check /tmp/fiveline-slider.js
