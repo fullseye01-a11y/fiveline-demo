@@ -1,5 +1,9 @@
 name: Scheduled official fund NAV source refresh check
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/official_nav_daily_check.yml
   schedule:
     # 21:30 Asia/Taipei on Monday-Friday. GitHub scheduler may run late.
     - cron: "30 13 * * 1-5"
