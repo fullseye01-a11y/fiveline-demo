@@ -20,8 +20,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Produce one validated public NAV snapshot from live official sources
         run: |
-          python tools/public_nav_history.py --output-dir /tmp/test_public_nav_history
-          python tools/rebuild_public_nav_sqlite.py --snapshots /tmp/test_public_nav_history --output /tmp/test_nav.sqlite
+          python -m tools.public_nav_history --output-dir /tmp/test_public_nav_history
+          python -m tools.rebuild_public_nav_sqlite --snapshots /tmp/test_public_nav_history --output /tmp/test_nav.sqlite
       - name: Verify 39 unapproved candidates and dated provider values in SQLite
         run: |
           python - <<'PY'
