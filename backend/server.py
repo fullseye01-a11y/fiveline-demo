@@ -51,6 +51,7 @@ def official_summary() -> dict:
                 "checked_at_utc":snapshot["checked_at_utc"],
                 "source_dataset":snapshot["origin"], "available":True})
         except Exception as exc:
+            print("official_NAV_provider_error", name, type(exc).__name__, str(exc)[:240], flush=True)
             providers.append({"source":name,"available":False,
                 "error":type(exc).__name__, "count":0})
     return {"mode":"government_open_data_latest_only", "providers":providers,
