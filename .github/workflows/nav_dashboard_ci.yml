@@ -1,0 +1,29 @@
+name: Validate public NAV dashboard
+on:
+  push:
+    branches:
+      - feature/nav-freshness-dashboard-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check snapshot and public page
+        run: python -m unittest discover -s tests -p test_nav_dashboard.py -v
+      - name: Parse inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          raw = Path('nav_status.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script>([\s\S]*?)</script>', raw)
+          assert len(scripts) == 1
+          Path('/tmp/nav_status.js').write_text(scripts[0], encoding='utf-8')
+          PY
+          node --check /tmp/nav_status.js
