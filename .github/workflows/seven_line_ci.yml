@@ -1,0 +1,29 @@
+name: Verify seven-line channel labels
+on:
+  push:
+    branches:
+      - feature/seven-line-annotations-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression snapshot and labels
+        run: python -m unittest discover -s tests -p test_five_line_labels.py -v
+      - name: Check embedded chart JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('five_line.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert len(scripts)==2, len(scripts)
+          Path('/tmp/five_line_chart.js').write_text(scripts[1],encoding='utf-8')
+          PY
+          node --check /tmp/five_line_chart.js
