@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#193451">
+<title>基金級別與去重稽核｜五線譜</title>
+<style>
+:root{--navy:#193451;--ink:#1e3550;--sub:#596e83;--line:#d9e2ed;--bg:#f3f6fa;--warn:#fff6e5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:var(--ink);line-height:1.55}
+header{background:var(--navy);color:white;padding:22px 16px}.wrap{max-width:1050px;margin:auto}
+header a{color:#d6e7f5;text-decoration:none;font-size:.88rem}header h1{font-size:clamp(1.35rem,4.8vw,2rem);line-height:1.35;margin:11px 0 5px}
+header p{margin:0;color:#d7e3ef;font-size:.88rem}main{padding:15px 15px 36px}
+.notice{background:var(--warn);border-left:4px solid #b4812e;border-radius:11px;padding:13px 14px;margin:0 0 15px;font-size:.86rem}
+.notice strong{display:block}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;padding:15px;margin-bottom:15px}
+h2{font-size:1.1rem;margin:0 0 10px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.stat{background:#f2f5f8;border-radius:11px;padding:12px}
+.stat strong{font-size:clamp(1.35rem,5vw,1.85rem);display:block;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:.77rem;color:var(--sub);margin-top:7px}
+.note{font-size:.82rem;color:var(--sub);margin:10px 0}
+.controls{display:grid;grid-template-columns:1fr;gap:9px}
+label{display:grid;gap:5px;font-size:.86rem;color:var(--sub)}
+select,input,button{font:inherit;min-height:44px;border-radius:9px}
+select,input{width:100%;min-width:0;border:1px solid #c4d0dc;background:white;color:var(--ink);padding:8px 11px}
+button{background:#205f87;border:1px solid #205f87;color:white;padding:9px 14px;font-weight:650;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #4695bf;outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actions a{font-size:.84rem;color:#1c628c}
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{border:1px solid var(--line);border-radius:11px;padding:12px;min-width:0}
+.card h3{font-size:1rem;line-height:1.4;margin:0 0 5px}
+.tag{display:inline-block;background:#fff0d5;color:#81520d;border-radius:999px;padding:4px 9px;font-size:.74rem;font-weight:700}
+.linked{border-top:1px solid #e9edf3;margin-top:7px;padding-top:7px;font-size:.82rem;word-break:break-word}
+.linked b{display:block}.linked span{color:var(--sub);display:block}
+.info{font-size:.85rem;color:var(--sub)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left;vertical-align:top}
+th{color:var(--sub);font-weight:700}
+.empty{color:var(--sub);border:1px dashed #c0d0de;border-radius:10px;padding:14px;font-size:.85rem}
+footer{font-size:.78rem;color:var(--sub)}a{color:#1e6791}
+@media(min-width:700px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1.2fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div class="wrap"><a href="market_universe.html">← 返回全市場名錄</a>
+<h1>基金跨來源、級別與重複稽核</h1>
+<p>ISIN／幣別／官方代碼／級別｜不會直接合併任何基金</p></div></header>
+<main class="wrap">
+<div class="notice"><strong>這是「疑似重複候選」，不是已核准合併。</strong>
+即使來源代碼、名稱或有效 ISIN 相同，仍須核對基金級別、累積或配息類型、幣別與法定身分。ETF 在交易所的市價，也不能取代投信基金的每單位 NAV。沒有證據的基金一律保留為獨立紀錄。</div>
+<section class="panel">
+<h2>標的級別核對概況</h2>
+<p id="state" class="note" aria-live="polite">正在讀取官方名錄的身分核對報告…</p>
+<div class="stats">
+<div class="stat"><strong id="funds">—</strong><span>基金／ETF 來源紀錄</span></div>
+<div class="stat"><strong id="missing">—</strong><span>缺 ISIN 紀錄</span></div>
+<div class="stat"><strong id="invalid">—</strong><span>ISIN 校驗未過</span></div>
+<div class="stat"><strong id="groups">—</strong><span>需核對的候選群組</span></div>
+</div>
+<p id="date" class="note"></p>
+<div class="actions"><button id="reload" type="button">重新載入</button><button id="csv" type="button" disabled>下載級別核對 CSV</button><a href="nav_class_evidence.html">原 68 檔基金 ISIN 稽核</a></div>
+</section>
+<section class="panel">
+<h2>疑似重複與幣別差異</h2>
+<div class="controls">
+<label>搜尋基金、代號、ISIN<input id="query" type="search" placeholder="例如 安聯、債券、USD" autocomplete="off"></label>
+<label>群組類型<select id="kind">
+<option value="all">全部需核對群組</option>
+<option value="same_verified_isin_and_currency">有效 ISIN 與幣別一致</option>
+<option value="same_code_cross_fund_sources">跨來源代碼相同</option>
+<option value="same_normalized_name_currency">名稱幣別相同</option>
+<option value="same_name_different_currency">相同名稱但幣別不同</option>
+</select></label>
+<button id="clear" type="button">清除篩選</button>
+</div>
+<p id="count" class="note" aria-live="polite"></p><div id="cards" class="cards"></div>
+</section>
+<section class="panel">
+<h2>歷史行情來源下一階段</h2>
+<table>
+<thead><tr><th>市場</th><th>待開發資料</th><th>限制</th></tr></thead>
+<tbody>
+<tr><td>證交所上市股／ETF</td><td>TWSE 官方歷史交易日資料及 ETF 配息事件</td><td>逐日價格、還原因子及公告時點需核對</td></tr>
+<tr><td>櫃買上櫃股／ETF</td><td>TPEx 官方日行情與 ETF 產品資料</td><td>每日最新快照不等於多年歷史回補</td></tr>
+<tr><td>境內基金</td><td>投信公會／基金公司歷史 NAV</td><td>基金級別、日期和配息單位不能推測</td></tr>
+<tr><td>在台核備境外基金</td><td>集保最新 NAV 與個別管理公司歷史下載</td><td>7 日快照不能替代多年 NAV；檢查授權</td></tr>
+</tbody></table>
+<p class="info">策略回測需要正確的「當時可取得時間」。尚未證明官方公告／修訂時間前，這些來源只能先用於參考與核對，不直接進入六策略歷史績效。</p>
+</section>
+<footer>名錄與稽核結果採開放資料且獨立版本化保存；未包含客戶資料，亦不改寫原 Excel、五線譜回歸線、配息、分割或正式回測。</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const RAW="https://raw.githubusercontent.com/fullseye01-a11y/fiveline-demo/market-universe/public_market_universe/identity_review.json";
+const API="https://api.github.com/repos/fullseye01-a11y/fiveline-demo/contents/public_market_universe/identity_review.json?ref=market-universe";
+const TXT={
+ same_verified_isin_and_currency:"相同 ISIN 與幣別（未核准）",
+ same_code_cross_fund_sources:"跨來源代碼相同（未核准）",
+ same_normalized_name_currency:"名稱與幣別相同（未核准）",
+ same_name_different_currency:"名稱相同但幣別不同（禁止合併）"
+};
+const el=id=>document.getElementById(id);
+const make=(name,value,cls)=>{const x=document.createElement(name);if(value!=null)x.textContent=String(value);if(cls)x.className=cls;return x};
+let data=null;
+async function download(){
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),40000);
+ try{
+  try{const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:c.signal});if(r.ok)return await r.json()}catch(e){}
+  const r=await fetch(API,{signal:c.signal,cache:"no-store",headers:{Accept:"application/vnd.github+json"}});
+  if(!r.ok)throw Error("review missing");
+  const obj=await r.json();
+  if(obj.encoding!=="base64"||!obj.content)throw Error("review unavailable");
+  const binary=atob(obj.content.replace(/\s/g,""));
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(binary,k=>k.charCodeAt(0))));
+ }finally{clearTimeout(timer)}
+}
+function groupCard(g){
+ const card=make("article",null,"card");
+ card.append(make("h3",TXT[g.relation]||g.relation));
+ card.append(make("span",g.record_count+" 筆來源紀錄，仍待人工核對","tag"));
+ for(const r of g.records){
+  const row=make("div",null,"linked");
+  row.append(make("b",r.name));
+  row.append(make("span",r.source+"｜"+r.code+(r.currency?"｜"+r.currency:"")+(r.isin?"｜ISIN "+r.isin:"")));
+  card.append(row);
+ }
+ if(g.display_truncated)card.append(make("p","此群組較長，網頁只顯示部分候選。","info"));
+ return card;
+}
+function filter(){
+ if(!data)return;
+ const q=el("query").value.trim().toLocaleLowerCase(),k=el("kind").value;
+ const rows=data.groups.filter(g=>(k==="all"||g.relation===k)&&
+ (!q||g.key_preview.toLocaleLowerCase().includes(q)||g.records.some(r=>
+  r.name.toLocaleLowerCase().includes(q)||r.code.toLocaleLowerCase().includes(q)||r.isin.toLocaleLowerCase().includes(q))));
+ el("count").textContent="符合 "+rows.length+" / 已展示 "+data.groups.length+" 組；總候選群組 "+data.potential_link_groups_total+" 組。";
+ const area=el("cards");area.replaceChildren();
+ if(!rows.length){area.append(make("div","沒有符合條件的待核對群組。","empty"));return}
+ const frag=document.createDocumentFragment();rows.forEach(r=>frag.append(groupCard(r)));area.append(frag);
+}
+function cell(s){
+ let x=String(s??"");if(/^\s*[=+\-@\t\r]/.test(x))x="'"+x;
+ return '"'+x.replace(/"/g,'""')+'"';
+}
+function exportCsv(){
+ if(!data||data.automatic_deduplication_applied!==false)return;
+ const head=["疑似關係","群組鍵","來源","代碼","名稱","幣別","ISIN","是否核准合併"];
+ const rows=data.groups.flatMap(g=>g.records.map(r=>[g.relation,g.key_preview,r.source,r.code,r.name,r.currency,r.isin,"否"]));
+ const csv="\ufeff"+[head,...rows].map(row=>row.map(cell).join(",")).join("\r\n")+"\r\n";
+ const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ const a=document.createElement("a");a.href=url;a.download="fiveline_fund_class_identity_review.csv";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1300);
+}
+async function load(){
+ el("reload").disabled=true;el("csv").disabled=true;el("state").textContent="正在讀取級別稽核結果…";
+ try{
+  const r=await download();
+  if(r.schema!=="fiveline_market_identity_review_v1"||!Array.isArray(r.groups)
+   ||r.automatic_deduplication_applied!==false||r.all_fund_classes_approved!==false
+   ||r.historical_nav_backfilled!==false||r.original_excel_modified!==false
+   ||r.customer_data_included!==false||r.unique_investment_products_verified!==null
+   ||r.groups.some(g=>g.merge_approved!==false||g.needs_manual_review!==true))
+   throw Error("fund identity report failed safe loading");
+  data=r;
+  el("funds").textContent=r.fund_etf_source_record_count.toLocaleString("zh-TW");
+  el("missing").textContent=r.missing_isin_fund_etf_rows.toLocaleString("zh-TW");
+  el("invalid").textContent=r.invalid_isin_fund_etf_rows.toLocaleString("zh-TW");
+  el("groups").textContent=r.potential_link_groups_total.toLocaleString("zh-TW");
+  el("date").textContent="目錄擷取時間："+r.catalog_checked_at_utc+"（UTC）。疑似關係並非經驗證的商品去重後總數。";
+  el("state").textContent="來源紀錄稽核完成；尚未核准任何基金級別或自動刪除標的。";
+  el("csv").disabled=false;filter();
+ }catch(e){
+  data=null;el("state").textContent="官方去重報告目前無法驗證。原全市場名錄與 68 檔 Excel 均不受影響。";
+  ["funds","missing","invalid","groups"].forEach(k=>el(k).textContent="—");
+  el("cards").replaceChildren(make("div","請稍後重新整理。","empty"));
+ }finally{el("reload").disabled=false}
+}
+el("reload").addEventListener("click",load);
+el("csv").addEventListener("click",exportCsv);
+el("query").addEventListener("input",filter);
+el("kind").addEventListener("change",filter);
+el("clear").addEventListener("click",()=>{el("query").value="";el("kind").value="all";filter()});
+load();
+})();
+</script>
+</body></html>

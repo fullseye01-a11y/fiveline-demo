@@ -1,0 +1,29 @@
+name: Validate OTC ETF and share class review UI
+on:
+  push:
+    branches: [feature/tpex-etf-and-dedup-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_tpex_etf_identity_ui.py -v
+      - run: python -m unittest discover -s tests -p test_market_universe_page.py -v
+      - name: Validate both browser scripts
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          for page in ['market_universe.html','market_identity_review.html']:
+            html=Path(page).read_text('utf-8')
+            blocks=re.findall(r'<script>(.*?)</script>',html,re.S)
+            assert len(blocks)==1,page
+            Path('/tmp/'+page+'.js').write_text(blocks[0],encoding='utf-8')
+          PY
+          node --check /tmp/market_universe.html.js
+          node --check /tmp/market_identity_review.html.js

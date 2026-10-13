@@ -19,11 +19,15 @@ class MarketPageTests(unittest.TestCase):
                   "name=\"viewport\"","market-universe/public_market_universe/latest.json"]:
             self.assertIn(s,WEB)
         self.assertIn("PAGE_SIZE=40",WEB)
+        self.assertIn('id="tpex-etf"', WEB)
+        self.assertIn('value="etf_tpex"', WEB)
+        self.assertIn('value="etf_twse"', WEB)
+        self.assertIn('href="market_identity_review.html"', WEB)
     def test_catalog_does_not_claim_prices_or_universal_global_coverage(self):
         for s in ["result.market_data_live_prices!==false",
                   "result.historical_nav_backfilled!==false","result.share_classes_approved!==false",
                   "result.original_excel_modified!==false","result.customer_records_included!==false",
-                  "尚未涵蓋全部上櫃 ETF","在台核備"]:
+                  "已追加櫃買中心上櫃 ETF 官方名錄","在台核備"]:
             self.assertIn(s,WEB)
         self.assertNotIn("innerHTML=",WEB)
         self.assertNotIn("localStorage",WEB)
