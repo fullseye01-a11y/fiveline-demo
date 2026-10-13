@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#193451">
+<title>官方台股歷史日線試跑｜五線譜</title>
+<style>
+:root{--navy:#193451;--ink:#243d56;--muted:#627991;--line:#d9e3ed;--bg:#f3f6fa;--warn:#fff5e2}
+*{box-sizing:border-box}body{background:var(--bg);margin:0;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif}
+header{background:var(--navy);color:#fff;padding:21px 16px}
+.wrap{max-width:1040px;margin:auto}header a{color:#e0edf8;text-decoration:none;font-size:.88rem}
+h1{font-size:clamp(1.4rem,5vw,1.95rem);margin:8px 0 4px;line-height:1.35}
+header p{margin:0;color:#d5e3f1;font-size:.88rem}
+main{padding:16px 15px 34px}
+.notice{background:var(--warn);border-left:4px solid #bd8737;border-radius:10px;padding:13px;font-size:.84rem;margin-bottom:14px}
+.notice b{display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:14px}
+h2{font-size:1.1rem;margin:0 0 12px}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.metric{background:#f1f5f8;border-radius:10px;padding:12px}
+.metric b{font-size:clamp(1.45rem,5vw,1.95rem);display:block;line-height:1.2;font-variant-numeric:tabular-nums}
+.metric span{font-size:.76rem;color:var(--muted);display:block;margin-top:8px}
+.note{font-size:.84rem;color:var(--muted);margin:12px 0}
+.symbols{display:grid;grid-template-columns:1fr;gap:10px}
+.symbol{border:1px solid var(--line);border-radius:11px;padding:13px}
+.symbol h3{font-size:1rem;margin:0 0 6px}
+.tag{border-radius:999px;background:#ecf3f9;color:#315f7b;display:inline-block;padding:4px 8px;font-size:.74rem;font-weight:650}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:11px}
+.facts small{color:var(--muted);font-size:.75rem;display:block}
+.facts strong{font-size:.9rem;word-wrap:break-word}
+button{padding:10px 14px;background:#205982;color:white;border:1px solid #205982;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;min-height:44px}
+button:disabled{opacity:.5}
+a{color:#24658c}
+a:focus-visible,button:focus-visible{outline:3px solid #3994bf;outline-offset:2px}
+.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.empty{border:1px dashed #b9ccda;padding:14px;border-radius:9px;color:var(--muted);font-size:.85rem}
+footer{font-size:.8rem;color:var(--muted)}
+@media(min-width:730px){.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.symbols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div class="wrap"><a href="market_universe.html">← 返回全市場標的名錄</a><h1>上市／上櫃歷史日線試跑</h1>
+<p>證交所與櫃買中心官方歷史 OHLCV｜研究暫存庫品質報告</p></div></header>
+<main class="wrap">
+<div class="notice"><b>本階段只驗證一小批官方歷史行情，不是全市場多年的資料庫。</b>
+目前只讀取四個範例標的及指定的月份／交易日，檢查開高低收、成交量、交易日期、重複與官方回傳身分。
+SQLite 原始價格只保留於短期研究檔案，不在本公開網頁散布。所有價格均未除權息或分割還原，也不會寫進原 Excel、五線譜或六策略。</div>
+<section class="panel">
+<h2>官方來源品質總覽</h2>
+<p class="note" id="state" aria-live="polite">讀取最後一次已驗證的研究試跑摘要…</p>
+<div class="metrics">
+<div class="metric"><b id="symbols">—</b><span>實測標的</span></div>
+<div class="metric"><b id="rows">—</b><span>已驗證歷史日線筆數</span></div>
+<div class="metric"><b id="requests">—</b><span>官方指定月份／交易日請求</span></div>
+<div class="metric"><b id="approved">0</b><span>正式回補核准</span></div>
+</div>
+<p id="updated" class="note"></p>
+<div class="actions"><button id="reload" type="button">重新讀取報告</button><a href="https://github.com/fullseye01-a11y/fiveline-demo/actions/workflows/ohlcv_pilot_stage.yml" target="_blank" rel="noopener noreferrer">檢視 GitHub 試跑與暫存檔案</a></div>
+</section>
+<section class="panel">
+<h2>逐標的已驗證日期</h2>
+<div class="symbols" id="cards"></div>
+<p class="note">跨年份抽樣成功並不等於中間日期已補齊。需取得官方交易日曆及全期間逐日資料後，才可驗證完整性。</p>
+</section>
+<section class="panel">
+<h2>仍須完成的項目</h2>
+<div id="todo" class="note">資料檢查中。</div>
+<p class="note">官方歷史資料是原始市價。ETF 的交易價格不同於 NAV；上市 ETF 分割、股票除權息和現金配息必須有獨立調整因子及公告日期，不能直接混用。</p>
+</section>
+<footer>資料來自<a href="https://accessibility.twse.com.tw/zh/trading/historical/stock-day.html">證交所個股日成交資訊</a>、<a href="https://www.tpex.org.tw/en-us/mainboard/trading/info/pricing.html">櫃買中心每日收盤行情</a>；商業用途及原始價格再次分發權限仍須確認。</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const RAW="https://raw.githubusercontent.com/fullseye01-a11y/fiveline-demo/market-universe/public_market_universe/ohlcv_pilot_summary.json";
+const API="https://api.github.com/repos/fullseye01-a11y/fiveline-demo/contents/public_market_universe/ohlcv_pilot_summary.json?ref=market-universe";
+const S=id=>document.getElementById(id);
+const make=(tag,content,cls)=>{let x=document.createElement(tag);if(content!=null)x.textContent=String(content);if(cls)x.className=cls;return x};
+async function fetchReport(){
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),30000);
+ try{
+  try{const r=await fetch(RAW+"?nocache="+Date.now(),{cache:"no-store",signal:c.signal});if(r.ok)return r.json()}catch(e){}
+  const r=await fetch(API,{cache:"no-store",signal:c.signal,headers:{Accept:"application/vnd.github+json"}});
+  if(!r.ok)throw Error("no pilot summary");
+  const obj=await r.json();
+  if(obj.encoding!=="base64"||!obj.content)throw Error("invalid summary");
+  const bytes=Uint8Array.from(atob(obj.content.replace(/\s/g,"")),k=>k.charCodeAt(0));
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+ }finally{clearTimeout(timer)}
+}
+function display(item){
+ const a=make("article",null,"symbol");
+ a.append(make("h3",item.market+"｜"+item.code));
+ a.append(make("span",item.category==="etf"?"ETF":item.category==="listed_stock"?"上市個股":"上櫃個股","tag"));
+ const facts=make("div",null,"facts");
+ for(const [k,v] of [["有效日線筆數",item.price_days],["最早實測日",item.earliest_observed_date],["最新實測日",item.latest_observed_date],["資料還原狀態","未調整"]]){
+  const x=make("div");x.append(make("small",k),make("strong",v));facts.append(x)
+ }
+ a.append(facts);return a;
+}
+async function load(){
+ S("reload").disabled=true;S("state").textContent="正在驗證 GitHub 的歷史日線研究摘要…";
+ try{
+  const x=await fetchReport();
+  if(x.schema!=="fiveline_ohlcv_history_pilot_v1"||x.pilot_symbols!==4
+   ||x.production_coverage_complete!==false||x.all_market_history_backfilled!==false
+   ||x.raw_quotes_publicly_redistributed!==false||x.original_excel_modified!==false
+   ||x.production_analyses_modified!==false||x.price_adjustments_applied!==false
+   ||x.dividend_adjustments_applied!==false||!Array.isArray(x.instruments)||x.instruments.length!==4
+   ||x.instruments.some(a=>a.continuous_calendar_coverage_verified!==false))
+   throw Error("metadata safety requirements not met");
+  S("symbols").textContent=x.pilot_symbols;
+  S("rows").textContent=x.pilot_quote_rows.toLocaleString("zh-TW");
+  S("requests").textContent=x.requested_sources;
+  S("approved").textContent="0";
+  S("updated").textContent="來源驗證時間（UTC）："+x.checked_at_utc+"。證交所月份與櫃買交易日來源分開比對。";
+  S("state").textContent="官方歷史原始行情試跑完成；完整多年行情與含息還原仍未核准。";
+  S("cards").replaceChildren(...x.instruments.map(display));
+  S("todo").replaceChildren(...x.missing_work.map(t=>make("p","• "+t)));
+ }catch(e){
+  ["symbols","rows","requests"].forEach(k=>S(k).textContent="—");
+  S("state").textContent="目前尚無可驗證的官方歷史試跑報告，研究行情不會取代舊圖表。";
+  S("cards").replaceChildren(make("div","請稍後重試或查看 GitHub 工作流程狀態。","empty"));
+ }finally{S("reload").disabled=false}
+}
+S("reload").addEventListener("click",load);
+load();
+})();
+</script></body></html>
