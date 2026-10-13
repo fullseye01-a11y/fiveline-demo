@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#193451"><meta name="robots" content="noindex,nofollow">
+<title>基金身分與配息證據稽核｜五線譜</title>
+<style>
+:root{--navy:#193451;--ink:#1c3450;--muted:#596f83;--border:#d6e2ee;--bg:#f3f6fb;--warn:#fff7e7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.65}
+header{background:var(--navy);color:white;padding:21px 16px}
+.wrap{max-width:1050px;margin:0 auto}
+header a{color:#e2eefa;font-size:.86rem;text-decoration:none}
+h1{font-size:clamp(1.35rem,5.1vw,1.9rem);line-height:1.36;margin:10px 0 3px}
+header p{font-size:.9rem;color:#d8e3ed;margin:0}
+main{padding:17px 15px 36px}
+.alert{background:var(--warn);border-left:4px solid #c49842;padding:13px 14px;border-radius:11px;font-size:.87rem;margin-bottom:14px}
+.alert strong{display:block}
+.panel{background:white;border:1px solid var(--border);border-radius:15px;padding:15px;margin-bottom:16px;min-width:0}
+h2{font-size:1.1rem;margin:0 0 11px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.metric{background:#f2f5f9;border-radius:12px;padding:12px}
+.metric strong{font-size:clamp(1.35rem,5.1vw,1.85rem);display:block;line-height:1.3;font-variant-numeric:tabular-nums}
+.metric span{font-size:.77rem;color:var(--muted)}
+p.note{color:var(--muted);font-size:.82rem;margin:11px 0 0}
+.controls{display:grid;grid-template-columns:1fr;gap:10px}
+label{display:grid;gap:5px;color:var(--muted);font-size:.85rem}
+input,select,button{font:inherit;font-size:.94rem;min-height:44px;border-radius:9px}
+input,select{width:100%;min-width:0;background:white;color:var(--ink);border:1px solid #bfcfe0;padding:8px 10px}
+button{border:1px solid #215983;background:#215983;color:white;font-weight:650;padding:7px 13px;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #5b9dd2;outline-offset:2px}
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{border:1px solid var(--border);border-radius:12px;padding:13px;min-width:0}
+.card h3{font-size:.99rem;overflow-wrap:anywhere;line-height:1.4;margin:0 0 5px}
+.chip{display:inline-block;padding:4px 9px;border-radius:999px;font-size:.72rem;font-weight:700;background:#f1f4f8;color:#405c73}
+.chip.pass{background:#edf5fa;color:#245e82}
+.mini{font-size:.8rem;color:var(--muted);margin:7px 0}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+.facts small{font-size:.74rem;color:var(--muted);display:block}
+.facts b{font-size:.88rem;overflow-wrap:anywhere}
+details{border-top:1px solid var(--border);padding-top:9px}
+summary{font-size:.84rem;font-weight:650;color:#245e84;cursor:pointer}
+a{color:#1d638e}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:11px}
+.status{font-size:.86rem;color:var(--muted);margin:0 0 10px}
+.empty{border:1px dashed #b7c8d8;border-radius:10px;color:var(--muted);padding:15px}
+footer{font-size:.8rem;color:var(--muted)}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1.1fr 1.1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a href="index.html">← 返回五線譜平台</a><h1>基金 ISIN／NAV／配息證據稽核</h1><p>68 檔候選與政府開放資料交叉查核 · 僅供研究及人工核對</p></div></header>
+<main class="wrap">
+<div class="alert"><strong>此處的「官方資料一致」不等於基金級別正式核准。</strong>
+境外基本資料、最近七日 NAV 與配息資訊可作來源交叉驗證；原 Excel 的基金 ISIN、累積／配息級別、避險級別及現金配息金額仍需人工查證。未核准的資料不會回填原五線譜、含息報酬或六策略回測。</div>
+<section class="panel">
+<h2>基金核對進度</h2>
+<p class="status" id="state" aria-live="polite">正在檢查官方基金資料與 Render 連線…</p>
+<div class="grid">
+<div class="metric"><strong id="all">—</strong><span>原 Excel 歷史標的</span></div>
+<div class="metric"><strong id="evidence">—</strong><span>官方身分資料一致，待人工核准</span></div>
+<div class="metric"><strong id="domestic">—</strong><span>境內基金級別證據待補</span></div>
+<div class="metric"><strong id="approved">0</strong><span>正式核准配對</span></div>
+</div>
+<p id="details" class="note">境外資料來源：TDCC 3-2、3-4（最近七日 NAV）、3-5（配息相關資料）。</p>
+<div class="actions" style="margin-top:12px"><button id="reload" type="button">重新執行稽核</button><a href="nav_match_review.html">原 68 檔候選表</a><a href="official_nav_search.html">最新官方 NAV 查詢</a></div>
+</section>
+<section class="panel">
+<h2>逐檔檢核紀錄</h2>
+<div class="controls">
+<label>搜尋基金名稱或 ID<input id="query" type="search" placeholder="例如 安聯、貝萊德、11" autocomplete="off"></label>
+<label>篩選身分狀態<select id="filter">
+<option value="all">全部 68 檔</option>
+<option value="official_metadata_consistent_review_pending">官方資料一致、尚未核准</option>
+<option value="domestic_class_reference_missing">境內基金級別待補</option>
+<option value="not_a_unique_candidate">尚無唯一候選</option>
+<option value="other">其他未通過情形</option>
+</select></label>
+<button id="reset" type="button">清除篩選</button>
+</div>
+<p class="note" id="count" aria-live="polite">尚未取得稽核明細。</p>
+<div class="cards" id="cards"></div>
+</section>
+<footer>
+資料來源：<a href="https://data.gov.tw/dataset/11639">境外基金基本資料</a>、
+<a href="https://data.gov.tw/dataset/11641">境外基金最近七日 NAV</a>、
+<a href="https://data.gov.tw/dataset/11642">境外基金配息資訊</a>。
+此頁只展示最新可取得的來源證據；不提供多年歷史 NAV，也未完成股息總報酬或分割還原。
+</footer></main>
+<script>
+(function(){
+"use strict";
+const ENDPOINT="https://fiveline-nav-readonly.onrender.com/api/official-nav/class-evidence";
+const NAMES={
+  official_metadata_consistent_review_pending:"官方一致 · 未核准",
+  domestic_class_reference_missing:"境內級別待補",
+  not_a_unique_candidate:"尚無唯一候選",
+  isin_missing_or_invalid:"ISIN 缺漏／格式異常",
+  basic_identity_missing_or_ambiguous:"官方基本資料待核對",
+  recent_nav_identity_missing:"近期 NAV 身分資料缺漏"
+};
+const byId=id=>document.getElementById(id);
+const mk=(tag,value,cls)=>{const e=document.createElement(tag);if(value!=null)e.textContent=String(value);if(cls)e.className=cls;return e};
+let data=null;
+function field(node,label,value){
+ const wrap=mk("div");wrap.append(mk("small",label),mk("b",value==null||value===""?"—":value));node.append(wrap);
+}
+function render(item){
+ const panel=mk("article",null,"card");
+ panel.append(mk("h3",item.legacy_name));
+ panel.append(mk("span",NAMES[item.status]||item.status,"chip"+(item.same_code_isin_evidence?" pass":"")));
+ panel.append(mk("div","編號 "+item.legacy_id+"｜"+item.legacy_ccy+"｜原歷史最後 NAV："+(item.legacy_nav_end||"—"),"mini"));
+ const facts=mk("div",null,"facts");
+ field(facts,"官方代碼",item.official_code);
+ field(facts,"官方 ISIN（來源值）",item.reference_isin);
+ field(facts,"近七日來源中可核對 NAV 日期數",item.recent_nav_days);
+ field(facts,"來源配息事件數",item.official_dividend_event_count);
+ panel.append(facts);
+ const more=mk("details"),summary=mk("summary","查看身分核對與禁止回補原因");
+ more.append(summary,mk("p",item.reason||"尚未完成基金身分核對。","mini"));
+ more.append(mk("p","原 Excel ISIN 已核准：否｜股息還原：否｜分割還原：否｜歷史回補：否。","mini"));
+ if(item.recent_nav_last)more.append(mk("p","近期官方 NAV 日期："+item.recent_nav_first+" ～ "+item.recent_nav_last,"mini"));
+ panel.append(more);
+ return panel;
+}
+function filter(){
+ if(!data)return;
+ const q=byId("query").value.trim().toLocaleLowerCase(),v=byId("filter").value;
+ const known=["official_metadata_consistent_review_pending","domestic_class_reference_missing","not_a_unique_candidate"];
+ const rows=data.records.filter(x=>(v==="all"||x.status===v||(v==="other"&&!known.includes(x.status)))
+   &&(x.legacy_name.toLocaleLowerCase().includes(q)||String(x.legacy_id).includes(q)));
+ byId("count").textContent="符合條件："+rows.length+" / "+data.total_legacy+" 檔";
+ const cards=byId("cards");cards.replaceChildren();
+ if(!rows.length){cards.append(mk("div","沒有符合條件的基金。","empty"));return}
+ const frag=document.createDocumentFragment();
+ rows.forEach(x=>frag.append(render(x)));
+ cards.append(frag);
+}
+async function load(){
+ const reload=byId("reload");
+ reload.disabled=true;byId("state").textContent="正在取得官方來源核對報告…";
+ try{
+   const c=new AbortController(),timer=setTimeout(()=>c.abort(),95000);
+   let response;
+   try{response=await fetch(ENDPOINT,{signal:c.signal,cache:"no-store",headers:{Accept:"application/json"}})}
+   finally{clearTimeout(timer)}
+   if(!response.ok)throw Error("HTTP "+response.status);
+   const payload=await response.json();
+   if(payload.schema!=="fiveline_nav_identity_dividend_evidence_v1"||payload.total_legacy!==68
+      ||payload.reviewed_approved!==0||payload.historical_nav_backfilled!==false
+      ||payload.cash_distributions_adjusted!==false||payload.splits_adjusted!==false
+      ||payload.records?.length!==68||payload.records.some(x=>x.approved!==false||x.share_class_approved!==false))
+      throw Error("稽核資料未通過唯讀與未核准保護檢查");
+   data=payload;
+   byId("state").textContent="已完成官方資料核對（僅供人工稽核）";
+   byId("all").textContent=payload.total_legacy;
+   byId("evidence").textContent=payload.official_metadata_consistent_not_approved;
+   byId("domestic").textContent=payload.status_counts.domestic_class_reference_missing||0;
+   byId("approved").textContent="0";
+   byId("details").textContent="官方來源筆數：基本資料 "+payload.official_basic_rows+"、近期 NAV "+payload.official_recent_nav_rows+"、配息資訊 "+payload.official_dividend_metadata_rows+"。稽核時間："+payload.checked_at_utc;
+   filter();
+ }catch(err){
+   data=null;
+   byId("state").textContent="官方來源暫時無法核對，請稍後重新執行。";
+   ["all","evidence","domestic"].forEach(id=>byId(id).textContent="—");
+   byId("cards").replaceChildren(mk("div","無法確認資料時，不會顯示任何未驗證的核准結果。","empty"));
+   byId("count").textContent="尚未取得核對結果";
+ }finally{reload.disabled=false}
+}
+byId("reload").addEventListener("click",load);
+byId("query").addEventListener("input",filter);
+byId("filter").addEventListener("change",filter);
+byId("reset").addEventListener("click",()=>{byId("query").value="";byId("filter").value="all";filter()});
+load();
+})();
+</script>
+</body></html>
