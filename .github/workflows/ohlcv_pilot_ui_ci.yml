@@ -1,0 +1,26 @@
+name: Verify official historic OHLCV pilot status website
+on:
+  push:
+    branches: [feature/ohlcv-historical-pilot-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_ohlcv_history_pilot_ui.py -v
+      - name: Verify browser JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          src=Path('ohlcv_history_pilot.html').read_text('utf-8')
+          scripts=re.findall(r'<script>(.*?)</script>',src,re.S)
+          assert len(scripts)==1
+          Path('/tmp/ohlcv_history_pilot.js').write_text(scripts[0],encoding='utf-8')
+          PY
+          node --check /tmp/ohlcv_history_pilot.js
