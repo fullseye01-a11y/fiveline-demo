@@ -132,8 +132,8 @@ def assess(paths:list[Path],legacy_csv:Path,checked_at:datetime|None=None)->dict
     if now.tzinfo is None:raise ValueError("checked_at must be timezone-aware")
     checked_iso=now.astimezone(timezone.utc).isoformat()
     rows=[]
-    count_conflicts=0
-    count_identity_drift=0
+    conflict_fund_ids=set()
+    drift_fund_ids=set()
     repeated=0
     total_unique_pairs=0
     for (legacy_id,ident),entry in sorted(refs.items(),key=lambda kv:(int(kv[0][0]),kv[0][1])):
@@ -170,8 +170,8 @@ def assess(paths:list[Path],legacy_csv:Path,checked_at:datetime|None=None)->dict
             "dividend_split_adjusted":False,
             "continuous_history_verified":False,
         }
-        if conflicts:count_conflicts+=1
-        if report["identity_changed_between_archives"]:count_identity_drift+=1
+        if conflicts:conflict_fund_ids.add(legacy_id)
+        if report["identity_changed_between_archives"]:drift_fund_ids.add(legacy_id)
         if conflicts:report["quality"]="conflicting_same_date_nav_blocked"
         elif report["identity_changed_between_archives"]:report["quality"]="fund_identity_drift_blocked"
         elif len(days)==1:report["quality"]="only_one_distinct_nav_date"
@@ -196,8 +196,8 @@ def assess(paths:list[Path],legacy_csv:Path,checked_at:datetime|None=None)->dict
         "distinct_effective_nav_dates_all_funds":len(date_tally),
         "earliest_effective_nav_date":min(all_days),
         "latest_effective_nav_date":max(all_days),
-        "same_day_value_conflict_funds":count_conflicts,
-        "identity_drift_funds":count_identity_drift,
+        "same_day_value_conflict_funds":len(conflict_fund_ids),
+        "identity_drift_funds":len(drift_fund_ids),
         "quality_status_counts":dict(by_status),
         "approved_funds":0,
         "historical_backfill_completed":False,
