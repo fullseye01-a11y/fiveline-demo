@@ -1,0 +1,28 @@
+name: Confirm dated TPEx row columns and codes
+on:
+  push:
+    branches: [feature/ohlcv-historical-pilot-20261014]
+    paths: [.github/workflows/ohlcv_tpex_columns_probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check TPEx dated table schema and two sample instruments
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import Request,urlopen
+          from urllib.parse import urlencode
+          url='https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?'+urlencode({'response':'json','date':'2026/09/30'})
+          with urlopen(Request(url,headers={'User-Agent':'Mozilla/5.0','Accept':'application/json'}),timeout=28) as r:
+            x=json.loads(r.read(7_000_000).decode('utf-8-sig'))
+          for table in x.get('tables',[])[:2]:
+            print('TABLE',table.get('title'),json.dumps(table.get('fields',[]),ensure_ascii=False),flush=True)
+            for item in table.get('data',[]):
+              arr=item if isinstance(item,list) else list(item.values()) if isinstance(item,dict) else []
+              if arr and str(arr[0]).strip() in ('6488','006201'):
+                print('ROW',str(arr[0]),str(arr[:15])[:700],flush=True)
+          PY
