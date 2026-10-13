@@ -1,0 +1,69 @@
+name: Update official whole-market instrument directory
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/market_universe_daily.yml
+  schedule:
+    # 22:15 Asia/Taipei on weekdays; GitHub may delay jobs.
+    - cron: "15 14 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: fiveline-official-market-universe
+  cancel-in-progress: false
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: application
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: market_repo
+          ref: market-universe
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch and validate all official bulk public market catalogs
+        working-directory: application
+        run: python -m tools.build_market_universe --out ../market_repo/public_market_universe/latest.json
+      - name: Do not publish partial, unapproved, or customer records
+        working-directory: application
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('../market_repo/public_market_universe/latest.json')
+          x=json.loads(p.read_text(encoding='utf-8'))
+          assert x['schema']=='fiveline_market_universe_v1'
+          assert x['catalog_complete_for_configured_sources']
+          assert not x['failed_sources']
+          assert len(x['covered_sources'])==5
+          assert x['total_rows']>2000
+          assert not x['market_data_live_prices']
+          assert not x['historical_nav_backfilled']
+          assert not x['share_classes_approved']
+          assert not x['original_excel_modified']
+          assert not x['customer_records_included']
+          assert x['total_rows']==len(x['instruments'])
+          assert all(not t['historical_prices_ready'] and not t['class_identity_approved'] for t in x['instruments'])
+          print('Verified directory records:',x['total_rows'])
+          print('Verified source breakdown:',x['category_counts'])
+          PY
+      - name: Commit public directory to dedicated branch
+        working-directory: market_repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public_market_universe/latest.json
+          if git diff --cached --quiet; then
+            echo "Official market directory unchanged"
+          else
+            git commit -m "Refresh 5 official public instrument catalogs ${{ github.run_id }}"
+            git push origin HEAD:market-universe
+          fi
