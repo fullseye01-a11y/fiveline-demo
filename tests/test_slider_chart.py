@@ -22,18 +22,18 @@ class SliderTests(unittest.TestCase):
         self.assertEqual(self.dataset["1"]["windows"]["840"]["points"][-1][0], "2026-08-31")
         self.assertAlmostEqual(self.dataset["1"]["windows"]["840"]["points"][-1][3], 2.0691,places=4)
 
-    def test_legend_plain_names_and_original_layout(self):
+    def test_legend_names_sd_suffixes_and_original_layout(self):
         legend=PAGE.split('<div class="legend"',1)[1].split('</div>\n<p class="info">',1)[0]
         for name in ["極端超買區","超買警戒區","強勢偏多區","中心趨勢線",
                      "弱勢回檔區","超賣警戒區","極端超賣區","NAV／價格走勢"]:
             self.assertIn(name,legend)
         for suffix in ["+3SD","+2SD","+1SD","0SD","-1SD","-2SD","-3SD"]:
-            self.assertNotIn(suffix,legend)
+            self.assertIn(suffix,legend)
         self.assertIn('迴歸通道位階：+3SD ~ -3SD',PAGE)
         self.assertIn('"目前位置："+r.zone',PAGE)
         self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr))',PAGE)
 
-    def test_slider_and_floating_cursor(self):
+    def test_slider_date_and_value_labels_are_outside_plot(self):
         for field in ['id="timeline"','id="scrub-date"','id="scrub-nav"','id="scrub-tl"',
                       'id="scrub-z"','id="scrub-zone"','id="scrub-levels"']:
             self.assertIn(field,PAGE)
@@ -42,9 +42,13 @@ class SliderTests(unittest.TestCase):
                      'slider.setAttribute("aria-valuetext"',
                      'ctx.line.setAttribute("x1",x)',
                      'ctx.dot.setAttribute("cx",x)',
-                     'ctx.tip2.textContent="NAV "+fmt(a[1])']:
+                     'byId("scrub-nav").textContent=fmt(a[1])']:
             self.assertIn(term,PAGE)
         self.assertIn('cursorContext={visible:visible,sd:sd',PAGE)
+        self.assertNotIn('tipRect=svgEl', PAGE)
+        self.assertNotIn('ctx.rect.setAttribute', PAGE)
+        self.assertIn('id="zone-name"', PAGE)
+        self.assertIn('id="scrub-zone-name"', PAGE)
 
     def test_slider_seven_actual_channel_prices(self):
         r=self.dataset["1"]["windows"]["840"]
