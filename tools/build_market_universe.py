@@ -29,6 +29,7 @@ FEEDS={
  },
  "tpex_otc_stocks":{
   "url":"https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
+  "fallback_url":"https://mopsfin.twse.com.tw/opendata/t187ap03_O.csv",
   "dataset":"https://data.gov.tw/dataset/25036","kind":"otc_stock","market":"TPEX","format":"json",
   "code":("公司代號","SecuritiesCompanyCode","CompanyCode","SecuritiesCompanyCode"),
   "name":("公司簡稱","公司名稱","CompanyAbbreviation","CompanyName")
@@ -88,15 +89,24 @@ def download(name,timeout=45):
  if name=="sitca_domestic_funds" and hasattr(ssl,"VERIFY_X509_STRICT"):
   ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
  req=Request(cfg["url"],headers={"Accept":"application/json,text/csv,*/*","User-Agent":"FivelinePublicCatalogReader/1.0"})
- with urlopen(req,timeout=timeout,context=ctx) as response:
-  if response.status!=200:raise ValueError("non-200 official provider")
-  data=response.read(MAX_BYTES+1)
- if len(data)>MAX_BYTES:raise ValueError("excessively large official dataset")
- return data
+ try:
+  with urlopen(req,timeout=timeout,context=ctx) as response:
+   if response.status!=200:raise ValueError("non-200 official provider")
+   data=response.read(MAX_BYTES+1)
+  if len(data)>MAX_BYTES:raise ValueError("excessively large official dataset")
+  return data, cfg["format"],cfg["url"]
+ except Exception:
+  if not cfg.get("fallback_url"):raise
+  backup=cfg["fallback_url"]
+  with urlopen(Request(backup,headers={"User-Agent":"FivelinePublicCatalogReader/1.0"}),timeout=timeout,context=ctx) as response:
+   if response.status!=200:raise ValueError("official fallback non-200")
+   data=response.read(MAX_BYTES+1)
+  if len(data)>MAX_BYTES:raise ValueError("official fallback too large")
+  return data,"csv",backup
 
-def normalize_source(key,raw):
+def normalize_source(key,raw,format_override=None,actual_url=None):
  config=FEEDS[key]
- rows=parse_bytes(raw,config["format"])
+ rows=parse_bytes(raw,format_override or config["format"])
  if not isinstance(rows,list) or not rows or not isinstance(rows[0],dict):
   raise ValueError("unsupported official source body")
  fields=set().union(*(set(r) for r in rows[:25] if isinstance(r,dict)))
@@ -127,7 +137,7 @@ def normalize_source(key,raw):
  if len(out)<5:
   raise ValueError("implausibly few official directory rows")
  return {"rows":out,"source_records":len(rows),"accepted_rows":len(out),"ignored_rows":ignored,
-         "source_fields":sorted(fields)[:40],"dataset":config["dataset"],"url":config["url"]}
+         "source_fields":sorted(fields)[:40],"dataset":config["dataset"],"url":actual_url or config["url"]}
 
 def build(sources:dict,errors:dict,now=None):
  now=now or datetime.now(timezone.utc)
@@ -139,7 +149,7 @@ def build(sources:dict,errors:dict,now=None):
   if key not in FEEDS:raise ValueError("unrecognized source")
   statistics[key]={"available":True,"records":res["source_records"],
                   "accepted":res["accepted_rows"],"ignored":res["ignored_rows"],
-                  "dataset":FEEDS[key]["dataset"],"format":FEEDS[key]["format"],
+                  "dataset":FEEDS[key]["dataset"],"actual_download_url":res.get("url",FEEDS[key]["url"]),"format":FEEDS[key]["format"],
                   "fields":res["source_fields"]}
   for row in res["rows"]:
    if row["uid"] in catalog and catalog[row["uid"]]!=row:
@@ -175,7 +185,8 @@ def main():
  errors={}
  for name in FEEDS:
   try:
-   parsed=normalize_source(name,download(name))
+   raw,format_used,used_url=download(name)
+   parsed=normalize_source(name,raw,format_override=format_used,actual_url=used_url)
    available[name]=parsed
    print(json.dumps({"provider":name,"accepted":parsed["accepted_rows"],
      "sample_fields":parsed["source_fields"][:9]},ensure_ascii=False),flush=True)
