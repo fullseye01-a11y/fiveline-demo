@@ -1,0 +1,31 @@
+name: Check mobile chart and read-only NAV status
+on:
+  push:
+    branches:
+      - feature/mobile-chart-and-nav-backend-status-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate chart and status
+        run: python -m unittest discover -s tests -p test_mobile_chart.py -v
+      - name: Check both inline JavaScript modules
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          for name in ["five_line_responsive.html", "nav_status.html"]:
+              html=Path(name).read_text(encoding="utf-8")
+              scripts=re.findall(r'<script>([\s\S]*?)</script>',html)
+              assert len(scripts)==1, (name,len(scripts))
+              Path('/tmp/'+name+'.js').write_text(scripts[0],encoding="utf-8")
+          PY
+          node --check /tmp/five_line_responsive.html.js
+          node --check /tmp/nav_status.html.js

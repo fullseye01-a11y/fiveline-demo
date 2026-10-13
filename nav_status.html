@@ -57,6 +57,14 @@ summary{cursor:pointer;font-weight:650;color:#23537d;padding:3px 0}
 @media(min-width:620px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1fr 215px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:19px}.fund{padding:18px}}
 @media(min-width:1000px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.backend{border:1px solid #c9dbe8;background:#fff;border-radius:15px;padding:15px;margin:0 0 17px}
+.backend h2{font-size:1.06rem;margin:0 0 8px}
+.backend p{font-size:.9rem;line-height:1.7;margin:7px 0;color:#465f74}
+.backend strong{color:#1d3b58}
+.backend-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:10px}
+.backend-actions button{font:inherit;font-size:.85rem;min-height:38px;padding:7px 12px;border:1px solid #bbcbda;background:#f5f9fc;border-radius:9px;color:#1c4b70;cursor:pointer}
+.backend-actions a{font-size:.84rem}
 </style>
 </head>
 <body>
@@ -69,6 +77,12 @@ summary{cursor:pointer;font-weight:650;color:#23537d;padding:3px 0}
 </header>
 <main class="wrap">
 <div class="notice" role="note"><strong>這不是即時行情網站</strong>本頁使用 Excel 歷史快照。延遲天數是以「現在的台灣日期」與每檔最後 NAV 日期比較，並非網路成功更新的證明。原始 NAV 每日明細、正式配息還原與客戶資料尚未接入。</div>
+<section class="backend" aria-label="後端連線狀態">
+<h2>Render NAV 後端連線</h2>
+<p><strong id="backend-state" aria-live="polite">尚未檢查</strong></p>
+<p id="backend-detail">此服務僅驗證伺服器與歷史資料可讀取；尚無最新 NAV 自動更新，不會改寫五線譜績效。</p>
+<div class="backend-actions"><button type="button" id="backend-check">檢查後端狀態</button><a href="https://fiveline-nav-readonly.onrender.com/" target="_blank" rel="noopener noreferrer">開啟後端服務</a></div>
+</section>
 <div class="grid" aria-label="資料總覽">
 <div class="kpi"><div class="value" id="k-total">—</div><div class="key">既有標的數</div><div class="extra">Excel 歷史快照</div></div>
 <div class="kpi"><div class="value" id="k-stale">—</div><div class="key">逾 7 天未更新</div><div class="extra" id="k-date">以台灣日期計算</div></div>
@@ -141,6 +155,32 @@ function paint(){
 document.getElementById("search").addEventListener("input",paint);
 document.getElementById("sort").addEventListener("change",paint);
 document.querySelectorAll("[data-filter]").forEach(function(button){button.addEventListener("click",function(){filter=button.dataset.filter;document.querySelectorAll("[data-filter]").forEach(function(b){b.setAttribute("aria-pressed",String(b===button))});paint()})});
+
+var backendEndpoint="https://fiveline-nav-readonly.onrender.com/api/status";
+function checkBackend(){
+ var btn=document.getElementById("backend-check"), status=document.getElementById("backend-state"), detail=document.getElementById("backend-detail");
+ btn.disabled=true;
+ status.textContent="連線檢查中…";
+ detail.textContent="免費後端若剛從休眠恢復，首次連線可能較久。此檢查不會抓取最新 NAV。";
+ var ctrl=new AbortController(), timeout=setTimeout(function(){ctrl.abort()},30000);
+ fetch(backendEndpoint,{cache:"no-store",signal:ctrl.signal})
+ .then(function(res){if(!res.ok)throw new Error("HTTP "+res.status);return res.json()})
+ .then(function(api){
+   if(api.service!=="fiveline-nav-backend"||api.health!=="ok")throw new Error("後端回應格式不符");
+   if(api.live_data_connected===true||api.auto_refresh_enabled===true){
+      status.textContent="伺服器已連線（仍需獨立核對 NAV 來源）";
+      detail.textContent="後端回報資料功能已更動；請先驗證供應商與 NAV 日期，再將任何最新資料用於分析。";
+   }else{
+      status.textContent="伺服器連線正常 · 只讀歷史模式";
+      detail.textContent="回報 "+api.instrument_count+" 檔標的，最近 NAV 日期 "+api.snapshot_latest_nav_date+"；未啟用最新 NAV 自動更新或客戶登入。";
+   }
+ })
+ .catch(function(err){status.textContent="目前無法確認連線";detail.textContent="網站的歷史快照仍可使用。可能是免費後端喚醒中或網路異常，請稍後按「檢查後端狀態」重試。";console.warn("read-only backend status",err)})
+ .finally(function(){clearTimeout(timeout);btn.disabled=false});
+}
+document.getElementById("backend-check").addEventListener("click",checkBackend);
+checkBackend();
+
 today=taiwanToday();
 fetch("data/nav_freshness_68.json",{cache:"no-store"}).then(function(res){if(!res.ok)throw new Error("HTTP "+res.status);return res.json()}).then(function(j){
   if(!j||j.is_realtime!==false||!Array.isArray(j.instruments)||j.instruments.length!==68)throw new Error("資料格式不符合預期");

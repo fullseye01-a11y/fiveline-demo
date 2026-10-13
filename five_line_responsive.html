@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#193451">
+<meta name="robots" content="noindex,nofollow">
+<title>五線譜｜響應式迴歸通道分析</title>
+<style>
+:root{--navy:#193451;--ink:#193149;--muted:#596b80;--line:#dae3ee;--up:#b96648;--down:#458970;--tl:#314965;--price:#13818f}
+*{box-sizing:border-box}html{max-width:100%;overflow-x:hidden}body{margin:0;background:#f3f6fb;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:100%;overflow-x:hidden}
+header{background:var(--navy);color:#fff;padding:22px max(16px,calc((100vw - 1080px)/2))}
+header a{color:#dceaf6;font-size:.86rem;text-decoration:none}header h1{font-size:clamp(1.27rem,4.5vw,1.8rem);line-height:1.4;margin:10px 0 4px}header p{color:#d0deea;margin:0;font-size:.88rem;line-height:1.5}
+main{max-width:1100px;padding:16px;margin:auto;min-width:0}
+.notice{background:#fff6e3;border-left:4px solid #b38b42;border-radius:10px;padding:13px 15px;font-size:.88rem;line-height:1.65;margin-bottom:13px}
+section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:clamp(12px,3vw,22px);margin-bottom:15px;min-width:0;overflow:hidden}
+.controls{display:grid;grid-template-columns:1fr;gap:11px;align-items:end}
+label{display:grid;gap:5px;font-size:.86rem;color:var(--muted);min-width:0}
+input,select{width:100%;min-width:0;border:1px solid #c0cedf;background:white;color:var(--ink);border-radius:9px;font:inherit;font-size:1rem;min-height:44px;padding:8px 10px}
+input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #3689b6;outline-offset:2px}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:15px}
+.metric{background:#f1f5fa;border-radius:11px;padding:13px;min-width:0}
+.metric span{display:block;font-size:.79rem;color:var(--muted)}
+.metric strong{display:block;font-size:clamp(1.1rem,4.5vw,1.5rem);margin-top:4px;word-break:break-word;font-variant-numeric:tabular-nums}
+#status{font-size:.81rem;color:var(--muted);line-height:1.65;margin:13px 0}
+.channel-range{font-size:clamp(1.1rem,4.3vw,1.5rem);line-height:1.5;margin:18px 0 4px;word-break:keep-all}
+.current-zone{font-size:clamp(1rem,3.5vw,1.25rem);font-weight:750;color:#324f6c;margin:0 0 12px}
+.chart-controls{display:flex;justify-content:flex-end;align-items:center;margin:8px 0;gap:10px}
+.chart-controls label{display:flex;align-items:center;gap:7px}
+.chart-controls select{width:auto;font-size:.83rem;min-height:36px;padding:4px 7px}
+.chart{width:100%;min-width:0;overflow:hidden;border-radius:10px;background:#fff}
+.chart svg{width:100%;max-width:100%;min-width:0;display:block;height:auto;aspect-ratio:auto;overflow:visible}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+.legend div{font-size:.82rem;line-height:1.4;display:flex;align-items:center;gap:7px;min-width:0}
+.swatch{width:18px;height:4px;flex:none;display:inline-block;border-radius:5px}
+.info{font-size:.76rem;color:var(--muted);line-height:1.6;margin:12px 0 0}
+h2{font-size:1.08rem;margin:0 0 10px}
+.tablewrap{max-width:100%;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:.83rem;font-variant-numeric:tabular-nums}
+th,td{padding:10px 8px;border-bottom:1px solid #e1e7ef;text-align:left;white-space:nowrap}th{color:var(--muted);font-weight:650}
+td:first-child,th:first-child{position:sticky;left:0;background:white}
+.back{color:#155985;font-size:.88rem;display:inline-block;margin:4px 0 10px}
+@media(min-width:650px){.controls{grid-template-columns:minmax(160px,1fr) minmax(240px,1.5fr) 140px}.legend{grid-template-columns:repeat(4,minmax(0,1fr))}.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><a href="index.html">← 五線譜智能財富平台 V2.6</a><h1>五線譜分析｜迴歸通道</h1><p>68 檔歷史快照 · 手機響應式圖表 · 固定 OLS／殘差 SD</p></header>
+<main>
+<div class="notice"><strong>非即時資料：</strong>來源為 Excel 歷史快照，沒有自動 NAV／股價更新。此畫面保留原版已產生的回歸中線、Z-Score 及 SD 通道資料；圖表範圍只改變顯示區間，不重新計算回歸。原 Excel 尚未完成全檔對帳。</div>
+<section>
+<div class="controls">
+<label>搜尋基金／股票／ETF<input type="search" id="query" placeholder="名稱、0050、2330、編號" autocomplete="off"></label>
+<label>選擇標的<select id="fund" aria-label="選擇標的"></select></label>
+<label>固定回歸觀察視窗<select id="window"><option value="840" selected>840 筆</option><option value="200">200 筆</option></select></label>
+</div>
+<div class="metrics" aria-label="最新歷史資料">
+<div class="metric"><span>最近 NAV／價格</span><strong id="last">—</strong></div>
+<div class="metric"><span>回歸中線 TL</span><strong id="mid">—</strong></div>
+<div class="metric"><span>目前 Z-Score</span><strong id="z">—</strong></div>
+<div class="metric"><span>最新資料日期</span><strong id="date">—</strong></div>
+</div>
+<p id="status" aria-live="polite">讀取 68 檔歷史資料中…</p>
+<h2 class="channel-range">迴歸通道位階：+3SD ~ -3SD</h2>
+<p id="zone" class="current-zone">目前位置：—</p>
+<div class="chart-controls"><label>圖表範圍 <select id="visible-range"><option value="all" selected>全部</option><option value="250">最近 250 筆</option><option value="120">最近 120 筆</option></select></label></div>
+<div class="chart"><svg id="plot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 470" preserveAspectRatio="xMidYMid meet" role="img" aria-label="歷史淨值與七條迴歸標準差通道線"></svg></div>
+<div class="legend" aria-label="七條迴歸通道線名稱">
+<div><i class="swatch" style="background:var(--up)"></i>極端超買區 +3SD</div>
+<div><i class="swatch" style="background:var(--up)"></i>超買警戒區 +2SD</div>
+<div><i class="swatch" style="background:var(--up)"></i>強勢偏多區 +1SD</div>
+<div><i class="swatch" style="background:var(--tl)"></i>中心趨勢線 0SD</div>
+<div><i class="swatch" style="background:var(--down)"></i>弱勢回檔區 -1SD</div>
+<div><i class="swatch" style="background:var(--down)"></i>超賣警戒區 -2SD</div>
+<div><i class="swatch" style="background:var(--down)"></i>極端超賣區 -3SD</div>
+<div><i class="swatch" style="background:var(--price)"></i>NAV／價格走勢</div>
+</div>
+<p class="info">手機版將七條線名稱排列在圖下方，避免右側文字擠壓 K 線／NAV 曲線。桌面版可在圖右側查看對應標籤；上下縮放依實際價格範圍計算，不更動數據。</p>
+</section>
+<section><h2>最近 8 筆資料</h2><div class="tablewrap"><table><thead><tr><th>日期</th><th>NAV</th><th>TL</th><th>Z-Score</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<section><h2>計算與版本說明</h2><p class="info">固定觀察視窗 OLS，樣本殘差 SD（n-1）；回歸通道為 TL ±1／2／3 SD。所有圖表資料取自既有五線譜快照，不代表即時行情。840 筆視窗與 200 筆視窗以原資料的預算結果顯示，並非每日重新更新。</p><a class="back" href="five_line.html">查看原始版（保留供還原）</a></section>
+</main>
+<script>
+(function(){
+"use strict";
+var db={},selectedId="",selectedWindow="840",currentRange="all", ids=[];
+var numFmt=new Intl.NumberFormat("zh-TW",{maximumFractionDigits:4});
+var byId=function(id){return document.getElementById(id)};
+var colors={nav:"#168c99",tl:"#314965",up:"#b96648",down:"#458970"};
+var codeMap={"3":"2330","4":"0050","5":"00631L","6":"00685L"};
+var ns="http://www.w3.org/2000/svg";
+function fmt(v){return v==null||!Number.isFinite(Number(v))?"—":numFmt.format(Number(v))}
+function svgEl(tag,attrs,text){var node=document.createElementNS(ns,tag);Object.entries(attrs||{}).forEach(function(kv){node.setAttribute(kv[0],String(kv[1]))});if(text!=null)node.textContent=String(text);return node}
+function searchItems(){
+  var query=byId("query").value.trim().toLocaleLowerCase();
+  var options=ids.filter(function(k){var d=db[k];return !query||k.includes(query)||d.name.toLocaleLowerCase().includes(query)||(codeMap[k]||"").toLocaleLowerCase().includes(query)});
+  var select=byId("fund"), prior=select.value||selectedId;
+  select.replaceChildren();
+  options.forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=(codeMap[k]?(codeMap[k]+"｜"):"")+db[k].name;select.appendChild(o)});
+  if(options.includes(prior))select.value=prior;
+  selectedId=select.value||"";
+  draw();
+}
+function draw(){
+  var svg=byId("plot"), tbody=byId("rows");
+  svg.replaceChildren();tbody.replaceChildren();
+  var d=db[selectedId],r=d&&d.windows[selectedWindow];
+  if(!r||r.status!=="ok"||!r.points||r.points.length<2){
+    ["last","mid","z","date"].forEach(function(k){byId(k).textContent="—"});
+    byId("zone").textContent="目前位置：資料不足";
+    byId("status").textContent=d?d.name+"｜此視窗歷史資料不足":"找不到符合條件的標的";
+    return;
+  }
+  var p=r.points,last=p[p.length-1],sd=r.sd;
+  byId("last").textContent=fmt(last[1]);byId("mid").textContent=fmt(last[2]);
+  byId("z").textContent=fmt(last[3]);byId("date").textContent=last[0];
+  byId("zone").textContent="目前位置："+r.zone;
+  byId("status").textContent=d.name+"｜"+selectedWindow+" 筆固定 OLS｜樣本殘差 SD："+fmt(sd)+"｜非即時資料";
+  p.slice(-8).reverse().forEach(function(a){
+    var row=document.createElement("tr");
+    [a[0],fmt(a[1]),fmt(a[2]),fmt(a[3])].forEach(function(v){var cell=document.createElement("td");cell.textContent=v;row.appendChild(cell)});
+    tbody.appendChild(row);
+  });
+  var visible=currentRange==="all"?p:p.slice(-Number(currentRange));
+  var parentWidth=svg.parentElement.getBoundingClientRect().width;
+  var compact=parentWidth<650;
+  var width=compact?720:1200,height=compact?470:455;
+  var left=compact?34:60,right=compact?686:940,top=compact?38:42,bottom=compact?410:392;
+  svg.setAttribute("viewBox","0 0 "+width+" "+height);
+  svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+  var values=[];
+  visible.forEach(function(a){values.push(a[1],a[2]+3*sd,a[2]-3*sd)});
+  var min=Math.min.apply(null,values),max=Math.max.apply(null,values);
+  if(!(max>min)){min-=1;max+=1}
+  var pad=Math.max((max-min)*.06,0.0001);min-=pad;max+=pad;
+  var px=function(i){return left+(right-left)*i/(visible.length-1)};
+  var py=function(v){return bottom-(v-min)/(max-min)*(bottom-top)};
+  for(var j=0;j<=4;j++){
+    var y=top+(bottom-top)*j/4;
+    svg.appendChild(svgEl("line",{x1:left,y1:y,x2:right,y2:y,stroke:"#dbe5ed","stroke-width":1.1,"stroke-dasharray":"5 6"}));
+    if(!compact)svg.appendChild(svgEl("text",{x:4,y:y+5,fill:"#65768b","font-size":15},fmt(max-(max-min)*j/4)));
+  }
+  for(var s=3;s>=1;s--){
+    for(var polarity of [1,-1]){
+      var fn=function(a){return a[2]+polarity*s*sd};
+      var line=visible.map(function(a,i){return(i?"L":"M")+px(i).toFixed(2)+" "+py(fn(a)).toFixed(2)}).join(" ");
+      svg.appendChild(svgEl("path",{d:line,fill:"none",stroke:polarity>0?colors.up:colors.down,"stroke-width":1.8,opacity:.9,"vector-effect":"non-scaling-stroke"}));
+    }
+  }
+  var center=visible.map(function(a,i){return(i?"L":"M")+px(i).toFixed(2)+" "+py(a[2]).toFixed(2)}).join(" ");
+  svg.appendChild(svgEl("path",{d:center,fill:"none",stroke:colors.tl,"stroke-width":2.2,"vector-effect":"non-scaling-stroke"}));
+  var trend=visible.map(function(a,i){return(i?"L":"M")+px(i).toFixed(2)+" "+py(a[1]).toFixed(2)}).join(" ");
+  svg.appendChild(svgEl("path",{d:trend,fill:"none",stroke:colors.nav,"stroke-width":2.7,"vector-effect":"non-scaling-stroke"}));
+  svg.appendChild(svgEl("circle",{cx:px(visible.length-1),cy:py(last[1]),r:compact?5:5.5,fill:colors.nav,stroke:"white","stroke-width":2}));
+  if(!compact){
+    var defs=[[3,"極端超買區",colors.up],[2,"超買警戒區",colors.up],[1,"強勢偏多區",colors.up],[0,"中心趨勢線",colors.tl],[-1,"弱勢回檔區",colors.down],[-2,"超賣警戒區",colors.down],[-3,"極端超賣區",colors.down]];
+    var ideals=defs.map(function(d){return py(last[2]+d[0]*sd)}),placed=[];
+    for(var i=0;i<ideals.length;i++)placed.push(Math.max(ideals[i],i?placed[i-1]+25:top+12));
+    var extra=Math.max(0,placed[placed.length-1]-(bottom-8));
+    if(extra)placed=placed.map(function(v){return v-extra});
+    if(placed[0]<top+12){var shift=top+12-placed[0];placed=placed.map(function(v){return v+shift})}
+    defs.forEach(function(d,i){
+      svg.appendChild(svgEl("path",{d:"M"+right+" "+ideals[i].toFixed(1)+" L"+(right+18)+" "+placed[i].toFixed(1),stroke:d[2],"stroke-width":1.15,fill:"none","vector-effect":"non-scaling-stroke"}));
+      svg.appendChild(svgEl("text",{x:right+22,y:placed[i]+5,fill:d[2],"font-size":18,"font-weight":650},d[1]));
+    });
+  }
+  var first=visible[0][0],lastDate=visible[visible.length-1][0];
+  svg.appendChild(svgEl("text",{x:left,y:height-9,fill:"#697c8c","font-size":compact?18:14},first));
+  svg.appendChild(svgEl("text",{x:right,y:height-9,fill:"#697c8c","font-size":compact?18:14,"text-anchor":"end"},lastDate));
+}
+byId("query").addEventListener("input",searchItems);
+byId("fund").addEventListener("change",function(){selectedId=this.value;draw()});
+byId("window").addEventListener("change",function(){selectedWindow=this.value;draw()});
+byId("visible-range").addEventListener("change",function(){currentRange=this.value;draw()});
+var wasCompact=window.matchMedia("(max-width:650px)").matches;
+window.addEventListener("resize",function(){var c=window.matchMedia("(max-width:650px)").matches;if(c!==wasCompact){wasCompact=c;draw()}});
+fetch("five_line.html",{cache:"force-cache"})
+ .then(function(res){if(!res.ok)throw Error("無法取得歷史五線譜資料");return res.text()})
+ .then(function(html){var doc=new DOMParser().parseFromString(html,"text/html");var source=doc.getElementById("dataset");if(!source)throw Error("歷史資料嵌入區不存在");
+  db=JSON.parse(source.textContent);ids=Object.keys(db);
+  if(ids.length!==68)throw Error("歷史標的數量驗證未通過");
+  selectedId=ids[0];searchItems();
+ }).catch(function(err){byId("status").textContent="歷史資料讀取失敗，請重新整理頁面。";console.error(err)});
+})();
+</script>
+</body></html>
