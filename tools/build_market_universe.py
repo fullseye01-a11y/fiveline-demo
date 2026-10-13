@@ -134,8 +134,8 @@ def normalize_source(key,raw,format_override=None,actual_url=None):
    "dividend_split_adjusted":False
   }
  out=sorted(got.values(),key=lambda r:(r["market"],r["code"],r["currency"],r["name"]))
- if len(out)<5:
-  raise ValueError("implausibly few official directory rows")
+ if len(out)<1:
+  raise ValueError("zero valid official directory rows")
  return {"rows":out,"source_records":len(rows),"accepted_rows":len(out),"ignored_rows":ignored,
          "source_fields":sorted(fields)[:40],"dataset":config["dataset"],"url":actual_url or config["url"]}
 
@@ -187,6 +187,7 @@ def main():
   try:
    raw,format_used,used_url=download(name)
    parsed=normalize_source(name,raw,format_override=format_used,actual_url=used_url)
+   if parsed["accepted_rows"]<50:raise ValueError("implausibly few official catalog rows for market-wide feed")
    available[name]=parsed
    print(json.dumps({"provider":name,"accepted":parsed["accepted_rows"],
      "sample_fields":parsed["source_fields"][:9]},ensure_ascii=False),flush=True)
