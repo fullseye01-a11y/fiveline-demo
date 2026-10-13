@@ -19,8 +19,43 @@ import json
 import re
 import ssl
 
-from backend.providers.open_fund_nav import parse_nav_date, decode_csv
-from backend.fund_matching import normalize_currency, normalize_name
+import unicodedata
+
+def decode_csv(raw:bytes)->str:
+    for encoding in ("utf-8-sig","cp950","big5"):
+        try:
+            text=raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+        if "<html" in text[:350].lower() or "<!doctype" in text[:350].lower():
+            raise ValueError("official provider returned HTML, not CSV")
+        return text
+    raise ValueError("unsupported CSV encoding")
+
+def parse_nav_date(raw)->date|None:
+    v=str(raw or "").strip().replace("年","/").replace("月","/").replace("日","")
+    try:
+        if re.fullmatch(r"\d{8}",v):
+            return date(int(v[:4]),int(v[4:6]),int(v[6:8]))
+        if re.fullmatch(r"\d{7}",v):
+            return date(1911+int(v[:3]),int(v[3:5]),int(v[5:7]))
+        m=re.fullmatch(r"(\d{2,4})[-/](\d{1,2})[-/](\d{1,2})",v)
+        if not m:return None
+        y,mn,d=map(int,m.groups())
+        if y<1911:y+=1911
+        return date(y,mn,d)
+    except ValueError:return None
+
+CURRENCY_ALIASES={"新臺幣":"TWD","新台幣":"TWD","臺幣":"TWD","台幣":"TWD",
+    "NTD":"TWD","TWD":"TWD","美金":"USD","美元":"USD","USD":"USD",
+    "南非幣":"ZAR","ZAR":"ZAR","人民幣":"CNY","CNY":"CNY",
+    "歐元":"EUR","EUR":"EUR"}
+def normalize_currency(value)->str:
+    value=unicodedata.normalize("NFKC",str(value or "")).strip()
+    return CURRENCY_ALIASES.get(value,value.upper())
+def normalize_name(value)->str:
+    value=unicodedata.normalize("NFKC",str(value or "")).casefold().replace("臺","台")
+    return "".join(c for c in value if c.isalnum())
 
 REGISTRY={
     "tdcc_offshore_basics":{
