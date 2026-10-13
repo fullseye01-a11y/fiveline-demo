@@ -1,0 +1,47 @@
+name: Validate TPEx ETFs and fund identity review
+on:
+  push:
+    branches: [feature/tpex-etf-and-dedup-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_tpex_etf_and_identity.py -v
+      - run: python -m unittest discover -s tests -p test_market_universe.py -v
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch six official sources including TPEx ETF (118+ codes)
+        run: python -m tools.build_market_universe --out /tmp/six_market.json
+      - name: Audit identity without deleting or merging any securities
+        run: |
+          python -m tools.audit_market_identity --catalog /tmp/six_market.json --output /tmp/identity_review.json
+          python - <<'PY'
+          import json
+          cat=json.load(open('/tmp/six_market.json'))
+          q=json.load(open('/tmp/identity_review.json'))
+          assert len(cat['covered_sources'])==6
+          assert cat['catalog_complete_for_configured_sources']
+          assert cat['category_counts']['etf']>=380
+          assert cat['total_rows']>=11100
+          assert q['source_record_total']==cat['total_rows']
+          assert q['potential_link_groups_total']>=0
+          assert not q['automatic_deduplication_applied']
+          assert not q['all_fund_classes_approved']
+          assert not q['historical_nav_backfilled']
+          assert not q['original_excel_modified']
+          print('ACTUAL ETF rows (TWSE and TPEx):',cat['category_counts']['etf'])
+          print('ACTUAL total catalog:',cat['total_rows'])
+          print('ACTUAL cross-source identity groups:',q['potential_link_group_counts'])
+          print('ACTUAL records missing ISIN:',q['missing_isin_fund_etf_rows'])
+          PY
