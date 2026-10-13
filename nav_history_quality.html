@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#193451"><meta name="robots" content="noindex,nofollow">
+<title>歷史 NAV 採集品質｜五線譜</title>
+<style>
+:root{--ink:#1c3450;--muted:#61748b;--navy:#193451;--bg:#f3f6fa;--border:#d9e2ef;--warn:#fff5e0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:var(--ink);line-height:1.6}
+header{background:var(--navy);color:white;padding:23px 16px}header a{color:#dceaf7;font-size:.88rem;text-decoration:none}
+.wrap{max-width:1080px;margin:auto}h1{margin:8px 0 4px;font-size:clamp(1.4rem,5vw,2rem);line-height:1.3}
+header p{font-size:.86rem;color:#d3e2ef;margin:0}
+main{padding:16px 15px 36px}
+.notice{padding:13px 14px;border-radius:12px;border-left:4px solid #c89136;background:var(--warn);font-size:.85rem;margin-bottom:15px}
+.notice strong{display:block}
+.panel{padding:15px;background:white;border:1px solid var(--border);border-radius:15px;margin-bottom:15px}
+h2{margin:0 0 10px;font-size:1.12rem}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.kpi{border-radius:11px;background:#f2f5f9;padding:11px}
+.kpi b{font-size:clamp(1.4rem,6vw,2rem);display:block;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:.76rem;display:block;margin-top:6px}
+.status{font-size:.87rem;color:var(--muted);margin:11px 0}
+.controls{display:grid;grid-template-columns:1fr;gap:9px}
+label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+select,input,button{font:inherit;min-height:44px;border-radius:10px}
+input,select{width:100%;min-width:0;padding:9px 10px;background:white;color:var(--ink);border:1px solid #c5d2e0}
+button{background:#215d85;color:white;border:1px solid #215d85;font-weight:700;padding:9px 14px;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+input:focus-visible,select:focus-visible,a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #3585b1;outline-offset:2px}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.actions a{color:#1f618b;font-size:.84rem}
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{border:1px solid var(--border);border-radius:12px;padding:12px;min-width:0}
+.card h3{font-size:.99rem;margin:0 0 5px;line-height:1.4;overflow-wrap:anywhere}
+.chip{font-weight:700;font-size:.73rem;color:#375b75;background:#eef4f9;border-radius:999px;padding:4px 9px;display:inline-block}
+.chip.warn{color:#986114;background:#fff1d7}
+.detail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:9px}
+.detail div{min-width:0}
+.detail small{color:var(--muted);display:block;font-size:.73rem}
+.detail b{font-size:.89rem;font-variant-numeric:tabular-nums;word-break:break-word}
+.more{font-size:.78rem;color:var(--muted);margin:8px 0 0}
+details{margin-top:8px;border-top:1px solid var(--border);padding-top:6px;font-size:.82rem;color:var(--muted)}
+summary{font-weight:700;cursor:pointer;color:#1d628d}
+.empty{border:1px dashed #afc2d3;border-radius:11px;padding:15px;font-size:.86rem;color:var(--muted)}
+footer{font-size:.79rem;color:var(--muted)}a{color:#1d628d}
+@media(min-width:700px){.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1.3fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div class="wrap"><a href="nav_status.html">← 返回 NAV 資料健康中心</a>
+<h1>歷史 NAV 採集品質檢查</h1>
+<p>公開資料版本庫 · 去重、有效日期與異常衝突 · 手機版</p>
+</div></header>
+<main class="wrap">
+<div class="notice"><strong>「保存次數」不等於「不同 NAV 日期數」。</strong>
+政府資料可能連續幾次公布同一淨值日；只有不同的官方 NAV 有效日期才計入日期覆蓋。
+「舊 Excel 截止日到新資料的日曆跨度」不是缺漏交易日數。基金身分尚未正式核准，所有資料都不能直接回填五線譜、含息總報酬或六策略。</div>
+<section class="panel">
+<h2>公開 NAV 保存品質總覽</h2>
+<p id="state" class="status" aria-live="polite">正在讀取已版本化保存的公開資料品質報告…</p>
+<div class="metrics">
+<div class="kpi"><b id="saved">—</b><small>已保存快照檔案數</small></div>
+<div class="kpi"><b id="unique">—</b><small>基金 × 不同 NAV 日期組合</small></div>
+<div class="kpi"><b id="repeat">—</b><small>同日 NAV 重複採集次數</small></div>
+<div class="kpi"><b id="conflict">—</b><small>同日淨值衝突基金數</small></div>
+</div>
+<p id="coverage" class="status">尚未取得來源有效日期。</p>
+<p id="freshness" class="status"></p>
+<div class="actions"><button id="reload" type="button">重新檢查</button><button id="csv" type="button" disabled>下載逐檔品質 CSV</button><a href="https://github.com/fullseye01-a11y/fiveline-demo/tree/official-nav-history/public_nav_history" target="_blank" rel="noopener noreferrer">查看來源保存庫</a></div>
+</section>
+<section class="panel">
+<h2>逐檔歷史 NAV 品質</h2>
+<div class="controls">
+<label>基金名稱／官方代碼／歷史編號<input id="query" type="search" placeholder="例如 安聯、25、ISIN" autocomplete="off"></label>
+<label>資料品質狀態<select id="status">
+<option value="all">全部候選基金</option>
+<option value="only_one_distinct_nav_date">僅一個不同 NAV 日期</option>
+<option value="multiple_nav_dates_unapproved">已有多個不同 NAV 日期（未核准）</option>
+<option value="conflicting_same_date_nav_blocked">同日淨值衝突</option>
+<option value="fund_identity_drift_blocked">官方身分變更</option>
+</select></label>
+<button id="reset" type="button">清除篩選</button>
+</div>
+<p id="count" class="status" aria-live="polite">尚未取得逐檔資料。</p>
+<div class="cards" id="cards"></div>
+</section>
+<footer>資料來源：<a href="https://data.gov.tw/dataset/11109">境內基金每日 NAV</a>、<a href="https://data.gov.tw/dataset/37818">境外全球型基金 NAV</a>。
+報告由 GitHub Actions 產出，版本化保存於公開資料分支。只有真實抓取到的淨值日期會列入統計；尚未完整回補原 Excel 歷史 NAV。</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const RAW="https://raw.githubusercontent.com/fullseye01-a11y/fiveline-demo/official-nav-history/public_nav_history/reports/latest.json";
+const API="https://api.github.com/repos/fullseye01-a11y/fiveline-demo/contents/public_nav_history/reports/latest.json?ref=official-nav-history";
+const LABEL={
+ only_one_distinct_nav_date:"僅一個不同 NAV 日期",
+ multiple_nav_dates_unapproved:"多個有效日期 · 待核准",
+ conflicting_same_date_nav_blocked:"同日淨值衝突 · 停止回補",
+ fund_identity_drift_blocked:"基金身分已變 · 停止回補"
+};
+const el=id=>document.getElementById(id);
+const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=String(text);if(cls)n.className=cls;return n};
+let data=null;
+async function getData(){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),35000);
+ try{
+   try{
+     const response=await fetch(RAW+"?t="+Date.now(),{cache:"no-store",signal:controller.signal,headers:{Accept:"application/json"}});
+     if(response.ok)return await response.json();
+   }catch(ignore){
+     /* Fall back to the GitHub public file API if raw.githubusercontent.com is unreachable. */
+   }
+   const response=await fetch(API,{cache:"no-store",signal:controller.signal,headers:{Accept:"application/vnd.github+json"}});
+   if(!response.ok)throw Error("public quality report absent");
+   const obj=await response.json();
+   if(obj.encoding!=="base64"||!obj.content)throw Error("unusable source");
+   const bytes=Uint8Array.from(atob(obj.content.replace(/\s/g,"")),ch=>ch.charCodeAt(0));
+   return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+ }finally{clearTimeout(timer)}
+}
+function viewCard(x){
+ const card=make("article",null,"card");
+ card.append(make("h3",x.legacy_name));
+ card.append(make("span",LABEL[x.quality]||x.quality,"chip"+(x.quality.includes("blocked")?" warn":"")));
+ const d=make("div",null,"detail");
+ function field(name,value){const block=make("div");block.append(make("small",name),make("b",value==null?"—":value));d.append(block)}
+ field("原 Excel 最後 NAV",x.legacy_nav_end);
+ field("最新官方有效日期",x.last_effective_nav_date);
+ field("不同 NAV 日期",x.distinct_effective_nav_dates);
+ field("總採集次數",x.collection_observations);
+ field("重複採集",x.repeated_observations);
+ field("最新原始 NAV（未還原）",x.latest_raw_nav);
+ card.append(d);
+ const detail=make("details");
+ detail.append(make("summary","查看更多來源及回補阻擋資訊"));
+ detail.append(make("p","官方代碼："+x.official_code+"｜幣別："+x.official_currency+"｜ISIN："+(x.official_isin||"來源未提供"),"more"));
+ detail.append(make("p","首次官方有效日期："+x.first_effective_nav_date+"｜採集日數："+x.distinct_capture_dates,"more"));
+ detail.append(make("p","原 Excel 至首次官方有效日期間的日曆跨度："+(x.legacy_to_first_observation_calendar_span_days??"—")+" 天（不是缺漏交易日）。","more"));
+ detail.append(make("p","身分核准：否｜配息還原：否｜歷史連續性核准：否","more"));
+ if(x.conflicting_nav_dates?.length)detail.append(make("p","衝突日期："+x.conflicting_nav_dates.join("、"),"more"));
+ card.append(detail);
+ return card;
+}
+function filter(){
+ if(!data)return;
+ const q=el("query").value.trim().toLocaleLowerCase(),f=el("status").value;
+ const records=data.funds.filter(x=>(f==="all"||x.quality===f)
+  &&(x.legacy_name.toLocaleLowerCase().includes(q)||x.official_code.toLocaleLowerCase().includes(q)||String(x.legacy_id).includes(q)||x.official_isin.toLocaleLowerCase().includes(q)));
+ el("count").textContent="符合 "+records.length+" 筆官方候選資料；原 Excel 共 68 檔，未收錄候選不代表無 NAV。";
+ const box=el("cards");box.replaceChildren();
+ if(!records.length){box.append(make("div","沒有符合條件的基金。","empty"));return}
+ const frag=document.createDocumentFragment();records.forEach(x=>frag.append(viewCard(x)));box.append(frag);
+}
+function csvSafe(value){
+ let text=String(value==null?"":value);
+ if(/^\s*[=+\-@\t\r]/.test(text))text="'"+text;
+ return '"'+text.replace(/"/g,'""')+'"';
+}
+function exportCsv(){
+ if(!data||data.approved_funds!==0)return;
+ const cols=["歷史ID","歷史名稱","官方來源","官方代碼","官方ISIN","幣別",
+ "原Excel最後NAV","官方最早NAV有效日期","官方最新NAV有效日期","有效NAV日期數",
+ "資料採集次數","重複採集","同日不同淨值日期","是否有代碼身分變更",
+ "舊Excel至官方首次NAV日曆跨度_不是缺漏交易日","是否人工核准"];
+ const rows=data.funds.map(x=>[
+ x.legacy_id,x.legacy_name,x.official_source,x.official_code,x.official_isin,x.official_currency,
+ x.legacy_nav_end,x.first_effective_nav_date,x.last_effective_nav_date,x.distinct_effective_nav_dates,
+ x.collection_observations,x.repeated_observations,x.conflicting_nav_dates.join("|"),
+ x.identity_changed_between_archives?"是":"否",x.legacy_to_first_observation_calendar_span_days,"否"
+ ]);
+ const csv="\ufeff"+[cols,...rows].map(a=>a.map(csvSafe).join(",")).join("\r\n")+"\r\n";
+ const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ const a=document.createElement("a");a.href=url;a.download="fiveline_public_nav_history_quality.csv";
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function load(){
+ el("reload").disabled=true;el("csv").disabled=true;el("state").textContent="正在讀取 GitHub 官方快照品質報告…";
+ try{
+   const obj=await getData();
+   if(obj.schema!=="public_nav_archive_quality_v1"||obj.legacy_total!==68||!Array.isArray(obj.funds)
+     ||obj.approved_funds!==0||obj.historical_backfill_completed!==false
+     ||obj.dividend_split_adjustment_completed!==false||obj.calendar_span_is_not_missing_trading_days!==true
+     ||obj.legacy_with_public_candidate_observations+obj.legacy_without_candidate_observations!==68
+     ||obj.total_collection_observations<obj.unique_fund_effective_date_pairs
+     ||obj.funds.some(x=>x.approved!==false||x.dividend_split_adjusted!==false||x.continuous_history_verified!==false))
+     throw Error("history safety checks failed");
+   data=obj;
+   el("saved").textContent=obj.archive_snapshot_files;
+   el("unique").textContent=obj.unique_fund_effective_date_pairs;
+   el("repeat").textContent=obj.repeated_collection_observations;
+   el("conflict").textContent=obj.same_day_value_conflict_funds;
+   el("coverage").textContent="已採集官方候選："+obj.legacy_with_public_candidate_observations+" 檔；未採集或未有唯一候選："+obj.legacy_without_candidate_observations+" 檔。";
+   el("freshness").textContent="官方有效 NAV 日期："+obj.earliest_effective_nav_date+" 至 "+obj.latest_effective_nav_date+"；最後採集："+obj.latest_archive_collected_at_utc+"（UTC）。";
+   el("state").textContent="資料品質報告讀取成功｜仍未核准任何基金，也未回補歷史 NAV。";
+   el("csv").disabled=false;
+   filter();
+ }catch(err){
+   data=null;
+   el("state").textContent="目前無法取得官方 NAV 品質報告，請稍後重試；未核准資料不會取代舊圖表。";
+   ["saved","unique","repeat","conflict"].forEach(id=>el(id).textContent="—");
+   el("count").textContent="資料尚未驗證";
+   el("cards").replaceChildren(make("div","可先由上方連結檢查 GitHub 公開資料版本庫。","empty"));
+ }finally{el("reload").disabled=false}
+}
+el("reload").addEventListener("click",load);
+el("csv").addEventListener("click",exportCsv);
+el("query").addEventListener("input",filter);
+el("status").addEventListener("change",filter);
+el("reset").addEventListener("click",()=>{el("query").value="";el("status").value="all";filter()});
+load();
+})();
+</script>
+</body></html>

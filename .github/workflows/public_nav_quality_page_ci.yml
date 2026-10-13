@@ -1,0 +1,26 @@
+name: Check public NAV quality mobile dashboard
+on:
+  push:
+    branches: [feature/public-nav-quality-monitor-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_public_nav_quality_page.py -v
+      - name: Parse browser JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('nav_history_quality.html').read_text('utf-8')
+          blocks=re.findall(r'<script>(.*?)</script>',html,re.S)
+          assert len(blocks)==1
+          Path('/tmp/nav_history_quality.js').write_text(blocks[0],encoding='utf-8')
+          PY
+          node --check /tmp/nav_history_quality.js
