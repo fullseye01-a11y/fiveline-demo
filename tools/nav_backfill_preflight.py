@@ -155,7 +155,8 @@ def check_bundle(item, history_item, legacy):
             old=iso_date(legacy["NAV截至日期"])
             if cdates[0]<=old:reasons.append("NAV_STARTS_BEFORE_LEGACY_END")
             latest=iso_date(history_item["last_effective_nav_date"])
-            if cdates[-1]<latest:reasons.append("NAV_SERIES_NOT_CONTINUOUS_THROUGH_LATEST_SNAPSHOT")
+            if cdates[-1]<latest or pairs[-1]<latest:
+                reasons.append("NAV_SERIES_NOT_CONTINUOUS_THROUGH_LATEST_SNAPSHOT")
         except (KeyError,TypeError,ValueError):
             reasons.append("INVALID_DATE_OR_NAV_SERIES")
     # Every event must be unit-cash, in fund valuation currency, including
