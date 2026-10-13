@@ -24,7 +24,8 @@ input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #3689
 .metric strong{display:block;font-size:clamp(1.1rem,4.5vw,1.5rem);margin-top:4px;word-break:break-word;font-variant-numeric:tabular-nums}
 #status{font-size:.81rem;color:var(--muted);line-height:1.65;margin:13px 0}
 .channel-range{font-size:clamp(1.1rem,4.3vw,1.5rem);line-height:1.5;margin:18px 0 4px;word-break:keep-all}
-.current-zone{font-size:clamp(1rem,3.5vw,1.25rem);font-weight:750;color:#324f6c;margin:0 0 12px}
+.current-zone{font-size:clamp(1rem,3.5vw,1.25rem);font-weight:750;color:#324f6c;margin:0 0 2px}
+.zone-name{font-size:clamp(1rem,3.5vw,1.25rem);font-weight:750;color:#324f6c;margin:0 0 12px}
 .chart-controls{display:flex;justify-content:flex-end;align-items:center;margin:8px 0;gap:10px}
 .chart-controls label{display:flex;align-items:center;gap:7px}
 .chart-controls select{width:auto;font-size:.83rem;min-height:36px;padding:4px 7px}
@@ -51,6 +52,8 @@ td:first-child,th:first-child{position:sticky;left:0;background:white}
 .scrub-value{min-width:0;background:white;border:1px solid #e2e8f0;border-radius:9px;padding:8px}
 .scrub-value small{display:block;font-size:.72rem;color:var(--muted)}
 .scrub-value b{display:block;font-size:.91rem;font-variant-numeric:tabular-nums;word-break:break-word}
+.scrub-zone-line{margin-top:9px;font-size:.87rem;color:#36536c;font-weight:700;line-height:1.5}
+.scrub-zone-line strong{color:#193451}
 .scrub details{margin-top:8px;font-size:.81rem}
 .scrub summary{color:#215878;cursor:pointer;font-weight:650;min-height:34px;display:flex;align-items:center}
 .scrub-subvalues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
@@ -77,6 +80,7 @@ td:first-child,th:first-child{position:sticky;left:0;background:white}
 <p id="status" aria-live="polite">讀取 68 檔歷史資料中…</p>
 <h2 class="channel-range">迴歸通道位階：+3SD ~ -3SD</h2>
 <p id="zone" class="current-zone">目前位置：—</p>
+<p id="zone-name" class="zone-name">所在位階：—</p>
 <div class="chart-controls"><label>圖表範圍 <select id="visible-range"><option value="all" selected>全部</option><option value="250">最近 250 筆</option><option value="120">最近 120 筆</option></select></label></div>
 <div class="chart"><svg id="plot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 470" preserveAspectRatio="xMidYMid meet" role="img" aria-label="歷史淨值與七條迴歸標準差通道線"></svg></div>
 <div class="scrub" id="scrub" aria-label="圖表滑動讀值">
@@ -88,6 +92,7 @@ td:first-child,th:first-child{position:sticky;left:0;background:white}
 <div class="scrub-value"><small>Z-Score</small><b id="scrub-z">—</b></div>
 <div class="scrub-value"><small>相對趨勢</small><b id="scrub-zone">—</b></div>
 </div>
+<div class="scrub-zone-line">所在位階：<strong id="scrub-zone-name">—</strong></div>
 <details><summary>展開當日七條通道價位</summary><div class="scrub-subvalues" id="scrub-levels"></div></details>
 </div>
 <div class="legend" aria-label="七條迴歸通道線名稱">
@@ -117,6 +122,17 @@ var ns="http://www.w3.org/2000/svg";
 function fmt(v){return v==null||!Number.isFinite(Number(v))?"—":numFmt.format(Number(v))}
 function svgEl(tag,attrs,text){var node=document.createElementNS(ns,tag);Object.entries(attrs||{}).forEach(function(kv){node.setAttribute(kv[0],String(kv[1]))});if(text!=null)node.textContent=String(text);return node}
 
+/* 位階依 Z-Score 所處帶狀區域分類，僅作描述，不改 OLS／SD。 */
+function zoneNameForZ(z){
+ if(!Number.isFinite(z))return "資料不足";
+ if(z>=3)return "極端超買區";
+ if(z>=2)return "超買警戒區";
+ if(z>=1)return "強勢偏多區";
+ if(z>=-1)return "中心趨勢區";
+ if(z>=-2)return "弱勢回檔區";
+ if(z>=-3)return "超賣警戒區";
+ return "極端超賣區";
+}
 function zoneForZ(z){
  if(!Number.isFinite(z))return "—";
  if(z>=3)return "高於 +3SD";
@@ -130,20 +146,16 @@ function updateTimeline(){
  if(!ctx)return;
  var n=Math.max(0,Math.min(ctx.visible.length-1,Number(slider.value)||0));
  var a=ctx.visible[n],x=ctx.px(n),y=ctx.py(a[1]);
- var tooltipWidth=184, tipX=Math.max(ctx.left,Math.min(ctx.right-tooltipWidth,x-tooltipWidth/2));
- var tipY=y<ctx.top+64?Math.min(ctx.bottom-58,y+18):Math.max(ctx.top+6,y-60);
+ /* 僅保留定位虛線與圓點；日期／NAV／位階顯示在圖外的滑桿卡片。 */
  ctx.line.setAttribute("x1",x);ctx.line.setAttribute("x2",x);
  ctx.dot.setAttribute("cx",x);ctx.dot.setAttribute("cy",y);
- ctx.rect.setAttribute("x",tipX);ctx.rect.setAttribute("y",tipY);
- ctx.tip1.setAttribute("x",tipX+10);ctx.tip1.setAttribute("y",tipY+21);
- ctx.tip2.setAttribute("x",tipX+10);ctx.tip2.setAttribute("y",tipY+42);
- ctx.tip1.textContent=a[0];ctx.tip2.textContent="NAV "+fmt(a[1]);
  slider.setAttribute("aria-valuetext",a[0]+" NAV "+fmt(a[1]));
  byId("scrub-date").textContent=a[0];
  byId("scrub-nav").textContent=fmt(a[1]);
  byId("scrub-tl").textContent=fmt(a[2]);
  byId("scrub-z").textContent=fmt(a[3]);
  byId("scrub-zone").textContent=zoneForZ(Number(a[3]));
+ byId("scrub-zone-name").textContent=zoneNameForZ(Number(a[3]));
  var levels=[[3,"極端超買區"],[2,"超買警戒區"],[1,"強勢偏多區"],[0,"中心趨勢線"],[-1,"弱勢回檔區"],[-2,"超賣警戒區"],[-3,"極端超賣區"]];
  var container=byId("scrub-levels");container.replaceChildren();
  levels.forEach(function(pair){var div=document.createElement("div"),name=document.createElement("small"),num=document.createElement("b");
@@ -167,12 +179,13 @@ function draw(){
   var svg=byId("plot"), tbody=byId("rows");
   svg.replaceChildren();tbody.replaceChildren();
   cursorContext=null;byId("timeline").disabled=true;
-  ["scrub-date","scrub-nav","scrub-tl","scrub-z","scrub-zone"].forEach(function(k){byId(k).textContent="—"});
+  ["scrub-date","scrub-nav","scrub-tl","scrub-z","scrub-zone","scrub-zone-name"].forEach(function(k){byId(k).textContent="—"});
   byId("scrub-levels").replaceChildren();
   var d=db[selectedId],r=d&&d.windows[selectedWindow];
   if(!r||r.status!=="ok"||!r.points||r.points.length<2){
     ["last","mid","z","date"].forEach(function(k){byId(k).textContent="—"});
     byId("zone").textContent="目前位置：資料不足";
+    byId("zone-name").textContent="所在位階：資料不足";
     byId("status").textContent=d?d.name+"｜此視窗歷史資料不足":"找不到符合條件的標的";
     return;
   }
@@ -180,6 +193,7 @@ function draw(){
   byId("last").textContent=fmt(last[1]);byId("mid").textContent=fmt(last[2]);
   byId("z").textContent=fmt(last[3]);byId("date").textContent=last[0];
   byId("zone").textContent="目前位置："+r.zone;
+  byId("zone-name").textContent="所在位階："+zoneNameForZ(Number(last[3]));
   byId("status").textContent=d.name+"｜"+selectedWindow+" 筆固定 OLS｜樣本殘差 SD："+fmt(sd)+"｜非即時資料";
   p.slice(-8).reverse().forEach(function(a){
     var row=document.createElement("tr");
@@ -229,16 +243,13 @@ function draw(){
       svg.appendChild(svgEl("text",{x:right+22,y:placed[i]+5,fill:d[2],"font-size":18,"font-weight":650},d[1]));
     });
   }
-  /* 只追加滑桿十字線與讀值，原本圖線及縮放計算全部不變 */
+  /* 滑桿只標示曲線位置，所有數值標籤放在圖外；原本圖線、縮放和 OLS 不變。 */
   var cursorGroup=svgEl("g",{"aria-label":"目前選定的歷史資料點"});
   var cursorLine=svgEl("line",{x1:right,y1:top,x2:right,y2:bottom,stroke:colors.nav,"stroke-width":1.4,"stroke-dasharray":"6 6",opacity:.8,"vector-effect":"non-scaling-stroke"});
   var cursorDot=svgEl("circle",{cx:right,cy:top,r:6,fill:colors.nav,stroke:"white","stroke-width":2,"vector-effect":"non-scaling-stroke"});
-  var tipRect=svgEl("rect",{x:0,y:0,width:184,height:50,rx:8,fill:"#ffffff",stroke:"#c9d9e4","stroke-width":1.3});
-  var tip1=svgEl("text",{x:0,y:0,fill:"#506981","font-size":17,"font-weight":650});
-  var tip2=svgEl("text",{x:0,y:0,fill:colors.nav,"font-size":19,"font-weight":750});
-  cursorGroup.append(cursorLine,cursorDot,tipRect,tip1,tip2);
+  cursorGroup.append(cursorLine,cursorDot);
   svg.append(cursorGroup);
-  cursorContext={visible:visible,sd:sd,left:left,right:right,top:top,bottom:bottom,px:px,py:py,line:cursorLine,dot:cursorDot,rect:tipRect,tip1:tip1,tip2:tip2};
+  cursorContext={visible:visible,sd:sd,px:px,py:py,line:cursorLine,dot:cursorDot};
   var timeline=byId("timeline");timeline.disabled=false;timeline.max=String(visible.length-1);timeline.value=String(visible.length-1);
   updateTimeline();
   var first=visible[0][0],lastDate=visible[visible.length-1][0];
