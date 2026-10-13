@@ -1,0 +1,47 @@
+name: Test unobstructed iPhone chart and dividend readiness checklist
+on:
+  push:
+    branches: [feature/no-overlap-zone-and-nav-next-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Existing slider regression suite
+        run: python -m unittest discover -s tests -p test_slider_chart.py -v
+      - name: New no-overlap, Chinese zone and NAV checklist tests
+        run: python -m unittest discover -s tests -p test_chart_zones_and_audit.py -v
+      - name: Check both browser JavaScript blocks
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          for filename in ["five_line_responsive.html","nav_class_evidence.html"]:
+              html=Path(filename).read_text("utf-8")
+              scripts=re.findall(r"<script>(.*?)</script>",html,re.S)
+              assert len(scripts)==1,(filename,len(scripts))
+              Path("/tmp/"+filename+".js").write_text(scripts[0],encoding="utf-8")
+          PY
+          node --check /tmp/five_line_responsive.html.js
+          node --check /tmp/nav_class_evidence.html.js
+      - name: Execute Chinese zone boundaries and verify expected fund
+        run: |
+          node - <<'JS'
+          const fs=require('fs'), vm=require('vm'), assert=require('assert/strict');
+          const src=fs.readFileSync('/tmp/five_line_responsive.html.js','utf8');
+          const block=src.match(/function zoneNameForZ\(z\)\{[\s\S]*?\n\}/);
+          assert(block,'Missing band zone helper');
+          const context=vm.createContext({});
+          vm.runInContext(block[0],context);
+          for (const [z,label] of [
+            [3,'極端超買區'],[2.0691,'超買警戒區'],[2,'超買警戒區'],
+            [1,'強勢偏多區'],[0.1617,'中心趨勢區'],[-0.5,'中心趨勢區'],
+            [-1,'弱勢回檔區'],[-2,'超賣警戒區'],[-3,'極端超賣區']
+          ]) assert.equal(context.zoneNameForZ(z),label,JSON.stringify(z));
+          console.log("All nine Chinese Z-score range boundary checks passed.");
+          JS
