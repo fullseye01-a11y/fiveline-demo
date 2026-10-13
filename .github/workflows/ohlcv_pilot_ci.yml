@@ -1,0 +1,45 @@
+name: Validate official historic OHLCV research pilot
+on:
+  push:
+    branches: [feature/ohlcv-historical-pilot-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_official_ohlcv_pilot.py -v
+  official-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch official pilot history with explicit no-redistribution metadata
+        run: python -m tools.official_ohlcv_pilot --sqlite /tmp/ohlcv_citest.sqlite --report /tmp/ohlcv_citest_report.json
+      - name: Verify dated, audited historical records
+        run: |
+          python - <<'PY'
+          import json,sqlite3
+          s=json.load(open('/tmp/ohlcv_citest_report.json',encoding='utf-8'))
+          with sqlite3.connect('/tmp/ohlcv_citest.sqlite') as db:
+            rows=db.execute('select market,symbol,count(*) from quote_raw group by market,symbol order by market,symbol').fetchall()
+            assert len(rows)==4, rows
+            assert db.execute("select count(*) from quote_raw where price_adjustment!='RAW_NOT_ADJUSTED'").fetchone()[0]==0
+            assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+          assert s['schema']=='fiveline_ohlcv_history_pilot_v1'
+          assert s['pilot_symbols']==4
+          assert s['pilot_quote_rows']>=40
+          assert s['sources_verified']==['TPEX_DAILY_QUOTES','TWSE_STOCK_DAY']
+          assert not s['raw_quotes_publicly_redistributed']
+          assert not s['all_market_history_backfilled']
+          assert not s['original_excel_modified']
+          assert not s['production_analyses_modified']
+          print('Verified private staged OHLCV quote counts:',rows)
+          print('Official monthly/date-scoped request count:',s['requested_sources'])
+          PY
