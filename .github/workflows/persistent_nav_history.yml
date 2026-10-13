@@ -51,6 +51,23 @@ jobs:
                 d['unique_fund_effective_date_pairs'],'distinct NAV effective days;',
                 d['repeated_collection_observations'],'repeated captures')
           PY
+      - name: Evaluate 68-fund preflight (public observations only, zero approvals)
+        working-directory: application
+        run: |
+          python -m tools.nav_backfill_preflight --quality ../nav_history_branch/public_nav_history/reports/latest.json --coverage data/phase16_instrument_coverage.csv --output ../nav_history_branch/public_nav_history/reports/backfill_preflight.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('../nav_history_branch/public_nav_history/reports/backfill_preflight.json')
+          r=json.loads(p.read_text('utf-8'))
+          assert r['legacy_total']==68 and len(r['funds'])==68
+          assert r['staging_eligible_count']==0
+          assert all(x['status']=='blocked' and not x['eligible_for_production_backfill'] for x in r['funds'])
+          assert not r['production_backfill_authorized']
+          assert not r['production_excel_changed']
+          assert not r['evidence_submitted']
+          print('Historical NAV backfill blocked for all 68 without independently reviewed evidence')
+          PY
       - name: Append to official-nav-history branch only
         working-directory: nav_history_branch
         run: |

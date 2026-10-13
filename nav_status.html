@@ -81,6 +81,7 @@ summary{cursor:pointer;font-weight:650;color:#23537d;padding:3px 0}
 <h2>公開 NAV 版本化歷史資料｜獨立保存</h2>
 <p><strong>逐日建立的官方公開 NAV 快照，不是完整歷史回補或已核准基金。</strong></p>
 <p>每天工作日晚間由 GitHub Actions 讀取官方來源、版本化保存 39 檔候選的原始 NAV 日期與數值，SQLite 可由快照重新建立。此資料庫完全隔離於正式五線譜和客戶資料。官方修訂的同日淨值不會被悄悄覆蓋。</p>
+<p><a href="nav_backfill_preflight.html"><strong>檢查 68 檔基金歷史回補前的缺失與安全條件 →</strong></a></p>
 <p><a href="nav_history_quality.html"><strong>查看逐檔 NAV 有效日期、重複採集與衝突稽核報告 →</strong></a></p>
 <div class="backend-actions"><a href="https://github.com/fullseye01-a11y/fiveline-demo/tree/official-nav-history/public_nav_history" target="_blank" rel="noopener noreferrer">開啟官方 NAV 快照保存庫</a><a href="https://github.com/fullseye01-a11y/fiveline-demo/actions/workflows/persistent_nav_history.yml" target="_blank" rel="noopener noreferrer">查看每日自動保存紀錄</a></div>
 <p>重要：GitHub 保存公開資料不是私人客戶資料庫；既有 Excel 及完整回測不可由此資料直接取代。</p>

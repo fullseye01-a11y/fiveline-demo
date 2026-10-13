@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1b3857">
+<title>68 檔 NAV 回補安全檢查｜五線譜</title>
+<style>
+:root{--bg:#f3f6fb;--ink:#1d334e;--sub:#5b6f84;--line:#d8e2ee;--navy:#1b3857;--warn:#fff6e4}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.65}
+header{background:var(--navy);color:white;padding:22px 16px}
+.wrap{max-width:1050px;margin:0 auto}
+header a{color:#dceaf8;font-size:.87rem;text-decoration:none}
+header h1{font-size:clamp(1.4rem,5vw,2rem);margin:9px 0 4px;line-height:1.3}
+header p{font-size:.88rem;color:#d1dfed;margin:0}
+main{padding:15px 15px 38px}
+.notice{border-left:4px solid #bb832d;background:var(--warn);border-radius:12px;padding:12px 14px;margin-bottom:15px;font-size:.86rem}
+.notice strong{display:block}
+.panel{border:1px solid var(--line);background:#fff;border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:1.13rem;margin:0 0 11px}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.metric{background:#f2f5f9;border-radius:11px;padding:11px}
+.metric strong{font-size:clamp(1.35rem,5vw,2rem);display:block;line-height:1.2;font-variant-numeric:tabular-nums}
+.metric span{color:var(--sub);font-size:.78rem;display:block;margin-top:7px}
+.note{font-size:.82rem;color:var(--sub);margin:11px 0}
+.controls{display:grid;grid-template-columns:1fr;gap:9px}
+input,select,button{font:inherit;min-height:45px;border-radius:9px}
+input,select{width:100%;min-width:0;border:1px solid #c2d0dd;background:white;color:var(--ink);padding:8px 11px}
+button{background:#205a83;color:white;border:1px solid #205a83;font-weight:700;padding:9px 13px;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+a{color:#24628d}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #3287bb;outline-offset:2px}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.actions a{font-size:.86rem}
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.item{border:1px solid var(--line);border-radius:12px;padding:13px;min-width:0}
+.item h3{font-size:1rem;line-height:1.4;margin:0 0 6px;overflow-wrap:anywhere}
+.tag{display:inline-block;background:#fff2df;color:#855a1f;font-weight:700;border-radius:999px;padding:4px 9px;font-size:.75rem}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.facts small{display:block;color:var(--sub);font-size:.74rem}
+.facts b{display:block;font-size:.89rem;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+details{border-top:1px solid var(--line);padding-top:8px}
+summary{font-size:.87rem;color:#245c80;font-weight:700;cursor:pointer}
+.blockers{padding-left:18px;font-size:.83rem;color:#805727;margin:8px 0 0}
+.empty{padding:16px;border-radius:10px;border:1px dashed #adc0d0;color:var(--sub);font-size:.85rem}
+.requirements{padding-left:20px;margin:0;font-size:.87rem}
+footer{font-size:.8rem;color:var(--sub)}
+@media(min-width:700px){.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1.3fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div class="wrap"><a href="nav_history_quality.html">← 返回 NAV 採集品質</a>
+<h1>歷史 NAV 回補安全檢查</h1><p>68 檔標的 · 基金級別、配息與估值日曆的上線阻擋清單</p></div></header>
+<main class="wrap">
+<div class="notice"><strong>目前不允許自動回補正式 Excel 或回測。</strong>
+本頁只顯示官方公開資料的逐檔稽核缺口，不會接收或上傳原始客戶資料、私人簽核、持倉或身分文件。
+就算日後人工核准全部資料，仍需經獨立測試環境對帳後才能進入正式版。</div>
+<section class="panel">
+<h2>正式回補前準備狀態</h2>
+<p id="state" class="note" aria-live="polite">正在檢查最新版本化的核對結果…</p>
+<div class="metrics">
+<div class="metric"><strong id="all">—</strong><span>Excel 原始標的</span></div>
+<div class="metric"><strong id="candidates">—</strong><span>已採集官方候選</span></div>
+<div class="metric"><strong id="blocked">—</strong><span>仍被阻擋的標的</span></div>
+<div class="metric"><strong id="approved">0</strong><span>已允許正式回補</span></div>
+</div>
+<p id="checked" class="note"></p>
+<div class="actions"><button id="reload" type="button">重新檢查</button><button id="download" type="button" disabled>下載 68 檔待辦 CSV</button><a href="nav_class_evidence.html">基金 ISIN／配息證據</a></div>
+</section>
+<section class="panel">
+<h2>正式回補必須具備的證據</h2>
+<ol class="requirements" id="requirements"><li>正在載入必要檢查項目…</li></ol>
+<p class="note">完整歷史 NAV 的交易／估值日必須使用可稽核的正式日期來源；不能只用相隔的日曆天數推估缺了幾筆。</p>
+</section>
+<section class="panel">
+<h2>逐檔核對清單</h2>
+<div class="controls">
+<label>搜尋標的名稱／編號<input id="query" type="search" placeholder="例如 安聯、貝萊德、11" autocomplete="off"></label>
+<label>核對狀態<select id="filter"><option value="all">全部 68 檔</option><option value="blocked">尚未符合正式回補</option><option value="missing_source">官方候選尚缺</option><option value="conflict">官方資料有異常／身分漂移</option><option value="staging_eligible_manual_signoff_required">僅符合測試環境條件</option></select></label>
+<button id="reset" type="button">清除篩選</button></div>
+<p id="count" class="note" aria-live="polite">尚未載入逐檔資料。</p>
+<div id="cards" class="cards"></div>
+</section>
+<footer>來源為 <a href="https://github.com/fullseye01-a11y/fiveline-demo/tree/official-nav-history/public_nav_history" target="_blank" rel="noopener noreferrer">GitHub 公開基金 NAV 快照庫</a>及 Excel 68 檔歷史標的摘要。基金代碼相似、來源筆數多或通道位階漂亮均不構成回補核准。</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const RAW="https://raw.githubusercontent.com/fullseye01-a11y/fiveline-demo/official-nav-history/public_nav_history/reports/backfill_preflight.json";
+const FALLBACK="https://api.github.com/repos/fullseye01-a11y/fiveline-demo/contents/public_nav_history/reports/backfill_preflight.json?ref=official-nav-history";
+const CODES={
+ NO_OFFICIAL_CANDIDATE:"尚無單一官方來源候選",
+ OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED:"仍需基金／股票／ETF 相應行情來源",
+ MULTIPLE_OFFICIAL_IDENTITIES_FOR_ONE_LEGACY_FUND:"同一 Excel 標的有多個官方身分，待人工排除",
+ SAME_DATE_NAV_CONFLICT:"同日不同 NAV，禁止直接回補",
+ OFFICIAL_IDENTITY_DRIFT:"官方代碼／ISIN／幣別變更，待核對",
+ INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED:"缺原 Excel 的獨立基金級別證據",
+ LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED:"缺完整授權歷史 NAV 與每單位配息證據"
+};
+const byId=id=>document.getElementById(id);
+const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=String(text);if(cls)el.className=cls;return el};
+let report=null;
+async function getReport(){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),35000);
+ try{
+   try{
+     const r=await fetch(RAW+"?v="+Date.now(),{cache:"no-store",signal:controller.signal});
+     if(r.ok)return await r.json();
+   }catch(e){/* GitHub raw host may temporarily fail; retry via GitHub API. */}
+   const r=await fetch(FALLBACK,{cache:"no-store",signal:controller.signal,headers:{Accept:"application/vnd.github+json"}});
+   if(!r.ok)throw Error("no public preflight report yet");
+   const data=await r.json();
+   if(data.encoding!=="base64"||!data.content)throw Error("invalid API response");
+   const binary=atob(data.content.replace(/\s/g,""));
+   const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+   return JSON.parse(new TextDecoder().decode(bytes));
+ }finally{clearTimeout(timer)}
+}
+function fact(group,label,value){
+ const cell=node("div");cell.append(node("small",label),node("b",value==null?"—":value));group.append(cell);
+}
+function showCard(x){
+ const card=node("article",null,"item");
+ card.append(node("h3",x.legacy_name));
+ card.append(node("span","正式回補：禁止","tag"));
+ const facts=node("div",null,"facts");
+ fact(facts,"Excel 編號",x.legacy_id);
+ fact(facts,"歷史最後 NAV",x.legacy_nav_end);
+ fact(facts,"官方最新有效日期",x.official_nav_last_date);
+ fact(facts,"已觀察的 NAV 日期數",x.distinct_official_nav_dates);
+ card.append(facts);
+ const details=node("details");
+ details.append(node("summary","查看尚缺證據（"+x.blockers.length+" 項）"));
+ const list=node("ul",null,"blockers");
+ x.blockers.forEach(c=>list.append(node("li",CODES[c]||c)));
+ details.append(list);
+ card.append(details);
+ return card;
+}
+function filter(){
+ if(!report)return;
+ const q=byId("query").value.trim().toLocaleLowerCase(),f=byId("filter").value;
+ const rows=report.funds.filter(x=>(x.legacy_name.toLocaleLowerCase().includes(q)||String(x.legacy_id).includes(q))
+  &&(f==="all"||(f==="blocked"&&x.status==="blocked")
+  ||(f==="missing_source"&&x.blockers.includes("NO_OFFICIAL_CANDIDATE"))
+  ||(f==="conflict"&&x.blockers.some(c=>c==="SAME_DATE_NAV_CONFLICT"||c==="OFFICIAL_IDENTITY_DRIFT"||c==="MULTIPLE_OFFICIAL_IDENTITIES_FOR_ONE_LEGACY_FUND"))
+  ||x.status===f));
+ byId("count").textContent="符合 "+rows.length+" / 68 檔。";
+ const area=byId("cards");area.replaceChildren();
+ if(!rows.length){area.append(node("div","無符合條件標的。","empty"));return}
+ const fragment=document.createDocumentFragment();rows.forEach(x=>fragment.append(showCard(x)));area.append(fragment);
+}
+function csvCell(value){
+ let txt=String(value==null?"":value);
+ if(/^\s*[=+\-@\t\r]/.test(txt))txt="'"+txt;
+ return '"'+txt.replace(/"/g,'""')+'"';
+}
+function exportCsv(){
+ if(!report||report.production_backfill_authorized!==false)return;
+ const head=["標的ID","標的名稱","幣別","Excel最後NAV日","官方最新NAV有效日","官方觀察日期數","狀態","尚缺證據代碼","正式回補核准"];
+ const rows=report.funds.map(x=>[x.legacy_id,x.legacy_name,x.legacy_currency,x.legacy_nav_end,
+   x.official_nav_last_date,x.distinct_official_nav_dates,x.status,x.blockers.join("|"),"否"]);
+ const blob=new Blob(["\ufeff"+[head,...rows].map(a=>a.map(csvCell).join(",")).join("\r\n")+"\r\n"],{type:"text/csv;charset=utf-8"});
+ const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="fiveline_68_nav_backfill_readiness.csv";
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1800);
+}
+async function load(){
+ byId("reload").disabled=true;byId("download").disabled=true;
+ byId("state").textContent="正在讀取歷史 NAV 回補前核對結果…";
+ try{
+   const x=await getReport();
+   if(x.schema!=="fiveline_nav_backfill_preflight_v1"||x.legacy_total!==68||!Array.isArray(x.funds)||x.funds.length!==68
+      ||x.production_backfill_authorized!==false||x.production_excel_changed!==false
+      ||x.read_only_report!==true||x.evidence_submitted!==false
+      ||x.funds.some(y=>y.eligible_for_production_backfill!==false))
+      throw Error("unsafe preflight status");
+   report=x;
+   byId("all").textContent=68;
+   byId("candidates").textContent=x.public_archive_candidate_count;
+   byId("blocked").textContent=x.status_counts.blocked||0;
+   byId("approved").textContent="0";
+   byId("checked").textContent="來源品質稽核時間（UTC）："+x.source_quality_checked_at_utc+"；尚未核准正式 NAV 回補。";
+   const reqs=byId("requirements");reqs.replaceChildren();
+   x.requirement_categories.forEach(t=>reqs.append(node("li",t)));
+   byId("state").textContent="回補安全檢查完成。所有未核准紀錄不得寫入既有五線譜。";
+   byId("download").disabled=false;filter();
+ }catch(e){
+   report=null;
+   byId("state").textContent="目前無法驗證最新安全檢查報告，正式 NAV 回補維持禁止。";
+   ["all","candidates","blocked"].forEach(k=>byId(k).textContent="—");
+   byId("count").textContent="尚無可核對資料";
+   byId("cards").replaceChildren(node("div","可先從來源保存庫查看最新稽核是否已產生。","empty"));
+ }finally{byId("reload").disabled=false}
+}
+byId("reload").addEventListener("click",load);
+byId("download").addEventListener("click",exportCsv);
+byId("query").addEventListener("input",filter);
+byId("filter").addEventListener("change",filter);
+byId("reset").addEventListener("click",()=>{byId("query").value="";byId("filter").value="all";filter()});
+load();
+})();
+</script>
+</body></html>
