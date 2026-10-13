@@ -34,6 +34,12 @@ FEEDS={
   "code":("公司代號","SecuritiesCompanyCode","CompanyCode","SecuritiesCompanyCode"),
   "name":("公司簡稱","公司名稱","CompanyAbbreviation","CompanyName")
  },
+ "tpex_etfs":{
+  "url":"https://info.tpex.org.tw/api/etf?lang=zh-tw",
+  "dataset":"https://info.tpex.org.tw/ETF/zh/filter.html",
+  "kind":"etf","market":"TPEX","format":"tpex_suggestions",
+  "code":("代號",),"name":("名稱",)
+ },
  "twse_etfs":{
   "url":"https://openapi.twse.com.tw/v1/opendata/t187ap47_L",
   "dataset":"https://data.gov.tw/dataset/157399","kind":"etf","market":"TWSE","format":"json",
@@ -51,9 +57,8 @@ FEEDS={
   "code":("基金代碼",),"name":("基金名稱",),"currency":("計價幣別",),"isin":("基金ISIN_CODE",)
  }
 }
-# Collection of official public catalog data is not a guarantee of complete
-# universes outside these sources (e.g. all global funds, TPEX ETFs, unlisted).
-NON_COVERED=("櫃買中心上櫃ETF獨立完整基本資料來源仍需增補",
+# Configured sources cover Taiwan-listed and TPEx ETFs, not all global funds.
+NON_COVERED=("櫃買中心 ETF 來源為官方即時建議清單，不含所有級別 ISIN／歷史 NAV 或上市下市紀錄",
              "全球所有境外基金不等於臺灣核備之境外基金",
              "興櫃、期貨、ETN、權證與海外上市個股不在本階段涵蓋範圍",
              "境內基金與證交所ETF可能為同一檔基金的不同證券／級別，未核對不可合併",
@@ -67,6 +72,20 @@ def chosen(row,names):
 
 def parse_bytes(raw,fmt):
  if len(raw)>MAX_BYTES or not raw:raise ValueError("official source size invalid")
+ if fmt=="tpex_suggestions":
+  obj=json.loads(raw.decode("utf-8-sig"))
+  if not isinstance(obj,dict) or not isinstance(obj.get("suggestions"),list):
+   raise ValueError("TPEx ETF response changed: missing suggestions")
+  unique={}
+  for suggestion in obj["suggestions"]:
+   if not isinstance(suggestion,str):raise ValueError("TPEx ETF suggestion is not a string")
+   matched=re.fullmatch(r"\s*([0-9A-Z]{4,8})\s+(.{2,220}?)\s*",suggestion)
+   if not matched:raise ValueError("TPEx ETF code/name suggestion has changed")
+   code,name=matched.groups()
+   if code in unique and unique[code]!=name:raise ValueError("TPEx ETF code reused with different name")
+   unique[code]=name
+  if not unique:raise ValueError("empty TPEx ETF official suggestion directory")
+  return [{"代號":code,"名稱":name} for code,name in unique.items()]
  if fmt=="json":
   obj=json.loads(raw.decode("utf-8-sig"))
   if isinstance(obj,dict):
@@ -162,7 +181,7 @@ def build(sources:dict,errors:dict,now=None):
  counts=dict(Counter(row["category"] for row in rows))
  return {
   "schema":SCHEMA,"checked_at_utc":now.astimezone(timezone.utc).isoformat(),
-  "manifest_source":"TWSE / TPEx / SITCA / TDCC official open datasets",
+  "manifest_source":"TWSE / TPEx ETF and listed securities / SITCA / TDCC official open datasets",
   "license":"https://data.gov.tw/license",
   "providers":statistics,"requested_sources":list(FEEDS),
   "covered_sources":sorted(sources),"failed_sources":sorted(errors),
