@@ -38,18 +38,18 @@ jobs:
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: python -m tools.public_nav_history --output-dir ../nav_history_branch/public_nav_history
-      - name: Rebuild temporary SQLite from versioned evidence (fail on NAV revision)
+      - name: Verify duplicates, effective NAV dates and fund identity quality
         working-directory: application
         run: |
-          python -m tools.rebuild_public_nav_sqlite --snapshots ../nav_history_branch/public_nav_history --output ../daily_public_nav_readonly.sqlite
+          python -m tools.audit_public_nav_quality --snapshots ../nav_history_branch/public_nav_history --coverage data/phase16_instrument_coverage.csv --output ../nav_history_branch/public_nav_history/reports/latest.json
           python - <<'PY'
-          import sqlite3
-          db=sqlite3.connect('../daily_public_nav_readonly.sqlite')
-          funds=db.execute("select count(*) from official_funds where approval_status='UNAPPROVED'").fetchone()[0]
-          observations=db.execute("select count(*) from nav_raw_history where identity_review='PENDING'").fetchone()[0]
-          assert funds>0 and observations>0
-          assert db.execute("select count(*) from official_funds where approval_status!='UNAPPROVED'").fetchone()[0]==0
-          print('Unapproved public funds:',funds,'dated raw observations:',observations)
+          import json
+          d=json.load(open('../nav_history_branch/public_nav_history/reports/latest.json',encoding='utf-8'))
+          assert d['approved_funds']==0 and not d['historical_backfill_completed']
+          assert d['calendar_span_is_not_missing_trading_days']
+          print('NAV quality:',d['archive_snapshot_files'],'archives;',
+                d['unique_fund_effective_date_pairs'],'distinct NAV effective days;',
+                d['repeated_collection_observations'],'repeated captures')
           PY
       - name: Append to official-nav-history branch only
         working-directory: nav_history_branch
@@ -63,6 +63,19 @@ jobs:
             git commit -m "Archive public government NAV candidates for run ${{ github.run_id }}"
             git push origin HEAD:official-nav-history
           fi
+      - name: Rebuild temporary SQLite from versioned evidence (fail on NAV revision)
+        working-directory: application
+        run: |
+          python -m tools.rebuild_public_nav_sqlite --snapshots ../nav_history_branch/public_nav_history --output ../daily_public_nav_readonly.sqlite
+          python - <<'PY'
+          import sqlite3
+          db=sqlite3.connect('../daily_public_nav_readonly.sqlite')
+          funds=db.execute("select count(*) from official_funds where approval_status='UNAPPROVED'").fetchone()[0]
+          observations=db.execute("select count(*) from nav_raw_history where identity_review='PENDING'").fetchone()[0]
+          assert funds>0 and observations>0
+          assert db.execute("select count(*) from official_funds where approval_status!='UNAPPROVED'").fetchone()[0]==0
+          print('Unapproved public funds:',funds,'dated raw observations:',observations)
+          PY
       - name: Upload disposable SQLite materialized view
         uses: actions/upload-artifact@v4
         with:
