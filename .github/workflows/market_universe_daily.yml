@@ -43,7 +43,7 @@ jobs:
           assert x['schema']=='fiveline_market_universe_v1'
           assert x['catalog_complete_for_configured_sources']
           assert not x['failed_sources']
-          assert len(x['covered_sources'])==5
+          assert len(x['covered_sources'])==6
           assert x['total_rows']>2000
           assert not x['market_data_live_prices']
           assert not x['historical_nav_backfilled']
@@ -55,15 +55,32 @@ jobs:
           print('Verified directory records:',x['total_rows'])
           print('Verified source breakdown:',x['category_counts'])
           PY
+      - name: Build cross-source share class identity review, no automatic merging
+        working-directory: application
+        run: |
+          python -m tools.audit_market_identity --catalog ../market_repo/public_market_universe/latest.json --output ../market_repo/public_market_universe/identity_review.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('../market_repo/public_market_universe/identity_review.json').read_text('utf-8'))
+          assert d['schema']=='fiveline_market_identity_review_v1'
+          assert not d['automatic_deduplication_applied']
+          assert not d['all_fund_classes_approved']
+          assert not d['historical_nav_backfilled']
+          assert not d['original_excel_modified']
+          assert not d['customer_data_included']
+          print('Potential fund identity review groups:',d['potential_link_groups_total'])
+          print('ISIN missing among fund/ETF rows:',d['missing_isin_fund_etf_rows'])
+          PY
       - name: Commit public directory to dedicated branch
         working-directory: market_repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public_market_universe/latest.json
+          git add public_market_universe/latest.json public_market_universe/identity_review.json
           if git diff --cached --quiet; then
             echo "Official market directory unchanged"
           else
-            git commit -m "Refresh 5 official public instrument catalogs ${{ github.run_id }}"
+            git commit -m "Refresh 6 official public instrument catalogs and class identity review ${{ github.run_id }}"
             git push origin HEAD:market-universe
           fi
