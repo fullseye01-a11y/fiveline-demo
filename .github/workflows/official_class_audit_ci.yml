@@ -1,0 +1,43 @@
+name: Validate official class and dividend identity evidence
+on:
+  push:
+    branches:
+      - feature/nav-identity-dividend-evidence-20261014
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_official_class_dividend_audit.py -v
+  provider-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Get TDCC basic class, rolling 7-day NAV, dividend metadata and match 68 candidates
+        run: python -m tools.official_class_dividend_audit --out /tmp/nav_class_evidence.json
+      - name: Check identity and history never considered approved
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/nav_class_evidence.json',encoding='utf-8'))
+          assert len(d['records'])==68
+          assert d['reviewed_approved']==0
+          assert not d['historical_nav_backfilled']
+          assert not d['cash_distributions_adjusted']
+          assert not d['splits_adjusted']
+          assert all(x['approved'] is False and x['share_class_approved'] is False for x in d['records'])
+          print('Evidence categories:',d['status_counts'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tdcc-identity-evidence-${{ github.run_id }}
+          path: /tmp/nav_class_evidence.json
+          retention-days: 30
+          if-no-files-found: error
