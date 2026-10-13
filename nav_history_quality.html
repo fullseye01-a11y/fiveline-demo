@@ -113,7 +113,7 @@ async function getData(){
    if(!response.ok)throw Error("public quality report absent");
    const obj=await response.json();
    if(obj.encoding!=="base64"||!obj.content)throw Error("unusable source");
-   const bytes=Uint8Array.from(atob(obj.content.replace(/\\s/g,"")),ch=>ch.charCodeAt(0));
+   const bytes=Uint8Array.from(atob(obj.content.replace(/\s/g,"")),ch=>ch.charCodeAt(0));
    return JSON.parse(new TextDecoder("utf-8").decode(bytes));
  }finally{clearTimeout(timer)}
 }
