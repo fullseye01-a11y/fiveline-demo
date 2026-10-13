@@ -1,0 +1,42 @@
+name: Validate whole-market official instrument catalog
+on:
+  push:
+    branches: [feature/market-wide-universe-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s tests -p test_market_universe.py -v
+  source-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Check 5 official market-wide bulk catalogs and report every failed provider
+        run: python -m tools.build_market_universe --out /tmp/market_universe.json --allow-partial
+      - name: Protect original Excel and validate direct source identities
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/market_universe.json',encoding='utf-8'))
+          assert p['schema']=='fiveline_market_universe_v1'
+          assert p['total_rows']>2000, p['total_rows']
+          assert not p['historical_nav_backfilled']
+          assert not p['share_classes_approved']
+          assert not p['original_excel_modified']
+          assert not p['customer_records_included']
+          assert len(p['covered_sources'])>=2, p['covered_sources']
+          assert all(x['name'] and x['code'] and x['uid'] for x in p['instruments'])
+          print('Actual imported rows:',p['total_rows'])
+          print('By type:',p['category_counts'])
+          print('Complete:',p['catalog_complete_for_configured_sources'])
+          print('Sources unavailable:',p['failed_sources'])
+          PY
