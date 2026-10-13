@@ -79,7 +79,7 @@ def parse_twse_month(payload,code,kind,requested_month):
   if not isinstance(cells,list) or len(cells)!=len(fields):raise ValueError("TWSE row schema changed")
   m=dict(zip(fields,cells))
   day=roc_date(m["日期"])
-  if day[:6]!=requested_month[:6]:raise ValueError("TWSE API month mismatch")
+  if day[:7]!=requested_month[:4]+"-"+requested_month[4:6]:raise ValueError("TWSE API month mismatch")
   if day in seen:raise ValueError("duplicate TWSE date")
   seen.add(day)
   # Suspended/no-trade days can lack an OHLC price; do not impute any close.
