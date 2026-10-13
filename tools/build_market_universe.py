@@ -205,7 +205,19 @@ def main():
  for name in FEEDS:
   try:
    raw,format_used,used_url=download(name)
-   parsed=normalize_source(name,raw,format_override=format_used,actual_url=used_url)
+   try:
+    parsed=normalize_source(name,raw,format_override=format_used,actual_url=used_url)
+   except (json.JSONDecodeError,UnicodeDecodeError,ValueError) as primary_error:
+    # The TPEx JSON feed intermittently ends mid-string; retry *only* via
+    # the issuer-supplied MOPS official CSV, never guess missing rows.
+    if name!="tpex_otc_stocks" or format_used=="csv":
+     raise
+    fallback=FEEDS[name]["fallback_url"]
+    req=Request(fallback,headers={"User-Agent":"FivelinePublicCatalogReader/1.0","Accept":"text/csv,*/*"})
+    with urlopen(req,timeout=45,context=ssl.create_default_context()) as response:
+     if response.status!=200:raise ValueError("official fallback HTTP status invalid") from primary_error
+     backup=response.read(MAX_BYTES+1)
+    parsed=normalize_source(name,backup,format_override="csv",actual_url=fallback)
    if parsed["accepted_rows"]<50:raise ValueError("implausibly few official catalog rows for market-wide feed")
    available[name]=parsed
    print(json.dumps({"provider":name,"accepted":parsed["accepted_rows"],
