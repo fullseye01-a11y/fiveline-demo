@@ -64,7 +64,8 @@ footer{font-size:.8rem;color:var(--muted)}
 <div class="metric"><strong id="approved">0</strong><span>正式核准配對</span></div>
 </div>
 <p id="details" class="note">境外資料來源：TDCC 3-2、3-4（最近七日 NAV）、3-5（配息相關資料）。</p>
-<div class="actions" style="margin-top:12px"><button id="reload" type="button">重新執行稽核</button><a href="nav_match_review.html">原 68 檔候選表</a><a href="official_nav_search.html">最新官方 NAV 查詢</a></div>
+<p class="note">正式回補前必備：原 Excel 基金級別／ISIN 核准、連續歷史 NAV、每單位現金配息、分割事件／因子及逐筆調整核對。任一項未完成，一律禁止寫入歷史回歸或績效。</p>
+<div class="actions" style="margin-top:12px"><button id="reload" type="button">重新執行稽核</button><button id="download-audit" type="button" disabled>下載 ISIN／配息核對 CSV</button><a href="nav_match_review.html">原 68 檔候選表</a><a href="official_nav_search.html">最新官方 NAV 查詢</a></div>
 </section>
 <section class="panel">
 <h2>逐檔檢核紀錄</h2>
@@ -106,6 +107,35 @@ let data=null;
 function field(node,label,value){
  const wrap=mk("div");wrap.append(mk("small",label),mk("b",value==null||value===""?"—":value));node.append(wrap);
 }
+/* 僅匯出公開來源證據與待核對欄位，不自動核准、不寫入歷史資料。 */
+function csvEscape(value){
+ let v=String(value==null?"":value);
+ if(/^\s*[=+\-@\t\r]/.test(v))v="'"+v;
+ return '"'+v.replace(/"/g,'""')+'"';
+}
+function exportIdentityAudit(){
+ if(!data||data.total_legacy!==68||data.reviewed_approved!==0)return;
+ const cols=["歷史標的ID","歷史名稱","歷史幣別","歷史NAV截止日期",
+  "交叉來源身分狀態","官方代碼","官方ISIN_未核准","ISIN_與原Excel比對",
+  "近期NAV有效日期筆數","來源配息事件數_不是現金金額",
+  "原Excel基金級別人工確認","每單位配息金額及幣別人工確認",
+  "分割事件與因子人工確認","可用完整歷史NAV來源與授權",
+  "日期缺值與配息還原人工核對","是否核准正式回補","結果說明"];
+ const rows=data.records.map(x=>[
+  x.legacy_id,x.legacy_name,x.legacy_ccy,x.legacy_nav_end,
+  NAMES[x.status]||x.status,x.official_code,x.reference_isin,
+  "未核准",x.recent_nav_days,x.official_dividend_event_count,
+  "待人工確認","待人工確認","待人工確認","待人工確認",
+  "待人工確認","否",x.reason
+ ]);
+ const payload="\ufeff"+[cols,...rows].map(row=>row.map(csvEscape).join(",")).join("\r\n")+"\r\n";
+ const url=URL.createObjectURL(new Blob([payload],{type:"text/csv;charset=utf-8"}));
+ const link=document.createElement("a");
+ link.href=url;link.download="fiveline_68_isin_dividend_backfill_review.csv";
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
 function render(item){
  const panel=mk("article",null,"card");
  panel.append(mk("h3",item.legacy_name));
@@ -153,6 +183,7 @@ async function load(){
       ||payload.records?.length!==68||payload.records.some(x=>x.approved!==false||x.share_class_approved!==false))
       throw Error("稽核資料未通過唯讀與未核准保護檢查");
    data=payload;
+   byId("download-audit").disabled=false;
    byId("state").textContent="已完成官方資料核對（僅供人工稽核）";
    byId("all").textContent=payload.total_legacy;
    byId("evidence").textContent=payload.official_metadata_consistent_not_approved;
@@ -162,6 +193,7 @@ async function load(){
    filter();
  }catch(err){
    data=null;
+   byId("download-audit").disabled=true;
    byId("state").textContent="官方來源暫時無法核對，請稍後重新執行。";
    ["all","evidence","domestic"].forEach(id=>byId(id).textContent="—");
    byId("cards").replaceChildren(mk("div","無法確認資料時，不會顯示任何未驗證的核准結果。","empty"));
@@ -169,6 +201,7 @@ async function load(){
  }finally{reload.disabled=false}
 }
 byId("reload").addEventListener("click",load);
+byId("download-audit").addEventListener("click",exportIdentityAudit);
 byId("query").addEventListener("input",filter);
 byId("filter").addEventListener("change",filter);
 byId("reset").addEventListener("click",()=>{byId("query").value="";byId("filter").value="all";filter()});
