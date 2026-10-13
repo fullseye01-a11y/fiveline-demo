@@ -15,6 +15,7 @@ from urllib.parse import urlsplit, parse_qs
 import threading
 import time
 from backend.providers.open_fund_nav import SOURCES, download_source, normalized_records
+from backend.fund_matching import get_legacy_rows, make_report
 
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY_FILE = ROOT / "data" / "phase16_summary.json"
@@ -59,6 +60,19 @@ def official_summary() -> dict:
        "share_class_matched_to_legacy":False,
        "dividend_split_adjusted":False,
        "cache_ttl_seconds":OFFICIAL_CACHE_TTL_SEC}
+
+
+
+def matching_review() -> dict:
+    """Never writes NAV or trusts similar names as matching share classes."""
+    successes, failures={},{}
+    for source in SOURCES:
+        try:
+            successes[source]=official_snapshot(source)
+        except Exception as exc:
+            failures[source]=type(exc).__name__
+    rows=get_legacy_rows(COVERAGE_FILE)
+    return make_report(rows,successes,failures)
 
 
 def official_lookup(source: str, query: str, limit: int = 30) -> dict:
@@ -137,6 +151,8 @@ class Handler(BaseHTTPRequestHandler):
                     data = {"health": data["health"], "live_data_connected": False}
             elif path == "/api/official-nav/status":
                 data = official_summary()
+            elif path == "/api/official-nav/match-report":
+                data = matching_review()
             elif path == "/api/official-nav/search":
                 args=parse_qs(urlsplit(self.path).query,keep_blank_values=False)
                 source=(args.get("source") or [""])[0]
