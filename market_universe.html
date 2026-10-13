@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#193451"><meta name="robots" content="noindex,nofollow">
+<title>全市場基金／股票／ETF 名錄｜五線譜</title>
+<style>
+:root{--navy:#193451;--ink:#1c3450;--sub:#59718a;--bg:#f2f6fa;--border:#d6e2ed;--warm:#fff5e6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.55;color:var(--ink)}
+header{background:var(--navy);color:white;padding:22px 16px}.wrap{max-width:1080px;margin:0 auto}
+header a{color:#e2edf6;font-size:.88rem;text-decoration:none}h1{font-size:clamp(1.4rem,5vw,2rem);line-height:1.3;margin:10px 0 3px}
+header p{font-size:.88rem;color:#d6e4ee;margin:0}main{padding:15px 15px 38px}
+.notice{background:var(--warm);border-left:4px solid #c18d39;padding:13px 14px;font-size:.86rem;border-radius:11px;margin-bottom:14px}
+.notice strong{display:block}
+.panel{background:white;border:1px solid var(--border);border-radius:15px;padding:15px;margin-bottom:15px}
+h2{font-size:1.12rem;margin:0 0 10px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stat{background:#f3f6fa;border-radius:10px;padding:11px}
+.stat b{display:block;font-size:clamp(1.3rem,4.8vw,1.75rem);font-variant-numeric:tabular-nums}
+.stat span{display:block;color:var(--sub);font-size:.76rem}
+.note{font-size:.81rem;color:var(--sub);margin:10px 0}
+.controls{display:grid;grid-template-columns:1fr;gap:9px}
+label{display:grid;gap:5px;color:var(--sub);font-size:.85rem}
+input,select,button{font:inherit;min-height:44px;border-radius:9px}
+input,select{border:1px solid #c1cddd;background:white;padding:9px 11px;color:var(--ink);width:100%;min-width:0}
+button{background:#205c85;border:1px solid #205c85;color:white;padding:9px 15px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+a:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid #368ab8;outline-offset:2px}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px}
+.actions a{font-size:.84rem;color:#225f88}
+.cards{display:grid;grid-template-columns:1fr;gap:9px}
+.card{border:1px solid var(--border);border-radius:12px;padding:12px;min-width:0}
+.card strong{display:block;overflow-wrap:anywhere;font-size:.95rem}
+.card small{display:block;color:var(--sub);font-size:.78rem;margin:5px 0}
+.chip{font-size:.72rem;font-weight:700;color:#38607d;background:#edf4fa;border-radius:999px;padding:4px 8px;display:inline-block}
+.empty{border:1px dashed #acc3d6;border-radius:11px;padding:14px;color:var(--sub);font-size:.85rem}
+.provider{font-size:.79rem;padding:7px 0;border-bottom:1px solid #e9edf3}
+.provider b{display:inline-block;margin-right:9px}
+.warn{color:#91581d}
+footer{font-size:.78rem;color:var(--sub)}a{color:#1e668d}
+@media(min-width:700px){.stats{grid-template-columns:repeat(5,minmax(0,1fr))}.controls{grid-template-columns:1.4fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div class="wrap"><a href="index.html">← 返回五線譜智能財富平台</a>
+<h1>全市場基金・股票・ETF 名錄</h1><p>臺灣證交所／櫃買中心／投信投顧公會／集保開放資料批次匯入</p>
+</div></header>
+<main class="wrap">
+<div class="notice"><strong>全市場標的名錄 ≠ 完整歷史行情。</strong>
+此頁可搜尋已批次匯入的公開標的名稱和代碼，但不代表每檔都已取得多年日線、完整 NAV、配息還原或六策略回測。
+境內基金和 ETF 可能是同一經濟標的的不同交易單位或級別，不能直接合併。
+目前尚未涵蓋全部上櫃 ETF 及全球未在台核備基金；資料有缺口會如實標示。</div>
+<section class="panel">
+<h2>已取得的市場名錄</h2>
+<p id="state" class="note" aria-live="polite">正在讀取官方全市場資料…</p>
+<div class="stats">
+<div class="stat"><b id="listed">—</b><span>上市公司</span></div>
+<div class="stat"><b id="otc">—</b><span>上櫃公司</span></div>
+<div class="stat"><b id="etf">—</b><span>上市 ETF</span></div>
+<div class="stat"><b id="domestic">—</b><span>境內基金級別紀錄</span></div>
+<div class="stat"><b id="offshore">—</b><span>在台核備境外基金紀錄</span></div>
+</div>
+<p id="meta" class="note">來源必須通過格式驗證，才會納入搜尋名單。</p>
+<div class="actions"><button id="reload" type="button">重新整理名錄</button><a href="nav_status.html">NAV 資料健康中心</a><a href="https://github.com/fullseye01-a11y/fiveline-demo/tree/market-universe/public_market_universe" target="_blank" rel="noopener noreferrer">查看來源與版本</a></div>
+</section>
+<section class="panel">
+<h2>搜尋全部已匯入標的</h2>
+<div class="controls">
+<label>輸入代碼／名稱／ISIN<input id="query" type="search" placeholder="例如 2330、0050、安聯、富達" autocomplete="off"></label>
+<label>標的類別<select id="kind">
+<option value="all">全部已匯入類別</option>
+<option value="listed_stock">上市個股</option>
+<option value="otc_stock">上櫃個股</option>
+<option value="etf">上市 ETF</option>
+<option value="domestic_fund_share_class">境內基金</option>
+<option value="offshore_fund_share_class">在台核備境外基金</option>
+</select></label>
+<button type="button" id="clear">清除篩選</button>
+</div>
+<p id="count" class="note" aria-live="polite">尚未載入搜尋結果。</p>
+<div id="cards" class="cards"></div>
+<div class="actions"><button type="button" id="more" disabled>顯示更多</button></div>
+</section>
+<section class="panel">
+<h2>官方來源與涵蓋缺口</h2>
+<div id="providers" class="provider-list">等待載入…</div>
+<h2 style="margin-top:18px">尚未完整涵蓋的項目</h2>
+<div id="gaps" class="note">資料正在核對。</div>
+</section>
+<footer>公開資料以其提供機關為準，須遵守相應使用條款。此頁只有官方標的身分名錄，不提供即時報價或投資建議。所有原五線譜回歸通道、六策略績效、原 Excel 均維持原樣。</footer>
+</main>
+<script>
+(function(){
+"use strict";
+const RAW="https://raw.githubusercontent.com/fullseye01-a11y/fiveline-demo/market-universe/public_market_universe/latest.json";
+const API="https://api.github.com/repos/fullseye01-a11y/fiveline-demo/contents/public_market_universe/latest.json?ref=market-universe";
+const PAGE_SIZE=40;
+const TITLES={
+ twse_listed_stocks:"證交所上市公司",
+ tpex_otc_stocks:"櫃買中心上櫃公司",
+ twse_etfs:"證交所上市 ETF",
+ sitca_domestic_funds:"投信投顧公會境內基金級別",
+ tdcc_offshore_funds:"集保在台核備境外基金"
+};
+const el=id=>document.getElementById(id);
+const mk=(name,txt,cls)=>{const n=document.createElement(name);if(txt!=null)n.textContent=String(txt);if(cls)n.className=cls;return n};
+let data=null,filtered=[],limit=PAGE_SIZE;
+async function get(){
+ const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),55000);
+ try{
+  try{
+   const r=await fetch(RAW+"?ts="+Date.now(),{signal:ctrl.signal,cache:"no-store"});
+   if(r.ok)return await r.json();
+  }catch(e){/* Official GitHub public raw may be temporarily inaccessible. */}
+  const r=await fetch(API,{signal:ctrl.signal,cache:"no-store",headers:{Accept:"application/vnd.github+json"}});
+  if(!r.ok)throw Error("public catalog unavailable");
+  const file=await r.json();
+  if(file.encoding!=="base64"||!file.content)throw Error("invalid catalog file");
+  const arr=Uint8Array.from(atob(file.content.replace(/\s/g,"")),x=>x.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(arr));
+ }finally{clearTimeout(timer)}
+}
+function render(r){
+ const card=mk("article",null,"card");
+ card.append(mk("strong",r.name));
+ card.append(mk("small","代碼："+r.code+(r.currency?"｜"+r.currency:"")+(r.isin?"｜ISIN："+r.isin:"")));
+ card.append(mk("span",TITLES[r.source]||r.category,"chip"));
+ card.append(mk("small","已收錄標的名錄｜尚未核准完整歷史行情與配息還原"));
+ return card;
+}
+function visible(){
+ const cards=el("cards");cards.replaceChildren();
+ const frag=document.createDocumentFragment();
+ filtered.slice(0,limit).forEach(r=>frag.append(render(r)));
+ if(!filtered.length)frag.append(mk("div","找不到符合條件的公開標的。","empty"));
+ cards.append(frag);
+ el("count").textContent="符合 "+filtered.length.toLocaleString("zh-TW")+" 筆名錄紀錄；顯示前 "+Math.min(limit,filtered.length).toLocaleString("zh-TW")+" 筆。";
+ el("more").disabled=limit>=filtered.length;
+}
+function query(){
+ if(!data)return;
+ const q=el("query").value.trim().toLocaleLowerCase(),kind=el("kind").value;
+ filtered=data.instruments.filter(r=>(kind==="all"||r.category===kind)
+   &&(!q||r.name.toLocaleLowerCase().includes(q)||r.code.toLocaleLowerCase().includes(q)||r.isin.toLocaleLowerCase().includes(q)));
+ limit=PAGE_SIZE;visible();
+}
+function renderMeta(){
+ const counts=data.category_counts;
+ for(const [id,field] of [["listed","listed_stock"],["otc","otc_stock"],["etf","etf"],["domestic","domestic_fund_share_class"],["offshore","offshore_fund_share_class"]])
+  el(id).textContent=(counts[field]||0).toLocaleString("zh-TW");
+ el("meta").textContent="名錄紀錄數："+data.total_rows.toLocaleString("zh-TW")+"；擷取時間："+data.checked_at_utc+"（UTC）。"+(data.catalog_complete_for_configured_sources?"五個已設定來源全部成功。":"部分來源取得失敗，請看下方狀態。");
+ const root=el("providers");root.replaceChildren();
+ Object.entries(data.providers).forEach(([key,v])=>{
+  const div=mk("div",null,"provider");
+  div.append(mk("b",TITLES[key]||key));
+  div.append(mk("span",v.available?(v.accepted.toLocaleString("zh-TW")+" 筆，來源正常"):"來源異常："+v.error,v.available?"":"warn"));
+  root.append(div);
+ });
+ const gap=el("gaps");gap.replaceChildren();
+ (data.known_coverage_gaps||[]).forEach(x=>gap.append(mk("p","• "+x)));
+}
+async function load(){
+ el("reload").disabled=true;
+ el("state").textContent="正在載入官方市場名錄，第一次可能需要數秒…";
+ try{
+  const result=await get();
+  if(result.schema!=="fiveline_market_universe_v1"||!Array.isArray(result.instruments)
+   ||result.total_rows!==result.instruments.length||result.market_data_live_prices!==false
+   ||result.historical_nav_backfilled!==false||result.share_classes_approved!==false
+   ||result.original_excel_modified!==false||result.customer_records_included!==false
+   ||result.instruments.some(x=>!x.uid||!x.name||!x.code||x.historical_prices_ready!==false)){
+   throw Error("catalog validation failed");
+  }
+  data=result;
+  el("state").textContent="已載入官方標的名錄；正式歷史行情與回測仍獨立維護。";
+  renderMeta();query();
+ }catch(err){
+  data=null;el("state").textContent="官方全市場名錄目前無法驗證，請稍後重試。";
+  ["listed","otc","etf","domestic","offshore"].forEach(k=>el(k).textContent="—");
+  el("count").textContent="尚無經驗證的名錄";
+  el("cards").replaceChildren(mk("div","既有五線譜及 68 檔歷史資料不受影響。","empty"));
+ }finally{el("reload").disabled=false}
+}
+el("reload").addEventListener("click",load);
+el("query").addEventListener("input",query);
+el("kind").addEventListener("change",query);
+el("more").addEventListener("click",()=>{limit+=PAGE_SIZE;visible()});
+el("clear").addEventListener("click",()=>{el("query").value="";el("kind").value="all";query()});
+load();
+})();
+</script></body></html>
