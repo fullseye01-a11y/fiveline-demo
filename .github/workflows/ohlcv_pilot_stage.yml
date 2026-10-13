@@ -1,0 +1,79 @@
+name: Stage official historic OHLCV research pilot
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ohlcv_pilot_stage.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: fiveline-historical-price-research-pilot
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: app
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: directory
+          ref: market-universe
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch 4 official test symbols, 3 TWSE months and 2 TPEx days
+        working-directory: app
+        run: |
+          mkdir -p ../price_research
+          python -m tools.official_ohlcv_pilot --sqlite ../price_research/staged_official_ohlcv.sqlite --report ../directory/public_market_universe/ohlcv_pilot_summary.json
+      - name: Validate SQLite is unadjusted and public report contains metadata only
+        working-directory: app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sqlite3,json
+          report=Path('../directory/public_market_universe/ohlcv_pilot_summary.json')
+          q=json.loads(report.read_text('utf-8'))
+          assert q['schema']=='fiveline_ohlcv_history_pilot_v1'
+          assert q['pilot_symbols']==4 and q['pilot_quote_rows']>=40
+          assert q['requested_sources']==8
+          assert q['sources_verified']==['TPEX_DAILY_QUOTES','TWSE_STOCK_DAY']
+          for k in ('production_coverage_complete','all_market_history_backfilled',
+                     'continuous_trading_calendar_verified','raw_quotes_publicly_redistributed',
+                     'price_adjustments_applied','dividend_adjustments_applied',
+                     'original_excel_modified','production_analyses_modified'):
+              assert q[k] is False,k
+          assert len(q['instruments'])==4
+          assert all(x['continuous_calendar_coverage_verified'] is False for x in q['instruments'])
+          s=report.read_text('utf-8')
+          assert '"open":' not in s and '"close":' not in s and '"volume_shares":' not in s
+          with sqlite3.connect('../price_research/staged_official_ohlcv.sqlite') as db:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              assert db.execute('select count(*) from quote_raw').fetchone()[0]==q['pilot_quote_rows']
+              assert db.execute("select count(*) from quote_raw where price_adjustment!='RAW_NOT_ADJUSTED'").fetchone()[0]==0
+              print('Verified research quotes:',db.execute('select market,symbol,count(*) from quote_raw group by 1,2').fetchall())
+          PY
+      - name: Publish quote-free pilot source and coverage summary only
+        working-directory: directory
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public_market_universe/ohlcv_pilot_summary.json
+          if git diff --cached --quiet; then
+            echo "pilot audit unchanged"
+          else
+            git commit -m "Archive official OHLCV pilot provenance-only summary ${{ github.run_id }}"
+            git push origin HEAD:market-universe
+          fi
+      - name: Keep provisional raw SQLite in short-lived GitHub Actions artifact only
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-ohlcv-research-sqlite-${{ github.run_id }}
+          path: price_research/staged_official_ohlcv.sqlite
+          retention-days: 7
+          if-no-files-found: error
