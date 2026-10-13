@@ -1,0 +1,27 @@
+name: Verify seven SD legend suffixes
+on:
+  push:
+    branches: [feature/restore-sd-legend-and-nav-matching-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -p test_legend_restore.py -v
+      - name: Validate chart JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path("five_line_responsive.html").read_text(encoding="utf-8")
+          matches=re.findall(r"<script>(.*?)</script>",src,re.S)
+          assert len(matches)==1
+          Path("/tmp/chart-js.js").write_text(matches[0],encoding="utf-8")
+          PY
+          node --check /tmp/chart-js.js
