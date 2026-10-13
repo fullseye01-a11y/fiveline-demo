@@ -1,0 +1,50 @@
+name: Verify NAV audit export and snapshot archival
+on:
+  push:
+    branches: [feature/nav-review-export-and-snapshot-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate local code and CSV protections
+        run: python -m unittest discover -s tests -p test_nav_review_archive.py -v
+      - name: JavaScript syntax for review CSV export
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          page=Path('nav_match_review.html').read_text('utf-8')
+          src=re.findall(r'<script>(.*?)</script>',page,re.S)
+          assert len(src)==1
+          assert 'id="export-review"' in page
+          assert 'function isinShape(' in src[0]
+          assert 'function proposedBackfill(' in src[0]
+          Path('/tmp/nav_review.js').write_text(src[0],encoding='utf-8')
+          PY
+          node --check /tmp/nav_review.js
+  live-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check official live review and produce disposable archive
+        run: python tools/nav_daily_review_snapshot.py --output-dir /tmp/nav_review_validation
+      - name: Validate archive is 68 rows, unapproved only
+        run: |
+          python - <<'PY'
+          import glob,json
+          fp=glob.glob('/tmp/nav_review_validation/*.json')
+          assert len(fp)==1
+          report=json.load(open(fp[0]))
+          assert len(report['rows'])==68
+          assert report['all_candidates_unapproved']
+          assert not report['historical_nav_backfilled']
+          assert sum(report['candidate_status_counts'].values())==68
+          print('Status:',report['candidate_status_counts'])
+          PY
