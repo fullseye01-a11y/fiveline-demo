@@ -1,7 +1,7 @@
-name: Verify seven five-line channel names
+name: Verify regression channel terminology
 on:
   push:
-    branches: [feature/fiveline-seven-level-names-20261013]
+    branches: [feature/regression-zone-terminology-20261013]
   workflow_dispatch:
 permissions:
   contents: read
