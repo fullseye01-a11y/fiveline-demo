@@ -1,5 +1,9 @@
 name: Scheduled official fund NAV source refresh check
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/official_nav_daily_check.yml
   schedule:
     # 21:30 Asia/Taipei on Monday-Friday. GitHub scheduler may run late.
     - cron: "30 13 * * 1-5"
@@ -57,3 +61,12 @@ jobs:
           if not ok:
               raise SystemExit('At least one government NAV data source is unavailable; do not silently treat old NAV as refreshed.')
           PY
+      - name: Archive unapproved 68-instrument NAV review snapshot
+        run: python tools/nav_daily_review_snapshot.py --output-dir daily_nav_review
+      - name: Upload time-limited review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-nav-review-${{ github.run_id }}
+          path: daily_nav_review/*
+          retention-days: 30
+          if-no-files-found: error
