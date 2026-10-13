@@ -1,0 +1,58 @@
+name: Validate 68-fund NAV backfill safety gate
+on:
+  push:
+    branches: [feature/nav-backfill-preflight-20261014]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate guarded backfill evidence with positive and negative synthetic inputs
+        run: python -m unittest discover -s tests -p test_nav_backfill_preflight.py -v
+      - name: Verify UI and scheduled report output
+        run: python -m unittest discover -s tests -p test_nav_backfill_preflight_page.py -v
+      - name: Validate browser JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('nav_backfill_preflight.html').read_text('utf-8')
+          blocks=re.findall(r'<script>(.*?)</script>',s,re.S)
+          assert len(blocks)==1
+          Path('/tmp/preflight.js').write_text(blocks[0],encoding='utf-8')
+          PY
+          node --check /tmp/preflight.js
+  real-public-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: source}
+      - uses: actions/checkout@v4
+        with:
+          ref: official-nav-history
+          path: nav_archive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply backfill blockers to actual last NAV quality report
+        working-directory: source
+        run: |
+          python -m tools.nav_backfill_preflight --quality ../nav_archive/public_nav_history/reports/latest.json --coverage data/phase16_instrument_coverage.csv --output ../review_dry_run.json
+          python - <<'PY'
+          import json
+          r=json.load(open('../review_dry_run.json'))
+          assert r['legacy_total']==68 and len(r['funds'])==68
+          assert r['staging_eligible_count']==0
+          assert not r['production_backfill_authorized']
+          assert not r['production_excel_changed']
+          assert not r['evidence_submitted']
+          assert all(x['status']=='blocked' for x in r['funds'])
+          print('NAV public candidates:',r['public_archive_candidate_count'])
+          print('Blocked:',r['status_counts'])
+          PY
