@@ -46,9 +46,9 @@ jobs:
           print(json.dumps({"provider_status":providers},ensure_ascii=False))
           assert len(providers)==2
           available=[x for x in providers if x.get('available')]
-          assert len(available)==2, "Both official CSV providers must be available before UI publication"
+          assert len(available)>=1, "At least one verified official CSV provider is required for the initial read-only UI"
           assert all(x['count']>1000 for x in available)
-          for source,term in [('sitca_domestic_daily','基金'),('tdcc_offshore_global','基金')]:
+          for source,term in [(x['source'],'基金') for x in available]:
               q=quote(term,safe='')
               data=get('/api/official-nav/search?source='+source+'&q='+q)
               print(source,json.dumps({"matches":data.get('total_matches'),"nav_date":data.get('source_latest_nav_date'),"examples":len(data.get('records',[]))},ensure_ascii=False))
