@@ -115,7 +115,14 @@ async function loadStatus(){
       if(!n)continue;
       byId(n+"-state").textContent=p.available?"已驗證 "+p.count.toLocaleString("zh-TW")+" 筆":"官方來源無法讀取";
       byId(n+"-date").textContent=p.available?"來源最新 NAV："+p.latest_nav_date+"（取用 "+p.checked_at_utc.slice(0,10)+" UTC）":"可稍後重試；歷史圖表不受影響";
+      const option=[...byId("source").options].find(x=>x.value===p.source);
+      if(option)option.disabled=!p.available;
       if(p.available)ok++;
+    }
+    const sourceSelect=byId("source");
+    if(sourceSelect.selectedOptions[0]&&sourceSelect.selectedOptions[0].disabled){
+      const firstAvailable=[...sourceSelect.options].find(x=>!x.disabled);
+      if(firstAvailable)sourceSelect.value=firstAvailable.value;
     }
     byId("connection").textContent=ok===2?"官方來源連線正常 · 僅最新快照":ok?"部分來源可用 · 尚非完整行情":"官方來源目前無法取得";
   }catch(e){
