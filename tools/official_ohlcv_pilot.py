@@ -119,12 +119,21 @@ def parse_tpex_day(payload,requested_day,targets):
  return sorted(allrows,key=lambda x:x["symbol"])
 
 def fetch_json(url):
- req=Request(url,headers=HEADERS)
- with urlopen(req,timeout=32,context=ssl.create_default_context()) as response:
-  if response.status!=200:raise ValueError("source HTTP status not 200")
-  b=response.read(MAX_BYTES+1)
- if not b or len(b)>MAX_BYTES:raise ValueError("source response empty or too large")
- return json.loads(b.decode("utf-8-sig")),sha256(b).hexdigest()
+ # Exchange web servers occasionally abort chunked HTTP transfers. Retry only
+ # transport-level incomplete/invalid-body failures, never a schema mismatch.
+ last=None
+ for attempt in range(3):
+  try:
+   req=Request(url,headers=HEADERS)
+   with urlopen(req,timeout=32,context=ssl.create_default_context()) as response:
+    if response.status!=200:raise ValueError("source HTTP status not 200")
+    b=response.read(MAX_BYTES+1)
+   if not b or len(b)>MAX_BYTES:raise ValueError("source response empty or too large")
+   return json.loads(b.decode("utf-8-sig")),sha256(b).hexdigest()
+  except (OSError,ValueError,json.JSONDecodeError) as error:
+   last=error
+   if attempt<2:time.sleep(1.25*(attempt+1))
+ raise ValueError("official historical response unusable after three attempts") from last
 
 def requests_spec():
  spec=[]
