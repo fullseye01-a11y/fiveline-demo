@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1b3857">
+<meta name="robots" content="noindex,nofollow">
+<title>68 檔 NAV 身分對帳｜五線譜</title>
+<style>
+:root{--ink:#19334d;--sub:#617186;--bg:#f3f6fa;--line:#d9e3ee;--navy:#1b3857;--warning:#fff7e7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.6}
+header{background:var(--navy);padding:23px 16px;color:white}
+.wrap{max-width:1050px;margin:0 auto}
+header a{color:#e1edf7;text-decoration:none;font-size:.87rem}
+h1{margin:10px 0 5px;font-size:clamp(1.45rem,5vw,2rem);line-height:1.3}
+header p{font-size:.89rem;color:#d2deea;margin:0}
+main{padding:16px 15px 36px}
+.notice{background:var(--warning);border-left:4px solid #c58e35;border-radius:10px;padding:13px 14px;margin-bottom:15px;font-size:.9rem}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;padding:15px;margin-bottom:16px}
+h2{margin:0 0 10px;font-size:1.15rem}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.stat strong{display:block;font-size:clamp(1.4rem,5.5vw,2rem);line-height:1.15;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--sub)}
+.status{font-size:.87rem;color:var(--sub);line-height:1.65;margin:0 0 12px}
+.inputrow{display:grid;grid-template-columns:1fr;gap:9px}
+input,select{font:inherit;font-size:.94rem;border-radius:10px;border:1px solid #c1ccda;min-height:44px;padding:9px 11px;width:100%;min-width:0;background:white;color:var(--ink)}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #3288b4;outline-offset:2px}
+button{border:1px solid #1f638b;background:#205f87;color:white;border-radius:10px;font:inherit;font-weight:650;padding:8px 14px;min-height:41px;cursor:pointer}
+button[disabled]{opacity:.55;cursor:wait}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
+.actions a{font-size:.85rem;color:#1e5b86}
+.count{color:var(--sub);font-size:.86rem;margin:13px 0 10px}
+.cards{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.card h3{font-size:1rem;line-height:1.45;margin:0;overflow-wrap:anywhere}
+.badge{font-size:.73rem;font-weight:700;line-height:1.3;border-radius:999px;padding:5px 9px;background:#eef2f7;color:#506780;white-space:nowrap}
+.badge.possible{background:#fff4dd;color:#8f5810}
+.summary{font-size:.8rem;color:var(--sub);margin:6px 0 0}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:11px 0}
+.facts small{display:block;color:var(--sub);font-size:.74rem}
+.facts b{font-size:.92rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+details{border-top:1px solid var(--line);padding-top:8px}
+summary{font-size:.84rem;color:#235f86;font-weight:650;cursor:pointer;padding:5px 0}
+.candidate{background:#f5f8fc;border-radius:9px;margin-top:8px;padding:10px;font-size:.84rem}
+.candidate strong{display:block;overflow-wrap:anywhere}
+.candidate div{color:var(--sub);overflow-wrap:anywhere}
+.empty{border:1px dashed #b3c5d5;border-radius:12px;text-align:center;color:var(--sub);padding:18px;font-size:.87rem}
+.foot{font-size:.8rem;color:var(--sub);margin:16px 0}
+@media(min-width:690px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.inputrow{grid-template-columns:1.3fr 1fr auto;align-items:end}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a href="index.html">← 返回五線譜平台</a>
+<h1>68 檔 NAV 身分對帳</h1><p>基金名稱、幣別及官方最新 NAV 候選配對 · 僅供人工稽核</p></div></header>
+<main class="wrap">
+<div class="notice"><strong>所有配對均未核准。</strong> 即使只找到一筆名稱與幣別一致的資料，仍需確認 ISIN、基金級別、累積／配息類型、避險幣別與調整口徑。本頁不會更新五線譜歷史 NAV、回歸通道或績效。</div>
+<section class="panel">
+<h2>來源狀態與對帳摘要</h2>
+<p id="state" class="status" aria-live="polite">正從 Render 讀取最新官方來源對帳摘要…</p>
+<div class="stats">
+<div class="stat"><strong id="total">—</strong><span>Excel 歷史標的</span></div>
+<div class="stat"><strong id="candidates">—</strong><span>唯一名稱及幣別候選</span></div>
+<div class="stat"><strong id="need">—</strong><span>仍待核對／其他狀態</span></div>
+<div class="stat"><strong id="approved">0</strong><span>已正式核准配對</span></div>
+</div>
+<div class="actions"><button type="button" id="reload">重新執行對帳檢查</button><a href="official_nav_search.html">查看官方最新 NAV</a><a href="nav_status.html">歷史 NAV 健康中心</a></div>
+<p class="status" id="provider" style="margin-top:12px"></p>
+</section>
+<section class="panel">
+<h2>逐檔候選稽核</h2>
+<div class="inputrow">
+<label>搜尋標的名稱／ID<input id="query" type="search" placeholder="例如 安聯、科技、19" autocomplete="off"></label>
+<label>目前對帳狀態<select id="filter">
+<option value="all">全部 68 檔</option>
+<option value="single_unverified_candidate">單一候選（未核准）</option>
+<option value="multiple_unverified_candidates">多重候選</option>
+<option value="currency_mismatch">幣別不符</option>
+<option value="no_exact_candidate">無完全一致候選</option>
+<option value="incomplete_provider_coverage">來源部分異常</option>
+<option value="separate_exchange_feed_or_identity_required">需其他行情來源</option>
+</select></label>
+<button id="reset" type="button">清除篩選</button>
+</div>
+<p class="count" id="count">載入中…</p>
+<div class="cards" id="cards"></div>
+</section>
+<p class="foot">本表只核對官方當次公布的基金快照，非逐日 NAV 歷史回補。未經人工核對前不可用於買賣建議、含息報酬或六策略回測。</p>
+</main>
+<script>
+(function(){
+"use strict";
+const ENDPOINT="https://fiveline-nav-readonly.onrender.com/api/official-nav/match-report";
+const LABELS={
+ single_unverified_candidate:"唯一候選 · 未核准",
+ multiple_unverified_candidates:"多筆候選",
+ currency_mismatch:"幣別不符",
+ no_exact_candidate:"無完全一致",
+ incomplete_provider_coverage:"來源不完整",
+ separate_exchange_feed_or_identity_required:"另需行情來源"
+};
+const byId=x=>document.getElementById(x);
+let report=null;
+function el(tag,text,cls){const a=document.createElement(tag);if(text!=null)a.textContent=String(text);if(cls)a.className=cls;return a}
+function field(parent,key,value){
+ const block=el("div");block.append(el("small",key),el("b",value??"—"));parent.append(block);
+}
+function renderCard(item){
+ const card=el("article",null,"card");
+ const top=el("div",null,"card-top");
+ const names=el("div");names.append(el("h3",item.name),el("p","標的 "+item.id+" · "+item.currency,"summary"));
+ top.append(names,el("span",LABELS[item.status]||item.status,"badge"+(item.status==="single_unverified_candidate"?" possible":"")));
+ card.append(top);
+ const facts=el("div",null,"facts");
+ field(facts,"歷史 NAV 最後日期",item.nav_end);
+ field(facts,"官方候選數",item.candidate_count);
+ card.append(facts);
+ const details=el("details");
+ details.append(el("summary","查看原因及候選資料"));
+ details.append(el("p",item.reason,"summary"));
+ if(!item.candidates?.length){details.append(el("p","沒有可以列出的同名候選資料。","summary"))}
+ (item.candidates||[]).forEach(c=>{
+   const box=el("div",null,"candidate");
+   box.append(el("strong",c.name));
+   box.append(el("div","官方代碼："+(c.code||"—")+"｜ISIN："+(c.isin||"未提供")));
+   box.append(el("div","幣別："+(c.currency||"—")+"｜NAV："+(c.nav||"—")+"｜日期："+(c.nav_date||"—")));
+   details.append(box);
+ });
+ card.append(details);
+ return card;
+}
+function draw(){
+ if(!report)return;
+ const q=byId("query").value.trim().toLowerCase(),f=byId("filter").value;
+ const records=report.records.filter(x=>(f==="all"||x.status===f)&&(x.name.toLowerCase().includes(q)||String(x.id).includes(q)));
+ byId("count").textContent="符合條件："+records.length+" / "+report.legacy_count+" 檔";
+ const cards=byId("cards");cards.replaceChildren();
+ if(!records.length){cards.append(el("div","沒有符合條件的標的。","empty"));return}
+ const frag=document.createDocumentFragment();records.forEach(x=>frag.append(renderCard(x)));cards.append(frag);
+}
+async function load(){
+ byId("reload").disabled=true;byId("state").textContent="載入官方資料與 68 檔配對稽核中…";
+ try{
+  const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),75000);let resp;
+  try{resp=await fetch(ENDPOINT,{cache:"no-store",signal:ctl.signal,headers:{Accept:"application/json"}})}finally{clearTimeout(timer)}
+  if(!resp.ok)throw Error("HTTP "+resp.status);
+  const j=await resp.json();
+  if(j.mode!=="read_only_matching_review"||j.legacy_count!==68||j.reviewed_and_approved_count!==0||j.any_legacy_nav_overwritten!==false||!Array.isArray(j.records)||j.records.length!==68)throw Error("配對回應未通過保護檢查");
+  report=j;
+  const counts=j.candidate_status_counts||{};
+  const single=counts.single_unverified_candidate||0;
+  byId("total").textContent=68;
+  byId("candidates").textContent=single;
+  byId("need").textContent=68-single;
+  byId("approved").textContent="0";
+  byId("provider").textContent="已讀取："+(j.provider_success||[]).join("、")+"；暫不可用來源："+(Object.keys(j.provider_errors||{}).join("、")||"無")+"。";
+  byId("state").textContent="已完成候選篩選（所有候選均未核准）｜檢查時間："+(j.checked_at_utc||"—")+"。";
+  draw();
+ }catch(err){
+  report=null;
+  byId("state").textContent="無法取得正式來源對帳結果，請稍後重新檢查。";
+  byId("provider").textContent="若政府資料來源或免費 Render 服務暫時異常，舊五線譜仍維持歷史快照。";
+  byId("cards").replaceChildren(el("div","目前沒有已驗證的配對資料可顯示。","empty"));
+  byId("count").textContent="尚無對帳結果";
+ }finally{byId("reload").disabled=false}
+}
+byId("reload").addEventListener("click",load);
+byId("query").addEventListener("input",draw);
+byId("filter").addEventListener("change",draw);
+byId("reset").addEventListener("click",()=>{byId("query").value="";byId("filter").value="all";draw()});
+load();
+})();
+</script>
+</body></html>
