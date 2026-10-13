@@ -1,0 +1,1055 @@
+{
+  "schema": "fiveline_nav_backfill_preflight_v1",
+  "checked_at_utc": "2026-10-13T21:23:07.903048+00:00",
+  "source_quality_checked_at_utc": "2026-10-13T21:23:07.826096+00:00",
+  "legacy_total": 68,
+  "public_archive_candidate_count": 39,
+  "staging_eligible_count": 0,
+  "production_backfill_authorized": false,
+  "production_excel_changed": false,
+  "dividend_adjustments_applied": false,
+  "split_adjustments_applied": false,
+  "read_only_report": true,
+  "evidence_submitted": false,
+  "status_counts": {
+    "blocked": 68
+  },
+  "requirement_categories": [
+    "原 Excel 獨立識別／基金級別",
+    "ISIN 或境內受監管級別識別",
+    "級別與配息類型證據",
+    "完整歷史 NAV 與授權",
+    "官方交易／估值日期曆",
+    "逐單位現金配息證據",
+    "分割／合併事件紀錄",
+    "逐筆歷史連續性及含息績效對帳"
+  ],
+  "notes": [
+    "A public NAV observation is not a continuous historical price series.",
+    "Observed calendar spans are not counts of missing market valuation days.",
+    "Private reviewer evidence is checked only offline, never sent to the public Git branch.",
+    "Even passing private evidence makes a fund staging-eligible only; production backfill requires separate approval."
+  ],
+  "funds": [
+    {
+      "legacy_id": "1",
+      "legacy_name": "安聯台灣科技基金",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-13",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "2",
+      "legacy_name": "安聯收益成長基金-AM穩定月收類股",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "3",
+      "legacy_name": "台積電",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "4",
+      "legacy_name": "元大台灣50",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "5",
+      "legacy_name": "元大台灣50正2",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "6",
+      "legacy_name": "群益臺灣加權正2",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "7",
+      "legacy_name": "主動統一台股增長",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "8",
+      "legacy_name": "Vanguard Total World Stock Index Fund ETF Shares",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "9",
+      "legacy_name": "統一全球新科技基金(新台幣)",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "10",
+      "legacy_name": "瀚亞多重收益優化組合基金B類型-美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "11",
+      "legacy_name": "貝萊德世界科技基金 A10 美元(總報酬穩定配息)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "12",
+      "legacy_name": "Vanguard S&P 500 ETF",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "13",
+      "legacy_name": "東方匯理基金策略收益債券 A 美元(穩定月配息)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "14",
+      "legacy_name": "復華全球物聯網科技基金(台幣)",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "15",
+      "legacy_name": "復華台灣智能基金",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-13",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "16",
+      "legacy_name": "復華5至10年期投資等級債券指數基金(台幣)",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "17",
+      "legacy_name": "復華已開發國家300股票指數基金(台幣)",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "18",
+      "legacy_name": "東方匯理基金策略收益債券 A 南非幣避險(穩定月配息)",
+      "legacy_currency": "ZAR",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "19",
+      "legacy_name": "富達基金-全球優質債券基金(A股C月配息美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "20",
+      "legacy_name": "PIMCO多元收益債券基金-M級類別(穩定月收息股份)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "21",
+      "legacy_name": "景順環球高評級企業債券基金 E-穩定月配息股 美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "22",
+      "legacy_name": "施羅德環球基金系列-環球收益成長(美元)A-月配固定2",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "23",
+      "legacy_name": "施羅德環球基金系列-環球多元收益(美元)A-月配固定",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "24",
+      "legacy_name": "摩根投資基金-多重收益基金-JPM多重收益(美元對沖)-A股(穩定月配)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "25",
+      "legacy_name": "安聯收益成長基金-AMg7月收收益類股(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "26",
+      "legacy_name": "安聯收益成長基金-AM穩定月收類股(南非幣避險)",
+      "legacy_currency": "ZAR",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "27",
+      "legacy_name": "聯博-全球多元收益基金AD月配級別美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "28",
+      "legacy_name": "聯博-全球多元收益基金AD月配南非幣避險級別",
+      "legacy_currency": "ZAR",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "29",
+      "legacy_name": "聯博收益型基金之聯博多元資產收益組合基金-AI類型(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "30",
+      "legacy_name": "聯博美國傘型基金之聯博美國多重資產收益基金-AI類型(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "31",
+      "legacy_name": "富蘭克林華美多重資產收益基金-新台幣(分配型)",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "32",
+      "legacy_name": "聯博-美國成長基金AP(總報酬月配)級別美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "33",
+      "legacy_name": "貝萊德全球智慧數據股票入息基金 A6 美元(穩定配息)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "34",
+      "legacy_name": "富達基金-永續發展全球存股優勢基金(A股C月配息美元避險)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "35",
+      "legacy_name": "瀚亞環球智慧數據股票基金B配息(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "36",
+      "legacy_name": "安聯台灣大壩基金-A類型-新臺幣",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-13",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "37",
+      "legacy_name": "施羅德環球基金系列-環球黃金(美元)A-累積",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "38",
+      "legacy_name": "貝萊德世界黃金基金 A10美元(總報酬穩定配息)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "39",
+      "legacy_name": "瀚亞中國A股基金-美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "40",
+      "legacy_name": "瀚亞投資-日本動力股票基金A(美元避險)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "41",
+      "legacy_name": "統一奔騰基金",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-13",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "42",
+      "legacy_name": "路博邁5G股票基金T累積(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "43",
+      "legacy_name": "百達-生物科技-R美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "44",
+      "legacy_name": "百達-Quest全球永續股票-R美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "45",
+      "legacy_name": "富達基金-全球入息基金(A股累計美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "46",
+      "legacy_name": "瀚亞印度基金A類型-美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "47",
+      "legacy_name": "施羅德環球基金系列-拉丁美洲(美元)A1-累積",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "48",
+      "legacy_name": "貝萊德世界黃金基金 A2 美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "49",
+      "legacy_name": "貝萊德世界礦業基金 A2 美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "50",
+      "legacy_name": "摩根基金-環球天然資源基金-JPM環球天然資源(美元)-A股(累計)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "51",
+      "legacy_name": "施羅德環球基金系列-新興市場優勢(美元)A1-累積",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "52",
+      "legacy_name": "安聯網路資安趨勢基金-AT累積類股(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-27",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-09",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "53",
+      "legacy_name": "百達-數位科技-R美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "54",
+      "legacy_name": "貝萊德世界科技基金 A2 美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "55",
+      "legacy_name": "摩根基金-美國科技基金-JPM美國科技(美元)-A股(累計)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "56",
+      "legacy_name": "CAPITAL ICE ESG 20+ Year BBB Us Corporate ETF",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "57",
+      "legacy_name": "Space Exploration Technologies Corp. - Class A Common Stock",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "58",
+      "legacy_name": "KGI SECURITIES INVT TST CO LTD",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "59",
+      "legacy_name": "Cathay Taiwan High Dividend Momentum Active ETF",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "60",
+      "legacy_name": "JPMorgan (Taiwan) Taiwan Equity High Income Active ETF",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "61",
+      "legacy_name": "復華全球平衡基金-新臺幣",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "62",
+      "legacy_name": "聯博–美國價值基金A級別美元",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-28",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "63",
+      "legacy_name": "Vanguard Morningstar Total Stock Market ETF",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "64",
+      "legacy_name": "Invesco QQQ Trust, Series 1",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "65",
+      "legacy_name": "State Street SPDR S&P 500 ETF Trust",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": null,
+      "official_nav_last_date": null,
+      "distinct_official_nav_dates": 0,
+      "status": "blocked",
+      "blockers": [
+        "NO_OFFICIAL_CANDIDATE",
+        "OFFICIAL_FEED_OR_MARKET_SOURCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "66",
+      "legacy_name": "復華全球債券組合基金",
+      "legacy_currency": "TWD",
+      "legacy_nav_end": "2026-08-31",
+      "official_source": "sitca_domestic_daily",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 1,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "67",
+      "legacy_name": "先機環球動態債券基金L類收益股(美元)",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    },
+    {
+      "legacy_id": "68",
+      "legacy_name": "施羅德環球基金系列-環球計量精選價值(美元)A-累積",
+      "legacy_currency": "USD",
+      "legacy_nav_end": "2026-09-01",
+      "official_source": "tdcc_offshore_global",
+      "official_nav_last_date": "2026-10-12",
+      "distinct_official_nav_dates": 2,
+      "status": "blocked",
+      "blockers": [
+        "INDEPENDENT_EXCEL_CLASS_EVIDENCE_REQUIRED",
+        "LICENSED_HISTORY_AND_CASH_EVENT_EVIDENCE_REQUIRED"
+      ],
+      "eligible_for_production_backfill": false
+    }
+  ]
+}
