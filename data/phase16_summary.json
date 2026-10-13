@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "report_type": "snapshot_dividend_nav_date_coverage_summary",
+  "source": "Existing Excel-derived snapshot embedded in the GitHub demonstration pages; not real-time",
+  "source_details": {
+    "repository": "fullseye01-a11y/fiveline-demo",
+    "nav_table": "nav_quality.html",
+    "distribution_audit": "distribution_audit.html"
+  },
+  "snapshot_latest_nav_date": "2026-09-01",
+  "generated_from_static_snapshot_on": "2026-10-13",
+  "instrument_count": 68,
+  "total_dividend_rows": 2456,
+  "categories": {
+    "date_matched": 1325,
+    "missing_nav_inside_range": 15,
+    "dividend_before_nav_start": 1114,
+    "dividend_after_nav_end": 2,
+    "instrument_without_nav": 0
+  },
+  "matched_count_plus_missing_inside_range": 1340,
+  "notes": [
+    "Counts assess dividend-date coverage relative to each instrument's NAV date range. A count of zero early dividends does not establish daily NAV completeness.",
+    "This JSON does not include original dividend row-level audit records; those cannot be reconstructed from aggregate totals.",
+    "Dividends, splits, fund distribution classes, and adjusted NAV/total return are not verified. Do not treat these records as investment performance.",
+    "Automatic NAV refresh is not enabled; verify instrument identity, share class and currency before importing new market data."
+  ]
+}
