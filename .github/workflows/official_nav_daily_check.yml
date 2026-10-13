@@ -1,0 +1,59 @@
+name: Scheduled official fund NAV source refresh check
+on:
+  schedule:
+    # 21:30 Asia/Taipei on Monday-Friday. GitHub scheduler may run late.
+    - cron: "30 13 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: official-fund-nav-daily-source-check
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Wake backend and validate government NAV latest snapshots
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import urlopen,Request
+          from datetime import datetime,timezone
+          from pathlib import Path
+
+          base='https://fiveline-nav-readonly.onrender.com'
+          req=Request(base+'/api/official-nav/status',headers={'Accept':'application/json'})
+          with urlopen(req,timeout=110) as resp:
+              assert resp.status==200
+              payload=json.load(resp)
+
+          assert payload.get('mode')=='government_open_data_latest_only'
+          providers=payload.get('providers',[])
+          expected={'sitca_domestic_daily','tdcc_offshore_global'}
+          assert {p.get('source') for p in providers}==expected
+          lines=[
+              '## 官方基金 NAV 來源定時檢查',
+              '',
+              '此工作僅更新後端的唯讀來源快取，不改動五線譜歷史資料。',
+              '',
+              '| 來源 | 結果 | 來源最新 NAV 日期 | 筆數 |',
+              '|---|---|---|---:|'
+          ]
+          ok=True
+          for p in providers:
+              valid=p.get('available') and p.get('count',0)>1000 and p.get('latest_nav_date')
+              ok=ok and bool(valid)
+              lines.append(f"| {p.get('source')} | {'可用' if valid else '異常'} | {p.get('latest_nav_date','—')} | {p.get('count',0)} |")
+          lines.extend(['','驗證時間（UTC）：'+datetime.now(timezone.utc).isoformat(),
+                        '資料原始來源：政府資料開放平台；未驗證與既有 68 檔基金級別、幣別、配息及分割還原之對應。'])
+          summary='\n'.join(lines)+'\n'
+          print(summary)
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write(summary)
+          if not ok:
+              raise SystemExit('At least one government NAV data source is unavailable; do not silently treat old NAV as refreshed.')
+          PY

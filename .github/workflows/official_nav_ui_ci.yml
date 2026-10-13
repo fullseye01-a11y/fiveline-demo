@@ -1,0 +1,58 @@
+name: Verify official NAV search and public endpoint
+on:
+  push:
+    branches:
+      - feature/official-nav-search-ui-20261013
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -p test_official_nav_page.py -v
+      - name: Verify inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          code=Path('official_nav_search.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script>([\s\S]*?)</script>',code)
+          assert len(scripts)==1
+          Path('/tmp/official_nav_search.js').write_text(scripts[0],encoding='utf-8')
+          PY
+          node --check /tmp/official_nav_search.js
+  api-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live Render government NAV backend (no writes)
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import urlopen
+          from urllib.parse import quote
+          base="https://fiveline-nav-readonly.onrender.com"
+          def get(path):
+              with urlopen(base+path,timeout=110) as r:
+                  assert r.status==200, r.status
+                  return json.loads(r.read(1_000_000))
+          status=get('/api/official-nav/status')
+          assert status.get('mode')=="government_open_data_latest_only"
+          providers=status['providers']
+          print(json.dumps({"provider_status":providers},ensure_ascii=False))
+          assert len(providers)==2
+          available=[x for x in providers if x.get('available')]
+          assert len(available)>=1, "At least one verified official CSV provider is required for the initial read-only UI"
+          assert all(x['count']>1000 for x in available)
+          for source,term in [(x['source'],'基金') for x in available]:
+              q=quote(term,safe='')
+              data=get('/api/official-nav/search?source='+source+'&q='+q)
+              print(source,json.dumps({"matches":data.get('total_matches'),"nav_date":data.get('source_latest_nav_date'),"examples":len(data.get('records',[]))},ensure_ascii=False))
+              assert data.get('matched_to_legacy_fiveline') is False
+              assert data['total_matches']>20
+              assert len(data.get('records',[]))<=30
+          PY
