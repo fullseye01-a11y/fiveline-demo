@@ -39,6 +39,11 @@ def pilot_worker() -> None:
     STATE["started_at"] = datetime.now(timezone.utc).isoformat()
     db = Path(os.getenv("PILOT_DB_PATH", "/tmp/fiveline-private-history/history_pilot.sqlite3"))
     try:
+        # Refuse an ephemeral-only fetch if the durable database is not connected.
+        from .storage_config import configured_dsn
+        durable_dsn = configured_dsn()
+        if durable_dsn is None:
+            raise RuntimeError("Durable storage disabled; refusing ephemeral-only import")
         result = run(
             date=os.getenv("PILOT_DATE", "2026-10-13"),
             db_path=db,
@@ -47,15 +52,16 @@ def pilot_worker() -> None:
             legacy_unit=None,  # DO NOT guess old TPEx aaData trading-volume unit.
         )
         report = summarize(db)
-        # Persist *before* reporting full completion. SQLite remains only a spool.
-        if os.environ.get("DATABASE_URL"):
-            from .postgres_store import persist_sqlite, private_summary
-            pg_sync = persist_sqlite(db)
-            pg_counts = private_summary()
-            print("HISTORY_PILOT_POSTGRES " + json.dumps(
-                {"sync": pg_sync, "durable_counts": pg_counts}, ensure_ascii=False), flush=True)
-        else:
-            print("HISTORY_PILOT_POSTGRES_NOT_CONNECTED; SQLite is ephemeral", flush=True)
+        # Archive first, confirm totals from Neon. SQLite remains only a spool.
+        from .postgres_store import persist_sqlite, private_summary
+        pg_sync = persist_sqlite(db, dsn=durable_dsn)
+        pg_counts = private_summary(dsn=durable_dsn)
+        print("HISTORY_PILOT_NEON " + json.dumps(
+            {"sync": pg_sync, "durable_counts": pg_counts}, ensure_ascii=False), flush=True)
+        if os.getenv("PILOT_R2_BACKUP_ON_SYNC", "0") == "1":
+            from .r2_backup import upload_and_verify
+            result_backup = upload_and_verify(durable_dsn)
+            print("HISTORY_PILOT_R2_BACKUP " + json.dumps(result_backup, ensure_ascii=False), flush=True)
         STATE["phase"] = "finished"
         print("HISTORY_PILOT_RESULT " + json.dumps(scrub_status(result), ensure_ascii=False), flush=True)
         print("HISTORY_PILOT_QUALITY " + json.dumps({
@@ -72,7 +78,7 @@ def pilot_worker() -> None:
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
-            payload = b'{"service":"fiveline-history-pilot","ok":true,"storage":"ephemeral","public_market_data":false}\n'
+            payload = b'{"service":"fiveline-history-pilot","ok":true,"data_store":"not_exposed","public_market_data":false}\n'
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store")
