@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#102f3c">
+<title>五線譜智能財富平台｜顧問與客戶整合測試版</title>
+<link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="五線譜首頁"><span class="brand-symbol">五</span><span><strong>五線譜智能財富</strong><small>Adviser · Client Platform</small></span></a>
+    <div class="nav-label">主選單</div>
+    <nav class="nav" aria-label="系統主選單">
+      <button class="nav-btn selected" data-panel="overview"><span class="nav-symbol">◈</span> 工作總覽</button>
+      <button class="nav-btn" data-panel="risk"><span class="nav-symbol">▤</span> RR 風險評估</button>
+      <button class="nav-btn" data-panel="allocation"><span class="nav-symbol">◫</span> 智能資產配置</button>
+      <button class="nav-btn" data-panel="retirement"><span class="nav-symbol">◷</span> 退休財富試算</button>
+      <button class="nav-btn" data-panel="data"><span class="nav-symbol">▥</span> 五線譜與資料中心</button>
+    </nav>
+    <div class="sidebar-foot"><span class="dot"></span>獨立測試環境<br><small>無客戶登入 · 不儲存輸入</small></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div><div class="eyebrow">WEALTH PLANNING WORKSPACE</div><div class="top-title">顧問工作台 <span class="version">Alpha 0.1</span></div></div>
+      <span class="chip">純示範資料 · 非正式客戶站</span>
+    </header>
+    <main id="main">
+      <div class="alert" role="note"><strong>重要｜本網站仍為功能測試版</strong><span>所有顯示資料與模型權重均為示例。尚未連接登入、真實客戶資料、即時 NAV 或完整 Excel 回測。請勿輸入真實姓名、帳號或其他個人資料。</span></div>
+
+      <section id="overview" class="panel active">
+        <div class="page-heading"><div><div class="eyebrow green">OVERVIEW</div><h1>讓投資建議，有完整的依據。</h1><p>從風險評估、資產配置到退休現金流，先完成同一套可互相連動的示範流程。</p></div><span class="stage">第一階段整合預覽</span></div>
+        <div class="stats-grid">
+          <div class="stat"><span>風險評估</span><strong id="summary-rr">RR3</strong><small>研究版規則 · 尚非正式適合度</small></div>
+          <div class="stat"><span>示範投資總額</span><strong id="summary-assets">NT$500,000</strong><small>不連接任何客戶帳戶</small></div>
+          <div class="stat"><span>商品與 NAV 即時覆蓋</span><strong>未啟用</strong><small>全市場匯入仍在建置</small></div>
+        </div>
+        <div class="two-col">
+          <article class="surface"><div class="section-top"><div><div class="eyebrow">QUICK START</div><h2>從風險問卷開始</h2></div><span class="bubble">01</span></div><p>用六項示範問卷產出 RR1～RR5，將風險承受能力與承擔意願分開評量。</p><button class="primary" data-goto="risk">開始評估 <span>→</span></button></article>
+          <article class="surface"><div class="section-top"><div><div class="eyebrow">PORTFOLIO</div><h2>漸進調整 vs 立即最佳化</h2></div><span class="bubble">02</span></div><p>比較新增資金應優先補足的類別，以及立即調整到目標權重需要買賣多少。</p><button class="ghost" data-goto="allocation">開啟配置試算 <span>→</span></button></article>
+        </div>
+        <article class="surface"><div class="section-top"><div><h2>平台建置狀態</h2><p class="muted">清楚區分已可試算與正式上線仍需完成的功能。</p></div></div>
+          <div class="milestones"><div><span class="done"></span><strong>RR 問卷</strong><small>可試算 · 暫定演算法</small></div><div><span class="done"></span><strong>資產配置</strong><small>可試算 · 示範曝險</small></div><div><span class="done"></span><strong>退休情境</strong><small>可試算 · 假設值</small></div><div><span class="pending"></span><strong>正式帳戶隔離</strong><small>待資料庫與越權測試</small></div><div><span class="pending"></span><strong>基金全市場行情</strong><small>待 NAV/配息/授權</small></div><div><span class="pending"></span><strong>Excel 27 表對帳</strong><small>逐公式／VBA 移植中</small></div></div>
+        </article>
+      </section>
+
+      <section id="risk" class="panel">
+        <div class="page-heading"><div><div class="eyebrow green">RISK PROFILE</div><h1>RR 風險評估</h1><p>分別衡量資金承擔能力與波動承受意願；以較低級別作為示範分級。</p></div></div>
+        <div class="two-col narrow-left"><article class="surface"><h2>六項風險評量</h2>
+        <form id="risk-form" class="formstack">
+          <label>預計投資年期<select name="horizon"><option value="0">1 年內</option><option value="1">1–3 年</option><option value="2" selected>3–7 年</option><option value="3">7 年以上</option></select></label>
+          <label>緊急預備金<select name="emergency_fund"><option value="0">沒有</option><option value="1">少於 3 個月</option><option value="2" selected>3–6 個月</option><option value="3">6 個月以上</option></select></label>
+          <label>收入穩定性<select name="income_stability"><option value="0">不穩定</option><option value="1">波動較大</option><option value="2" selected>大致穩定</option><option value="3">高度穩定</option></select></label>
+          <label>可接受最大帳面虧損<select name="loss_tolerance"><option value="0">不能接受</option><option value="1">約 5%</option><option value="2" selected>約 10–15%</option><option value="3">約 20–25%</option><option value="4">30% 以上</option></select></label>
+          <label>市場下跌時的行動<select name="reaction"><option value="0">立即賣出</option><option value="1">減碼一部分</option><option value="2" selected>維持持有</option><option value="3">有紀律地增加配置</option></select></label>
+          <label>投資知識<select name="knowledge"><option value="0">剛開始學習</option><option value="1">瞭解基本概念</option><option value="2" selected>理解基金與 ETF</option><option value="3">可評估複雜風險</option></select></label>
+          <button class="primary" type="submit">計算示範 RR 評級 <span>→</span></button>
+        </form></article>
+        <article class="surface result-card"><div class="eyebrow">ASSESSED PROFILE</div><div class="rr-ring"><span id="risk-tier">RR3</span><small>暫定風險級別</small></div>
+          <div class="metric"><span>資金承擔能力</span><strong id="risk-capacity">—</strong></div>
+          <div class="track"><span id="capacity-bar"></span></div>
+          <div class="metric"><span>心理風險意願</span><strong id="risk-willingness">—</strong></div>
+          <div class="track"><span id="willingness-bar"></span></div>
+          <div id="risk-explain" class="soft-note">填寫示範問卷後顯示結果，不會保存輸入。</div>
+          <button class="ghost" data-goto="allocation">使用此 RR 試算配置 <span>→</span></button>
+        </article></div>
+      </section>
+
+      <section id="allocation" class="panel">
+        <div class="page-heading"><div><div class="eyebrow green">ASSET ALLOCATION</div><h1>智能資產配置</h1><p>同時呈現台灣、全球、債券、現金與科技曝險；科技屬股票子集合，不重複加總。</p></div></div>
+        <div class="two-col narrow-left">
+          <article class="surface"><h2>示範現有持倉</h2><p class="muted">可以調整金額，請勿輸入客戶的真實持倉。</p><form id="allocation-form" class="formstack">
+            <div id="position-fields" class="positions"></div>
+            <label>新增可投資金額（NT$）<input type="number" name="new_money" value="100000" min="0" max="100000000" step="1000"></label>
+            <label>風險級別<select name="rr" id="allocation-rr"><option value="1">RR1 保守</option><option value="2">RR2 穩健</option><option value="3" selected>RR3 平衡</option><option value="4">RR4 積極</option><option value="5">RR5 成長</option></select></label>
+            <button class="primary" type="submit">產生兩種配置方案 <span>→</span></button></form>
+          </article>
+          <article class="surface"><div class="section-top"><h2>配置結構</h2><span class="tag">示範比例</span></div>
+            <div id="allocation-breakdown" class="bars"><p class="muted">試算後顯示權重</p></div>
+            <div class="exposure"><div><span>台灣股票</span><strong id="exposure-tw">—</strong></div><div><span>全球股票</span><strong id="exposure-global">—</strong></div><div><span>科技曝險</span><strong id="exposure-tech">—</strong></div></div>
+          </article>
+        </div>
+        <div class="two-col results">
+          <article class="surface"><span class="eyebrow">GRADUAL</span><h2>漸進調整｜只用新增資金</h2><p>不賣出原持倉，優先補足低於目標的類別。</p><div id="gradual-result" class="trade-list"><p class="muted">請先執行配置試算。</p></div></article>
+          <article class="surface"><span class="eyebrow">REBALANCE</span><h2>立即最佳化｜估算買賣差額</h2><p>使總資產接近示範權重；負值表示估計賣出，不含費用與稅。</p><div id="rebalance-result" class="trade-list"><p class="muted">請先執行配置試算。</p></div></article>
+        </div>
+        <p class="muted footnote">目前沒有穿透式真實基金持股與最新 NAV，不能將示範科技重疊比例當作實際投組分析。</p>
+      </section>
+
+      <section id="retirement" class="panel">
+        <div class="page-heading"><div><div class="eyebrow green">RETIREMENT</div><h1>退休與現金流試算</h1><p>保守、基準、樂觀三種假設，皆扣除年費率並計入通膨影響。</p></div></div>
+        <div class="two-col narrow-left">
+        <article class="surface"><h2>試算條件</h2><form id="retirement-form" class="formstack">
+          <label>目前投資資產（NT$）<input type="number" name="initial" value="500000" min="0" step="10000"></label>
+          <label>每月投入（NT$）<input type="number" name="monthly_contribution" value="12000" min="0" step="1000"></label>
+          <label>每月提領（NT$）<input type="number" name="monthly_withdrawal" value="0" min="0" step="1000"></label>
+          <label>試算年期<select name="years"><option value="5">5 年</option><option value="10" selected>10 年</option><option value="15">15 年</option><option value="20">20 年</option><option value="30">30 年</option></select></label>
+          <label>目標資產（NT$）<input type="number" name="target" value="12000000" min="0" step="100000"></label>
+          <label>假設通膨率（%／年）<input type="number" name="inflation_pct" value="2" min="0" max="20" step=".5"></label>
+          <label>假設費率（%／年）<input type="number" name="annual_fee_pct" value=".6" min="0" max="10" step=".1"></label>
+          <button class="primary" type="submit">產生三情境試算 <span>→</span></button></form></article>
+        <article class="surface"><h2>預估期末資產</h2><p class="muted">假設名目年報酬分別 -1%／3%／6%，不是預測，也不是實際回測。</p>
+          <div id="retirement-results" class="scenarios"><p class="muted">請先執行退休試算。</p></div>
+          <div class="soft-note">所有數值皆在當次請求中計算，未儲存至後端。</div>
+        </article></div>
+      </section>
+
+      <section id="data" class="panel">
+        <div class="page-heading"><div><div class="eyebrow green">RESEARCH DATA</div><h1>五線譜與資料中心</h1><p>沿用已驗證的示範網站，同時明確顯示正式資料整合進度。</p></div></div>
+        <div class="stats-grid"><div class="stat"><span>舊版 Excel</span><strong>27 張</strong><small>逐項功能對照中</small></div><div class="stat"><span>官方歷史行情試跑</span><strong>66 筆</strong><small>四檔標的 · 非全市場</small></div><div class="stat"><span>正式客戶登入</span><strong>未開放</strong><small>需要後端隔離驗收</small></div></div>
+        <div class="two-col">
+          <article class="surface"><h2>五線譜分析（現有原型）</h2><p>既有展示站提供的 SD 通道與分析，尚未完成 Excel 全項等值驗證。</p><a class="primary link-btn" href="https://fullseye01-a11y.github.io/fiveline-demo/five_line_responsive.html" target="_blank" rel="noopener noreferrer">開啟五線譜展示 <span>↗</span></a></article>
+          <article class="surface"><h2>資料與完整功能移植</h2><p>基金 NAV、配息、全球配置、歷史回測、RR 商品風險及全部基金名錄正在獨立開發，正式客戶使用前需逐項驗收。</p><a class="ghost link-btn" href="https://github.com/fullseye01-a11y/fiveline-demo/tree/feature/adviser-client-platform-v1" target="_blank" rel="noopener noreferrer">查看開發分支 <span>↗</span></a></article>
+        </div>
+      </section>
+    </main>
+    <footer>五線譜智能財富平台 · 顧問與客戶整合測試版 · 沒有客戶資料庫 · 非投資建議</footer>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+</body></html>
