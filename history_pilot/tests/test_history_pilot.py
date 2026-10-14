@@ -71,5 +71,42 @@ class TestHistoryPilot(unittest.TestCase):
         self.assertEqual(result["pending"], 1)
 
 
+
+class TestExtendedHistoryPilot(unittest.TestCase):
+    def test_twse_future_day_is_excluded(self):
+        doc = {"stat": "OK", "fields": ["日期", "成交股數", "成交金額", "開盤價", "最高價", "最低價", "收盤價", "成交筆數"],
+               "data": [["115/10/13", "100", "10,000", "100", "102", "99", "100", "8"],
+                        ["115/10/14", "100", "10,000", "100", "102", "99", "100", "8"]]}
+        bars, errors = parse_twse(doc, "2330", "2026-10", as_of="2026-10-13")
+        self.assertEqual(errors, [])
+        self.assertEqual([r["day"] for r in bars], ["2026-10-13"])
+
+    def test_precision_changes_do_not_forge_revision(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open_db(Path(d) / "sample.sqlite3") as conn:
+                row1 = make_bar("TWSE", "2330", "115/10/13", "100.00", "102.00", "99", "100", "100", "10,000")
+                row2 = make_bar("TWSE", "2330", "115/10/13", "100", "102", "99.0", "100.0", "100", "10000")
+                stage_batch(conn, "TWSE", "a", [row1], [])
+                self.assertEqual(stage_batch(conn, "TWSE", "a", [row2], [])["unchanged"], 1)
+
+    def test_turnover_unit_outlier_is_held(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open_db(Path(d) / "sample.sqlite3") as conn:
+                row = make_bar("TPEX", "8069", "115/10/13", "100", "103", "99", "101", "1000", "100000000")
+                self.assertEqual(stage_batch(conn, "TPEX", "a", [row], [])["pending"], 1)
+                self.assertIn("value_volume", conn.execute("SELECT review_reason FROM pending_review").fetchone()[0])
+
+    def test_quality_report_is_read_only(self):
+        from quality_report import summarize
+        with tempfile.TemporaryDirectory() as d:
+            file = Path(d) / "sample.sqlite3"
+            with open_db(file) as conn:
+                row = make_bar("TWSE", "2330", "115/10/13", "100", "102", "99", "100", "100", "10,000")
+                stage_batch(conn, "TWSE", "a", [row], [])
+            report = summarize(file)
+            self.assertEqual(report["status"], "LOCAL_CHECKS_PASS")
+            self.assertEqual(report["counts"]["approved_bars"], 1)
+            self.assertNotIn("open", report["symbols"][0])
+
 if __name__ == "__main__":
     unittest.main()
