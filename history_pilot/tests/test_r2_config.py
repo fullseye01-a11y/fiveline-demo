@@ -2,8 +2,8 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from r2_backup import validate_endpoint, r2_config
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from history_pilot.r2_backup import validate_endpoint, r2_config
 
 class TestR2Config(unittest.TestCase):
     def test_expected_endpoint(self):
