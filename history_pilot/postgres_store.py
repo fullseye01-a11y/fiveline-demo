@@ -71,7 +71,11 @@ def persist_sqlite(db_path: Path, dsn: str | None = None) -> dict:
     try:
         with psycopg.connect(dsn, connect_timeout=15, application_name='fiveline_history_pilot') as conn:
             with conn.cursor() as cur:
-                cur.execute(SCHEMA)
+                # psycopg uses prepared statements; execute one DDL per call.
+                # Never submit several SQL commands as a single prepared query.
+                for ddl in SCHEMA.split(";"):
+                    if ddl.strip():
+                        cur.execute(ddl.strip())
                 rows = source.execute('SELECT * FROM bar_versions ORDER BY market,code,day,version')
                 for b in rows:
                     counts['incoming'] += 1
