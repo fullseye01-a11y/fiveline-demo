@@ -74,11 +74,15 @@ def persist_sqlite(db_path: Path, dsn: str | None = None) -> dict:
                     cur.execute('SELECT pg_advisory_xact_lock(hashtext(%s))', ('|'.join(key),))
                     cur.execute("""SELECT version,fingerprint FROM history_stage.bar_versions
                       WHERE market=%s AND code=%s AND day=%s
-                      ORDER BY version DESC LIMIT 1""", key)
-                    last=cur.fetchone()
-                    if last is not None and last[1]==b['fingerprint']:
+                      ORDER BY version DESC""", key)
+                    existing=cur.fetchall()
+                    # Replays may contain multiple locally staged revisions.
+                    # Compare against ALL previously archived fingerprints, not
+                    # only the newest version, to avoid endless fake revisions.
+                    if any(old_fp == b['fingerprint'] for _, old_fp in existing):
                         counts['unchanged'] += 1
                         continue
+                    last=existing[0] if existing else None
                     approved, reason=plan_revision(last, b['approved']==1, b['review_reason'])
                     if last is None:
                         cur.execute("""SELECT close FROM history_stage.approved_bars
