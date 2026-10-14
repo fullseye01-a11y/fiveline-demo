@@ -1,0 +1,110 @@
+"""Read-only adviser/client preview with synthetic data and NO user accounts.
+
+Do not enable personal-data collection on this service. Production sign-in
+requires separately deployed, audited authentication and RLS-backed storage.
+"""
+from __future__ import annotations
+import json
+import os
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import urlsplit
+
+from .engine import SAMPLE_POSITIONS, allocation_plan, risk_assessment, retirement_projection
+
+STATIC = Path(__file__).resolve().parent / "static"
+ROUTES = {"/": ("index.html", "text/html; charset=utf-8"),
+          "/app.js": ("app.js", "application/javascript; charset=utf-8"),
+          "/style.css": ("style.css", "text/css; charset=utf-8")}
+MAX_BODY = 16_384
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "FivelinePreview"
+    sys_version = ""
+    
+    def _headers(self, status=200, content_type="application/json; charset=utf-8", length=0):
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(length))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        self.send_header("Content-Security-Policy",
+                         "default-src 'none'; script-src 'self'; style-src 'self'; "
+                         "img-src 'self' data:; connect-src 'self'; base-uri 'none'; "
+                         "frame-ancestors 'none'; form-action 'self'")
+        self.end_headers()
+
+    def _json(self, obj, status=200):
+        data = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        self._headers(status, length=len(data))
+        self.wfile.write(data)
+
+    def do_GET(self):
+        path = urlsplit(self.path).path
+        if path == "/health":
+            return self._json({"ok": True, "service": "fiveline-adviser-preview",
+                               "data_mode": "synthetic_only", "client_records": False})
+        if path == "/api/demo":
+            return self._json({"positions": SAMPLE_POSITIONS, "synthetic": True,
+                               "login_available": False, "market_data_live": False,
+                               "modules": {"rr": "provisional", "allocation": "provisional",
+                                           "retirement": "provisional", "five_line": "existing_demo_only",
+                                           "clients": "not_enabled"}})
+        if path in ROUTES:
+            filename, mime = ROUTES[path]
+            content = (STATIC / filename).read_bytes()
+            self._headers(200, mime, len(content))
+            self.wfile.write(content)
+            return
+        if path.startswith("/api/clients") or path.startswith("/api/portfolio"):
+            return self._json({"error": "未開放：需要真實登入及租戶資料庫驗收。"}, 403)
+        return self._json({"error": "頁面不存在"}, 404)
+
+    def do_POST(self):
+        path = urlsplit(self.path).path
+        if path.startswith("/api/clients") or path.startswith("/api/portfolio") or path.startswith("/api/auth"):
+            return self._json({"error": "此展示站不收集真實客戶資料，也沒有登入功能。"}, 403)
+        handlers = {"/api/risk": risk_assessment,
+                    "/api/allocation": allocation_plan,
+                    "/api/retirement": retirement_projection}
+        if path not in handlers:
+            return self._json({"error": "未開放的 API"}, 404)
+        if not self.headers.get("Content-Type", "").split(";")[0].strip().lower() == "application/json":
+            return self._json({"error": "請使用 JSON"}, 415)
+        try:
+            size = int(self.headers.get("Content-Length", "0"))
+            if size < 1 or size > MAX_BODY:
+                return self._json({"error": "輸入資料大小不符"}, 413)
+            payload = json.loads(self.rfile.read(size))
+            if not isinstance(payload, dict):
+                return self._json({"error": "JSON 必須是物件"}, 400)
+            return self._json(handlers[path](payload))
+        except (ValueError, TypeError, KeyError, OverflowError) as exc:
+            return self._json({"error": str(exc)[:140]}, 400)
+        except Exception:
+            return self._json({"error": "試算失敗，請確認示範輸入格式。"}, 500)
+
+    def log_message(self, *_args):
+        # Do not log entered amounts or encoded URL parameters.
+        pass
+
+
+def main():
+    # Dedicated independent free Render preview. No Neon URL, account secret,
+    # customer identifiers or private backend endpoints at this stage.
+    port = int(os.getenv("PORT", "10000"))
+    srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    print("ADVISER_PREVIEW_READY synthetic_only=true login=false", flush=True)
+    try:
+        srv.serve_forever()
+    finally:
+        srv.server_close()
+
+
+if __name__ == "__main__":
+    main()
