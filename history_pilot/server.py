@@ -122,6 +122,39 @@ def coverage_audit_worker() -> None:
         print("HISTORY_COVERAGE_AUDIT_FAILED " + type(exc).__name__,flush=True)
 
 
+
+def twse_calendar_probe_worker() -> None:
+    """Single opt-in official annual calendar GET and Neon date-only audit."""
+    STATE["phase"] = "twse_calendar_running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        from .storage_config import configured_dsn
+        from .twse_official_calendar_probe import run_probe
+        dsn = configured_dsn()
+        if not dsn:
+            raise RuntimeError("Durable Neon must be configured before calendar probe")
+        report = run_probe(dsn)
+        STATE["phase"] = "twse_calendar_finished"
+        # Never log raw prices, volume, full Neon URI, or entire official body.
+        print("HISTORY_TWSE_OFFICIAL_CALENDAR " + json.dumps({
+            "schema": report["schema"],
+            "year":report["year"],
+            "official_special_event_rows":report["official_special_event_rows"],
+            "planned_sessions_per_instrument":report["total_planned_sessions_per_instrument"],
+            "symbols":report["symbol_count"],
+            "planned_missing_sessions":report["missing_planned_session_count"],
+            "quotes_on_closed_days":report["unexpected_closed_session_quotes"],
+            "official_source_sha256":report["source_payload_sha256"],
+            "actual_sessions_independently_verified":report["actual_daily_sessions_verified"],
+            "complete_historical_coverage_verified":report["complete_historical_coverage_verified"],
+            "neon_mutated":report["neon_database_mutated"],
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        STATE["phase"] = "twse_calendar_error"
+        print("HISTORY_TWSE_CALENDAR_FAILED " + type(exc).__name__,flush=True)
+
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -150,14 +183,17 @@ def main():
     backfill = os.getenv("PILOT_BACKFILL_ON_BOOT", "0") == "1"
     initial = os.getenv("PILOT_FETCH_ON_BOOT", "0") == "1"
     coverage = os.getenv("PILOT_COVERAGE_AUDIT_ON_BOOT", "0") == "1"
-    if sum((backfill, initial, coverage)) > 1:
-        raise RuntimeError("Only one of importer, backfill, or coverage audit may run")
+    official_calendar = os.getenv("PILOT_TWSE_CALENDAR_PROBE_ON_BOOT", "0") == "1"
+    if sum((backfill, initial, coverage, official_calendar)) > 1:
+        raise RuntimeError("Only one importer/backfill/coverage/calendar probe may run")
     if backfill:
         threading.Thread(target=backfill_worker, daemon=True, name="backfill-worker").start()
     elif initial:
         threading.Thread(target=pilot_worker, daemon=True, name="pilot-worker").start()
     elif coverage:
         threading.Thread(target=coverage_audit_worker, daemon=True, name="coverage-audit").start()
+    elif official_calendar:
+        threading.Thread(target=twse_calendar_probe_worker, daemon=True, name="twse-calendar-probe").start()
     else:
         print("HISTORY_IMPORTS_DISABLED", flush=True)
     port = int(os.environ.get("PORT", "10000"))
