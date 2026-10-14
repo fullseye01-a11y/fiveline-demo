@@ -12,6 +12,7 @@ Safeguards:
 from __future__ import annotations
 
 import datetime as dt
+from contextlib import closing
 import json
 import tempfile
 import time
@@ -89,7 +90,7 @@ def run_backfill(*, connect_to_neon: bool = True, delay: float = 1.2) -> dict:
     batches = []
     with tempfile.TemporaryDirectory(prefix="fiveline-private-small-backfill-") as folder:
         db_path = Path(folder) / "backfill.sqlite3"
-        with open_db(db_path) as con:
+        with closing(open_db(db_path)) as con:
             for index, request in enumerate(plan):
                 if index:
                     time.sleep(delay)
