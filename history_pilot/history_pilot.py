@@ -45,7 +45,7 @@ def decimal_string(value) -> str:
         raise ValueError("non-numeric price") from exc
     if not dec.is_finite() or dec <= 0:
         raise ValueError("non-positive price")
-    return format(dec, "f")
+    return format(dec.normalize(), "f")
 
 
 def whole_number(value) -> int:
@@ -89,7 +89,7 @@ def make_bar(market, code, day, op, hi, lo, cl, vol, turnover, note="") -> dict:
             "volume_shares": v, "turnover_twd": t, "note": str(note or "").strip()}
 
 
-def parse_twse(doc: dict, code: str, year_month: str) -> tuple[list[dict], list[str]]:
+def parse_twse(doc: dict, code: str, year_month: str, as_of: str | None = None) -> tuple[list[dict], list[str]]:
     if doc.get("stat") != "OK":
         raise ValueError("TWSE response not OK")
     fields, data = doc.get("fields"), doc.get("data")
@@ -102,11 +102,14 @@ def parse_twse(doc: dict, code: str, year_month: str) -> tuple[list[dict], list[
                 raise ValueError("not a list row")
             extracted = lookup_fields(fields, row, [
                 ("日期",), ("開盤價",), ("最高價",), ("最低價",), ("收盤價",),
-                ("成交股數",), ("成交金額",), ("註記",)])
-            (day, _), (op, _), (hi, _), (lo, _), (cl, _), (vol, _), (turn, _), (note, _) = extracted
+                ("成交股數",), ("成交金額",)])
+            (day, _), (op, _), (hi, _), (lo, _), (cl, _), (vol, _), (turn, _) = extracted
+            note = row[[re.sub(r"[\s()（）]", "", str(f)) for f in fields].index("註記")] if "註記" in fields else ""
             bar = make_bar("TWSE", code, day, op, hi, lo, cl, vol, turn, note)
             if bar["day"][:7] != year_month:
                 raise ValueError("row date outside requested month")
+            if as_of and bar["day"] > iso_date(as_of):
+                continue  # Prevent point-in-time look-ahead when importing a monthly response.
             bars.append(bar)
         except (ValueError, TypeError) as exc:
             errors.append(f"row {idx + 1}: {exc}")
@@ -254,6 +257,13 @@ def stage_batch(conn: sqlite3.Connection, source: str, key: str, bars: list[dict
                 prior = conn.execute("SELECT close FROM approved_bars WHERE market=? AND code=? AND day<? ORDER BY day DESC LIMIT 1", (bar["market"], bar["code"], bar["day"])).fetchone()
                 if prior and abs(Decimal(bar["close"]) / Decimal(prior[0]) - 1) > Decimal("0.30"):
                     reason = "price_jump_over_30pct_review_corporate_action"
+            # Gross notional / shares should roughly match traded price. The 20%
+            # tolerance avoids misclassifying some after-hours negotiated trades.
+            # Flag unit mismatches for review rather than discarding source data.
+            if bar["turnover_twd"] is not None and bar["volume_shares"]:
+                vwap = Decimal(bar["turnover_twd"]) / Decimal(bar["volume_shares"])
+                if vwap < Decimal(bar["low"]) * Decimal("0.80") or vwap > Decimal(bar["high"]) * Decimal("1.20"):
+                    reason += (";" if reason else "") + "value_volume_unit_or_price_outlier"
             approved = 0 if reason else 1
             conn.execute("""INSERT INTO bar_versions(market,code,day,version,open,high,low,close,volume_shares,turnover_twd,note,fingerprint,fetched_at,approved,review_reason)
                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
@@ -276,7 +286,7 @@ def run(date: str, db_path: Path, twse_codes: list[str], tpex_codes: list[str], 
     with open_db(db_path) as conn:
         for code in twse_codes:
             doc = fetch_json(TWSE_URL, {"date": year_month.replace("-", "") + "01", "stockNo": code, "response": "json"})
-            bars, errors = parse_twse(doc, code, year_month)
+            bars, errors = parse_twse(doc, code, year_month, as_of=date)
             counts.append(stage_batch(conn, "TWSE", f"{code}/{year_month}", bars, errors))
             time.sleep(0.7)
         if tpex_codes:
@@ -293,7 +303,7 @@ def run(date: str, db_path: Path, twse_codes: list[str], tpex_codes: list[str], 
 def main():
     cli = argparse.ArgumentParser(description="Run a small restricted official OHLCV history pilot. Never publishes raw rows.")
     cli.add_argument("--date", required=True, help="YYYY-MM-DD, e.g. 2026-10-13")
-    cli.add_argument("--db", type=Path, default=Path("private_data/history_pilot.sqlite3"))
+    cli.add_argument("--db", type=Path, default=Path(__file__).resolve().parent / "private_data" / "history_pilot.sqlite3")
     cli.add_argument("--twse", nargs="*", default=["2330", "0050"])
     cli.add_argument("--tpex", nargs="*", default=["8069", "6488"])
     cli.add_argument("--tpex-legacy-volume-unit", choices=["shares", "thousand_shares"], default=None,
