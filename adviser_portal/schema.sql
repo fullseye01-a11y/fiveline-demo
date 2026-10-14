@@ -124,40 +124,80 @@ CREATE POLICY members_read ON adviser_private.members
     AND (id=adviser_private.request_member()
       OR adviser_private.request_role()='admin'));
 
-CREATE POLICY clients_isolated ON adviser_private.clients
-  USING(org_id=adviser_private.request_org()
+-- Separate read/write policies. A customer can NEVER update/delete client rows
+-- merely because they are allowed to view their own information.
+CREATE POLICY clients_read ON adviser_private.clients
+  FOR SELECT USING(org_id=adviser_private.request_org()
     AND (adviser_private.request_role()='admin'
-       OR (adviser_private.request_role()='adviser' AND advisor_member_id=adviser_private.request_member())
-       OR (adviser_private.request_role()='client' AND owner_member_id=adviser_private.request_member())))
+      OR (adviser_private.request_role()='adviser' AND advisor_member_id=adviser_private.request_member())
+      OR (adviser_private.request_role()='client' AND owner_member_id=adviser_private.request_member())));
+CREATE POLICY clients_add ON adviser_private.clients
+  FOR INSERT WITH CHECK(org_id=adviser_private.request_org()
+    AND (adviser_private.request_role()='admin'
+      OR (adviser_private.request_role()='adviser' AND advisor_member_id=adviser_private.request_member())));
+CREATE POLICY clients_modify ON adviser_private.clients
+  FOR UPDATE USING(org_id=adviser_private.request_org()
+    AND (adviser_private.request_role()='admin'
+      OR (adviser_private.request_role()='adviser' AND advisor_member_id=adviser_private.request_member())))
   WITH CHECK(org_id=adviser_private.request_org()
     AND (adviser_private.request_role()='admin'
       OR (adviser_private.request_role()='adviser' AND advisor_member_id=adviser_private.request_member())));
 
--- Child tables require visibility of the parent client through its RLS policy,
--- not merely an organization match.
-CREATE POLICY positions_client_isolation ON adviser_private.client_positions
-  USING (org_id=adviser_private.request_org() AND EXISTS(
-    SELECT 1 FROM adviser_private.clients c
-    WHERE c.org_id=client_positions.org_id AND c.id=client_positions.client_id))
+-- Children are visible ONLY through the parent's RLS-checked client row.
+CREATE POLICY positions_read ON adviser_private.client_positions
+  FOR SELECT USING(org_id=adviser_private.request_org()
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_positions.org_id AND c.id=client_positions.client_id));
+CREATE POLICY positions_add ON adviser_private.client_positions
+  FOR INSERT WITH CHECK(org_id=adviser_private.request_org()
+    AND adviser_private.request_role() IN ('adviser','admin')
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_positions.org_id AND c.id=client_positions.client_id));
+CREATE POLICY positions_modify ON adviser_private.client_positions
+  FOR UPDATE USING(org_id=adviser_private.request_org()
+    AND adviser_private.request_role() IN ('adviser','admin')
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_positions.org_id AND c.id=client_positions.client_id))
   WITH CHECK(org_id=adviser_private.request_org()
     AND adviser_private.request_role() IN ('adviser','admin')
     AND EXISTS(SELECT 1 FROM adviser_private.clients c
       WHERE c.org_id=client_positions.org_id AND c.id=client_positions.client_id));
 
-CREATE POLICY risk_client_isolation ON adviser_private.client_risk_assessments
-  USING (org_id=adviser_private.request_org() AND EXISTS(
-    SELECT 1 FROM adviser_private.clients c
-    WHERE c.org_id=client_risk_assessments.org_id AND c.id=client_risk_assessments.client_id))
+CREATE POLICY risk_read ON adviser_private.client_risk_assessments
+  FOR SELECT USING(org_id=adviser_private.request_org()
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_risk_assessments.org_id AND c.id=client_risk_assessments.client_id));
+CREATE POLICY risk_add ON adviser_private.client_risk_assessments
+  FOR INSERT WITH CHECK(org_id=adviser_private.request_org()
+    AND adviser_private.request_role() IN ('adviser','admin')
+    AND assessor_member_id=adviser_private.request_member()
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_risk_assessments.org_id AND c.id=client_risk_assessments.client_id));
+CREATE POLICY risk_modify ON adviser_private.client_risk_assessments
+  FOR UPDATE USING(org_id=adviser_private.request_org()
+    AND adviser_private.request_role() IN ('adviser','admin')
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_risk_assessments.org_id AND c.id=client_risk_assessments.client_id))
   WITH CHECK(org_id=adviser_private.request_org()
     AND adviser_private.request_role() IN ('adviser','admin')
     AND assessor_member_id=adviser_private.request_member()
     AND EXISTS(SELECT 1 FROM adviser_private.clients c
       WHERE c.org_id=client_risk_assessments.org_id AND c.id=client_risk_assessments.client_id));
 
-CREATE POLICY allocations_client_isolation ON adviser_private.client_allocations
-  USING (org_id=adviser_private.request_org() AND EXISTS(
-    SELECT 1 FROM adviser_private.clients c
-    WHERE c.org_id=client_allocations.org_id AND c.id=client_allocations.client_id))
+CREATE POLICY allocations_read ON adviser_private.client_allocations
+  FOR SELECT USING(org_id=adviser_private.request_org()
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_allocations.org_id AND c.id=client_allocations.client_id));
+CREATE POLICY allocations_add ON adviser_private.client_allocations
+  FOR INSERT WITH CHECK(org_id=adviser_private.request_org()
+    AND adviser_private.request_role() IN ('adviser','admin')
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_allocations.org_id AND c.id=client_allocations.client_id));
+CREATE POLICY allocations_modify ON adviser_private.client_allocations
+  FOR UPDATE USING(org_id=adviser_private.request_org()
+    AND adviser_private.request_role() IN ('adviser','admin')
+    AND EXISTS(SELECT 1 FROM adviser_private.clients c
+      WHERE c.org_id=client_allocations.org_id AND c.id=client_allocations.client_id))
   WITH CHECK(org_id=adviser_private.request_org()
     AND adviser_private.request_role() IN ('adviser','admin')
     AND EXISTS(SELECT 1 FROM adviser_private.clients c
