@@ -31,4 +31,16 @@ python -m tools.official_history_gap_audit \
 - 即使「暫定日期連續」通過，\`production_coverage_complete\`、\`official_calendar_completeness_reviewed\`、配息／分割還原、正式策略發布旗標仍全為 \`false\`。
 - 每批回補必須先確立來源批量存取及商業使用權、日期窗口、例外清單；官方資料來源與版本須留存。不要因 GitHub Actions 通過就直接改正式回測。
 
-本階段：\`python -m unittest discover -s tests -p 'test_official_history_gap_audit.py' -v\`，十項合成案例驗證。不使用正式行情、不需要 API token。
+本階段：\`python -m unittest discover -s tests -p 'test_official_history_gap_audit.py' -v\`，十項缺漏稽核合成案例驗證；另有五項回補清單測試。不使用正式行情、不需要 API token。
+
+## 分批回補計畫（只產生清單，尚未執行大量下載）
+
+```bash
+python -m tools.official_history_backfill_plan --sqlite /private/staged_official_ohlcv.sqlite \
+  --calendar /private/official_calendar.csv --windows /private/official_instrument_windows.csv \
+  --limit 20 --report /tmp/ohlcv_backfill_plan.json
+```
+
+缺漏的 TWSE 股票與上市 ETF 按「標的×月份」合併成一個 STOCK_DAY 工作單元；TPEx 上櫃股票與 ETF 按「交易日」合併成一個 dailyQuotes 工作單元。各批只請求**目前研究 SQLite 缺少**的交易日；有觀測資料就不會重複排入。單次最多 100 個工作單元，預設 20。日曆任何日期未經官方證據核對，該標的停止排程並列出未驗證日數。
+
+此程式**不會連網下載、不會寫 Neon、不會執行除權息與分割還原**。實際批次下載、逐筆版本化入庫、全市場擴展與合法再利用，仍待來源授權、資料容量和執行端驗證完成。
