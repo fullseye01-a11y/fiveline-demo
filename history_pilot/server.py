@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""Render free-tier *ephemeral* official-history pilot.
+
+Only GET /health is public. The local SQLite cache is not served. The import
+worker runs at most once per process startup if explicitly enabled.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+import threading
+import traceback
+from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+from .history_pilot import run
+from .quality_report import summarize
+
+STATE = {"phase": "not_started", "started_at": None}
+
+
+def scrub_status(result: dict) -> dict:
+    """Only counts: never expose prices, original documents, or full source URLs."""
+    return {
+        "requested_date": result["requested_date"],
+        "approved_bars": result["approved_bars"],
+        "pending_review": result["pending_review"],
+        "batches": [
+            {key: x[key] for key in ("source", "request", "retrieved", "inserted", "unchanged", "pending", "rejected")}
+            for x in result["batches"]
+        ],
+    }
+
+
+def pilot_worker() -> None:
+    STATE["phase"] = "running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    db = Path(os.getenv("PILOT_DB_PATH", "/tmp/fiveline-private-history/history_pilot.sqlite3"))
+    try:
+        result = run(
+            date=os.getenv("PILOT_DATE", "2026-10-13"),
+            db_path=db,
+            twse_codes=["2330", "0050"],
+            tpex_codes=["8069", "6488"],
+            legacy_unit=None,  # DO NOT guess old TPEx aaData trading-volume unit.
+        )
+        report = summarize(db)
+        STATE["phase"] = "finished"
+        print("HISTORY_PILOT_RESULT " + json.dumps(scrub_status(result), ensure_ascii=False), flush=True)
+        print("HISTORY_PILOT_QUALITY " + json.dumps({
+            "status": report["status"],
+            "counts": report["counts"],
+            "review_reasons": report["review_reasons"],
+        }, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        STATE["phase"] = "error"
+        # Never log raw response bodies, market data or user credentials.
+        print("HISTORY_PILOT_FAILED " + type(exc).__name__ + ": " + str(exc)[:180], flush=True)
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/health":
+            payload = b'{"service":"fiveline-history-pilot","ok":true,"storage":"ephemeral","public_market_data":false}\n'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        elif self.path == "/robots.txt":
+            payload = b"User-agent: *\nDisallow: /\n"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        else:
+            self.send_error(404)
+
+    def log_message(self, fmt, *args):
+        pass  # Suppress request-specific logs.
+
+
+def main():
+    if os.getenv("PILOT_FETCH_ON_BOOT", "0") == "1":
+        threading.Thread(target=pilot_worker, daemon=True, name="pilot-worker").start()
+    else:
+        print("HISTORY_PILOT_FETCH_DISABLED", flush=True)
+    port = int(os.environ.get("PORT", "10000"))
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    print("HISTORY_PILOT_SERVER_READY", flush=True)
+    try:
+        server.serve_forever()
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
