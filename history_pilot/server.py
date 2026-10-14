@@ -47,6 +47,15 @@ def pilot_worker() -> None:
             legacy_unit=None,  # DO NOT guess old TPEx aaData trading-volume unit.
         )
         report = summarize(db)
+        # Persist *before* reporting full completion. SQLite remains only a spool.
+        if os.environ.get("DATABASE_URL"):
+            from .postgres_store import persist_sqlite, private_summary
+            pg_sync = persist_sqlite(db)
+            pg_counts = private_summary()
+            print("HISTORY_PILOT_POSTGRES " + json.dumps(
+                {"sync": pg_sync, "durable_counts": pg_counts}, ensure_ascii=False), flush=True)
+        else:
+            print("HISTORY_PILOT_POSTGRES_NOT_CONNECTED; SQLite is ephemeral", flush=True)
         STATE["phase"] = "finished"
         print("HISTORY_PILOT_RESULT " + json.dumps(scrub_status(result), ensure_ascii=False), flush=True)
         print("HISTORY_PILOT_QUALITY " + json.dumps({
@@ -57,7 +66,7 @@ def pilot_worker() -> None:
     except Exception as exc:
         STATE["phase"] = "error"
         # Never log raw response bodies, market data or user credentials.
-        print("HISTORY_PILOT_FAILED " + type(exc).__name__ + ": " + str(exc)[:180], flush=True)
+        print("HISTORY_PILOT_FAILED " + type(exc).__name__, flush=True)
 
 
 class Handler(BaseHTTPRequestHandler):
