@@ -110,3 +110,13 @@ class TestExtendedHistoryPilot(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSelectedCodes(unittest.TestCase):
+    def test_bad_unselected_tpex_rows_are_ignored(self):
+        data = {"reportDate": "115/10/13", "aaData": [
+            ["1234", "non-target", "--", "--", "--", "--", "--", "--", "--", "--"],
+            ["8069", "target", "100", "+1", "99", "102", "98", "1000", "100000", "10"]]}
+        bars, errors = parse_tpex(data, "2026-10-13", {"8069"}, "shares")
+        self.assertEqual(len(bars), 1)
+        self.assertEqual(errors, [])
