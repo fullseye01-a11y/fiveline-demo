@@ -25,3 +25,14 @@ Render 原獨立測試服務 `fiveline-history-pilot-20261014`，GitHub 分支 `
 (1) 證交所「實際開市」另取證（不能僅依週一至週五推定）；(2) 櫃買中心年度休市資料與個別停牌核驗；(3) 已上市日期與摘牌事件版本庫；(4) 企業行動（除權息/拆分）調整資料與總報酬抽樣逐筆對帳；(5) 全市場多年度分批回補與合法商業資料授權。
 
 本階段不能宣稱全市場多年的回補已完成。
+
+## 2026-10-14 Render 現場驗收結果（已執行）
+
+- 既有 Render 測試服務真正向證交所年度 JSON 端點提出 **一次** HTTPS 請求。
+- 官方回傳 `stat=ok` 且 `queryYear=2026`，27 筆已知年度特殊開休市紀錄，對應來源 SHA-256 `7fefe785ea7155a5004a2eb74486ad865ea5c4b5f02ee0cffbbdacb1ca2ea390`。
+- 0050、2330，在指定 2026-09-01 至 2026-10-13 研究期間，每檔 28 個公告排除休市後的**預定**交易日；Neon 日期對應缺漏 0，公告休市日卻有行情 0。
+- Render Build `69/69` Python 測試通過；新部署顯示 `live`，應用程式紀錄 `HISTORY_TWSE_OFFICIAL_CALENDAR`。
+- 檢查後 Neon `bar_versions=66`，`approved_bars=66`，`sync_runs=2`，`pending=0`，與檢查前相同。
+- `actual_daily_sessions_verified=false`，`complete_historical_coverage_verified=false`，`neon_mutated=false`；沒有開啟行情匯入，也沒有處理分割／配息還原。
+
+**注意**：此處 0 缺漏是年度公告預定交易日期的對照，並非來源正式核准、日曆臨時異動檢查或全市場資料完整性保證。
