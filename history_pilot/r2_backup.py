@@ -15,8 +15,10 @@ from urllib.parse import urlsplit
 
 if __package__:
     from .encrypted_backup import backup_to_file, verify_file
+    from .recovery_drill import restore_drill
 else:
     from encrypted_backup import backup_to_file, verify_file
+    from recovery_drill import restore_drill
 
 MAX_OBJECT_BYTES = 8 * 1024 * 1024  # Budget guardrail, not a quota guarantee.
 
@@ -89,7 +91,11 @@ def upload_and_verify(dsn: str) -> dict:
         verified = verify_file(retrieved, cfg["PILOT_BACKUP_PASSPHRASE"])
         if not verified["valid_aead_and_schema"] or verified["rows"] != backup["rows"]:
             raise RuntimeError("Remote backup failed authenticated content verification")
+        drill = restore_drill(retrieved, cfg["PILOT_BACKUP_PASSPHRASE"])
+        if not drill["verified"] or drill["restored_versions"] != backup["rows"]:
+            raise RuntimeError("Remote backup failed isolated restoration drill")
     return {"uploaded": True, "verified_by_readback": True,
+            "isolated_sqlite_recovery_drill": True,
             "encrypted": True, "rows": backup["rows"],
             "backup_key": key, "external_backup": True,
             "restore_into_new_postgres_tested": False}
