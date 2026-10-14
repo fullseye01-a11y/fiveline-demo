@@ -25,6 +25,8 @@ def iso_date(value: str) -> str:
     s = str(value).strip()
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
         return dt.date.fromisoformat(s).isoformat()
+    if re.fullmatch(r"\d{8}", s):
+        return dt.date(int(s[:4]), int(s[4:6]), int(s[6:8])).isoformat()
     match = re.fullmatch(r"(\d{2,3})/(\d{1,2})/(\d{1,2})", s)
     if match:
         y, m, d = map(int, match.groups())
