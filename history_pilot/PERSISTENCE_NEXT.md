@@ -1,4 +1,7 @@
-# 第三階段：PostgreSQL 私人保存與加密備份（2026-10-14）
+# 舊版 Render PostgreSQL 實驗手冊（已被 NEON_R2_MIGRATION.md 取代）
+
+**請勿再依此文件新增 Render PostgreSQL 資料庫。** 新版以 Neon Free 與 Cloudflare R2 為主；舊測試庫保留作回退。
+
 
 ## 已實際建立
 - Render workspace: My Workspace
