@@ -43,6 +43,11 @@ CREATE TABLE IF NOT EXISTS history_stage.sync_runs (
 """
 
 
+def fingerprint_already_seen(existing_versions, fingerprint: str) -> bool:
+    """Avoid synthetic revisions when replaying an earlier SQLite stage version."""
+    return any(old_fp == fingerprint for _, old_fp in existing_versions)
+
+
 def plan_revision(last, staged_approved: bool, staged_reason: str):
     """Existing quote changed => hold even if ephemeral SQLite lost its history."""
     if last is not None:
@@ -79,7 +84,7 @@ def persist_sqlite(db_path: Path, dsn: str | None = None) -> dict:
                     # Replays may contain multiple locally staged revisions.
                     # Compare against ALL previously archived fingerprints, not
                     # only the newest version, to avoid endless fake revisions.
-                    if any(old_fp == b['fingerprint'] for _, old_fp in existing):
+                    if fingerprint_already_seen(existing, b['fingerprint']):
                         counts['unchanged'] += 1
                         continue
                     last=existing[0] if existing else None
