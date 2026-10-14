@@ -92,6 +92,36 @@ def backfill_worker() -> None:
         print("HISTORY_BACKFILL_FAILED " + type(exc).__name__, flush=True)
 
 
+
+def coverage_audit_worker() -> None:
+    """Optional one-shot read-only Neon date audit, no public quotes or DB writes."""
+    STATE["phase"] = "coverage_audit_running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        from .storage_config import configured_dsn
+        from .calendar_coverage import audit_neon
+        dsn = configured_dsn()
+        if dsn is None:
+            raise RuntimeError("Neon not configured; coverage audit disabled")
+        # No official holiday/listing evidence is yet configured: the report
+        # deliberately refuses to certify complete coverage, even on a clean DB.
+        report = audit_neon(dsn)
+        STATE["phase"] = "coverage_audit_finished"
+        print("HISTORY_COVERAGE_AUDIT " + json.dumps({
+            "status":report["status"],
+            "approved_raw_days":report["approved_raw_days"],
+            "symbols":report["symbols"],
+            "peer_observed_gap_candidates":report["peer_observed_gap_candidates"],
+            "official_session_gaps":report["official_session_gaps"],
+            "calendar_evidence_attested":report["provisional_coverage_passed"],
+            "full_market_history_verified":report["full_market_history_verified"],
+            "database_mutated":report["database_mutated"],
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        STATE["phase"] = "coverage_audit_error"
+        print("HISTORY_COVERAGE_AUDIT_FAILED " + type(exc).__name__,flush=True)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -119,12 +149,15 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     backfill = os.getenv("PILOT_BACKFILL_ON_BOOT", "0") == "1"
     initial = os.getenv("PILOT_FETCH_ON_BOOT", "0") == "1"
-    if backfill and initial:
-        raise RuntimeError("Cannot enable the original importer and backfill together")
+    coverage = os.getenv("PILOT_COVERAGE_AUDIT_ON_BOOT", "0") == "1"
+    if sum((backfill, initial, coverage)) > 1:
+        raise RuntimeError("Only one of importer, backfill, or coverage audit may run")
     if backfill:
         threading.Thread(target=backfill_worker, daemon=True, name="backfill-worker").start()
     elif initial:
         threading.Thread(target=pilot_worker, daemon=True, name="pilot-worker").start()
+    elif coverage:
+        threading.Thread(target=coverage_audit_worker, daemon=True, name="coverage-audit").start()
     else:
         print("HISTORY_IMPORTS_DISABLED", flush=True)
     port = int(os.environ.get("PORT", "10000"))
