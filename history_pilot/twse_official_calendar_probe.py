@@ -14,7 +14,10 @@ import re
 import ssl
 from urllib.request import Request, urlopen
 
-from .calendar_coverage import neon_read_only_dates
+if __package__:
+    from .calendar_coverage import neon_read_only_dates
+else:
+    from calendar_coverage import neon_read_only_dates
 
 SOURCE_URL = "https://www.twse.com.tw/holidaySchedule/holidaySchedule?response=json"
 ALTERNATE_YEAR_URL = "https://www.twse.com.tw/holidaySchedule/holidaySchedule?response=json&queryYear=115"
