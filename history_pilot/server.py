@@ -75,6 +75,23 @@ def pilot_worker() -> None:
         print("HISTORY_PILOT_FAILED " + type(exc).__name__, flush=True)
 
 
+def backfill_worker() -> None:
+    """Private one-shot bounded importer, never a public endpoint."""
+    STATE["phase"] = "backfill_running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        from .backfill import run_backfill
+        result = run_backfill()
+        STATE["phase"] = "backfill_finished"
+        # Counts only. No original OHLCV, credentials or source payloads.
+        print("HISTORY_BACKFILL_SUCCESS " +
+              json.dumps(result, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        STATE["phase"] = "backfill_error"
+        # Do not log exception text (may contain URI or sensitive response body).
+        print("HISTORY_BACKFILL_FAILED " + type(exc).__name__, flush=True)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -100,10 +117,16 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    if os.getenv("PILOT_FETCH_ON_BOOT", "0") == "1":
+    backfill = os.getenv("PILOT_BACKFILL_ON_BOOT", "0") == "1"
+    initial = os.getenv("PILOT_FETCH_ON_BOOT", "0") == "1"
+    if backfill and initial:
+        raise RuntimeError("Cannot enable the original importer and backfill together")
+    if backfill:
+        threading.Thread(target=backfill_worker, daemon=True, name="backfill-worker").start()
+    elif initial:
         threading.Thread(target=pilot_worker, daemon=True, name="pilot-worker").start()
     else:
-        print("HISTORY_PILOT_FETCH_DISABLED", flush=True)
+        print("HISTORY_IMPORTS_DISABLED", flush=True)
     port = int(os.environ.get("PORT", "10000"))
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print("HISTORY_PILOT_SERVER_READY", flush=True)
