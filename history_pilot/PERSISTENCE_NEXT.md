@@ -23,8 +23,9 @@
 2. 進 Render 服務 `fiveline-history-pilot-20261014` → **Environment**，新增 `DATABASE_URL`，其值為上一步的完整 Internal URL。**不要貼到 ChatGPT / GitHub / 網頁公開欄位。**
 3. 在該 Render 服務 **Settings** → **Build Command** 改成：
    `pip install -r history_pilot/requirements-storage.txt && cd history_pilot && python -m unittest discover -s tests -v`
-4. 按 Render **Save and deploy**，確認 app logs 出現 `HISTORY_PILOT_POSTGRES` 與 `durable_counts`，而非 `HISTORY_PILOT_POSTGRES_NOT_CONNECTED`。不要只看健康檢查 HTTP 200。
-5. 服務採 `autoDeploy=no`，且會在服務每次啟動時再執行小規模樣本抓取（當前環境設定）。這不是定時全市場資料抓取。
+4. 同一服務的 **Environment**，把 `PILOT_FETCH_ON_BOOT` 設為 `1`，明確重新進行官方小規模匯入。當前值是 `0`（安全停用，不會在每次啟動重複抓取）。
+5. 按 Render **Save and deploy**，確認 app logs 出現 `HISTORY_PILOT_POSTGRES` 與 `durable_counts`，而非 `HISTORY_PILOT_POSTGRES_NOT_CONNECTED`。不要只看健康檢查 HTTP 200。
+6. 服務採 `autoDeploy=no`，只有設定 `PILOT_FETCH_ON_BOOT=1` 才會在服務啟動時執行小規模樣本抓取；請在完成首次持久化驗收後設回 `0`，避免非預期重複匯入。這不是定時全市場資料抓取。
 
 ## 可選擇的手動加密備份工具
 - 配置本機 Python 套件：`pip install -r requirements-storage.txt`（需接入私有資料庫）。
@@ -47,3 +48,9 @@ Render 免費 Postgres 30 天後到期且沒有受管理備份；免費 Web 無�
 - PG 內真實行情寫入：**未完成**
 - 雲端異地備份／還原演練：**未完成**
 - 正式全市場日線回補：**未啟用**
+
+## 實際 Render 連線限制
+- PostgreSQL 外部 IP allowlist 為空；此為安全保護，Render MCP 的外部 SQL 查詢工具因此無法直接連線。**勿為了工具查詢而開放 0.0.0.0/0。**
+- Render 服務與 PostgreSQL 同在 Singapore，完成 Internal Database URL 綁定後，由該服務做私人內網寫入。
+- 2026-10-14 09:07 台灣時間：Web Service 已正常 live，環境變數 PILOT_FETCH_ON_BOOT=0 已確認在 logs 印出 HISTORY_PILOT_FETCH_DISABLED；17 項建置測試全通過（新增版本重播測試待重新部署）。
+- 第一次小規模 18 筆樣本是暫存 SQLite，曾重新部署，必須視為**可能已遺失**，不應假設資料已自動複製到新 PostgreSQL。
