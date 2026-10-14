@@ -156,6 +156,15 @@ def parse_tpex(doc: dict, requested_day: str, selected_codes: set[str], legacy_u
         try:
             if not isinstance(row, list):
                 raise ValueError("not a list row")
+            # Whole-market TPEx responses contain many unselected securities.
+            # Reject malformed OHLC only for target codes, not other instruments.
+            code_idx = 0 if fields is None else next((i for i, f in enumerate(fields) if re.sub(r"[\s()（）]", "", str(f)) in ("代號", "證券代號", "股票代號")), None)
+            if code_idx is None:
+                raise ValueError("TPEx code column absent")
+            if len(row) <= code_idx:
+                raise ValueError("TPEx missing code")
+            if str(row[code_idx]).strip() not in selected_codes:
+                continue
             if fields is None:
                 if len(row) < 10:
                     raise ValueError("legacy row has too few columns")
