@@ -21,6 +21,7 @@ class TestHistoryPilot(unittest.TestCase):
     def test_roc_iso(self):
         self.assertEqual(iso_date("115/10/13"), "2026-10-13")
         self.assertEqual(iso_date("1151013"), "2026-10-13")
+        self.assertEqual(iso_date("20261013"), "2026-10-13")
         with self.assertRaises(ValueError):
             iso_date("115/13/43")
 
