@@ -13,7 +13,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .encrypted_backup import backup_to_file, verify_file
+if __package__:
+    from .encrypted_backup import backup_to_file, verify_file
+else:
+    from encrypted_backup import backup_to_file, verify_file
 
 MAX_OBJECT_BYTES = 8 * 1024 * 1024  # Budget guardrail, not a quota guarantee.
 
