@@ -38,3 +38,15 @@ sqlite3 private_data/history_pilot.sqlite3 'select market, code, day, version, r
 ## 尚未完成
 
 公開 GitHub Pages 靜態站無法執行 Python 或 SQLite。正式來源抓取、排程、備份及權限管理必須在私人持久化後端部署。7 項單元測試為**離線合成樣本**，不代表已在此執行環境完成即時官方回補；必須實際執行網路試跑，再回報成功率／缺漏率／逐檔審核結果。
+
+
+## 第二階段：品質報告（僅私人本機）
+
+1. 在 history_pilot 目錄執行：python3 -m unittest discover -s tests -v
+2. 實測 SQLite 品質報告：python3 quality_report.py --db private_data/history_pilot.sqlite3
+3. 合成測試：python3 examples/make_synthetic_demo.py，再執行 python3 quality_report.py --db private_data/synthetic_demo.sqlite3
+
+品質報告只有批次數、資料範圍、待覆核筆數，不含原始 OHLCV。LOCAL_CHECKS_PASS 僅代表內部檢查通過，不能視為來源 API 已成功連線、完整歷史已回補或取得商用授權。
+合成範例應為 8 筆核准、2 筆待覆核、1 筆歷史修訂、0 筆主鍵重複；合成資料絕不代表真實行情。
+
+2026-10-14 狀態：執行環境官方 TWSE/TPEx 來源受 DNS 限制，沒有把 2026-10-13 真實 OHLCV 匯入，私人持久後端與正式排程尚未部署。下一階段須在私人後端實測來源資料格式、TPEx aaData 單位及授權條件。
