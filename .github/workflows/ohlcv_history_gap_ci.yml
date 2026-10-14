@@ -5,6 +5,8 @@ on:
     paths:
       - tools/official_history_gap_audit.py
       - tests/test_official_history_gap_audit.py
+      - tools/official_history_backfill_plan.py
+      - tests/test_official_history_backfill_plan.py
       - .github/workflows/ohlcv_history_gap_ci.yml
   workflow_dispatch:
 permissions:
@@ -19,7 +21,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate synthetic official calendar, holidays and suspensions
-        run: python -m unittest discover -s tests -p 'test_official_history_gap_audit.py' -v
+        run: python -m unittest discover -s tests -p 'test_official_history_*.py' -v
       - name: Check provisional certification cannot publish or rewrite production
         run: |
           python - <<'PY'
