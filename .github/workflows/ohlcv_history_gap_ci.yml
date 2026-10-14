@@ -1,0 +1,44 @@
+name: Official OHLCV trading-day gap audit
+on:
+  push:
+    branches: [feature/ohlcv-history-gap-audit-20261014]
+    paths:
+      - tools/official_history_gap_audit.py
+      - tests/test_official_history_gap_audit.py
+      - tools/official_history_backfill_plan.py
+      - tests/test_official_history_backfill_plan.py
+      - .github/workflows/ohlcv_history_gap_ci.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fail-closed-historical-gaps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate synthetic official calendar, holidays and suspensions
+        run: python -m unittest discover -s tests -p 'test_official_history_*.py' -v
+      - name: Check provisional certification cannot publish or rewrite production
+        run: |
+          python - <<'PY'
+          import tempfile, sqlite3
+          from pathlib import Path
+          from tools.official_history_gap_audit import make_report
+          with tempfile.TemporaryDirectory() as t:
+              p=Path(t)/'research.sqlite'
+              with sqlite3.connect(p) as db:
+                  db.execute('CREATE TABLE quote_raw(market TEXT,symbol TEXT,trade_date TEXT,open TEXT,high TEXT,low TEXT,close TEXT,volume_shares TEXT,turnover_twd TEXT,price_adjustment TEXT)')
+                  db.execute('INSERT INTO quote_raw VALUES (?,?,?,?,?,?,?,?,?,?)',('TWSE','2330','2026-09-01','100','101','99','100','500','50000','RAW_NOT_ADJUSTED'))
+              audit=make_report(p)
+              assert audit['production_coverage_complete'] is False
+              assert audit['raw_quotes_publicly_redistributed'] is False
+              assert audit['production_analyses_modified'] is False
+              assert audit['original_excel_modified'] is False
+              assert audit['price_adjustments_applied'] is False
+              assert audit['dividend_adjustments_applied'] is False
+              print('Safe, metadata-only prototype audit:',audit['instrument_count'],'instrument')
+          PY
