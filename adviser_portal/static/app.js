@@ -226,10 +226,10 @@ function renderCatalogItem(row){
       "境外基金僅提供最近七日 NAV 證據及配息日期參考。級別未正式核准，不可用於含息回測。");
     card.append(note);
     const offshoreParts=["nav","dividend","readiness"];
-    if(row.isin==="LU2156566916")offshoreParts.push("issuer");
+    if(row.isin==="LU2156566916")offshoreParts.push("issuer-current","issuer");
     offshoreParts.forEach(part=>{
       const trigger=el("button","ghost catalog-nav-btn",
-        part==="nav"?"核對境外最近七日 NAV":part==="dividend"?"查看官方配息日期":part==="issuer"?"富達官方配息公告對帳":"檢查含息試算資料完整度");
+        part==="nav"?"核對境外最近七日 NAV":part==="dividend"?"查看官方配息日期":part==="issuer-current"?"富達 10 月公告最新配息核對":part==="issuer"?"富達 7 月歷史公告對照":"檢查含息試算資料完整度");
       trigger.type="button";
       const area=el("div","catalog-nav-evidence");
       area.setAttribute("aria-live","polite");
@@ -248,7 +248,14 @@ function renderCatalogItem(row){
           const v=await res.json();
           if(!res.ok)throw Error(v.error||"來源無法核對");
           if(v.instrument_uid!==row.uid)throw Error("標的身分無法核對");
-          if(part==="issuer"){
+          if(part==="issuer-current"){
+            if(v.publisher_pdf_table_verified!==true||v.pdf_document_edition!=="2026-10"||
+               v.per_unit_cash_amounts_verified_against_pdf!==12||
+               v.tdcc_amounts_reconciled!==0||
+               v.ready_for_total_return!==false||v.usable_for_portfolio!==false||
+               v.production_backtests_modified!==false)
+              throw Error("最新公告尚未達資料品質要求");
+          }else if(part==="issuer"){
             if(v.ready_for_total_return!==false||v.usable_for_portfolio!==false||
                v.issuer_document_bytes_verified!==false||
                v.issuer_per_unit_payouts_reconciled!==0||
@@ -304,6 +311,30 @@ function renderCatalogItem(row){
             for(const reason of v.reasons||[]){
               area.append(el("p","catalog-nav-warning",reason));
             }
+          }else if(part==="issuer-current" && v.status==="ISSUER_OCTOBER_12_RECORDS_PDF_VERIFIED_RESEARCH_ONLY"){
+            area.append(
+              el("strong","catalog-nav-value","2026/10 富達官方配息｜表格已驗證"),
+              el("small","","級別 "+v.publisher_class_code+" · ISIN "+v.isin+
+                " · PDF 實際第 "+v.pdf_page_number+" 頁"),
+              el("small","","原始 PDF 驗證 12 期；舊版重疊月份 9 期一致；新增月份 3 期")
+            );
+            for(const entry of (v.newer_per_unit_cash_distribution||[])){
+              if(!/^2026-(08|09|10)-\d{2}$/.test(entry.ex_date)||
+                 !/^\d+\.\d{4}$/.test(entry.usd_per_unit))throw Error("配息格式異常");
+              area.append(el("small","",
+                "除息 "+entry.ex_date+"｜公告每單位 "+
+                entry.usd_per_unit+" 美元；收益來源 "+
+                entry.income_percent+"%／本金 "+entry.capital_percent+"%"));
+            }
+            if(v.official_pdf_url!=="https://www.fidelityinternational.com/legal/documents/FF/TW-zh/fdpc.ff.TW-zh.TW.pdf")
+              throw Error("官方 PDF 來源不符");
+            const link=el("a","catalog-source-link","富達 10 月官方 PDF ↗");
+            link.href=v.official_pdf_url;
+            link.target="_blank";link.rel="noopener noreferrer";
+            area.append(link);
+            area.append(el("small","","來源指紋："+v.pdf_sha256.slice(0,16)+"…"));
+            area.append(el("p","catalog-nav-warning",
+              "只完成發行人公告表格驗證；集保每單位金額對帳為 0 筆，未補齊三年 NAV，不能當作含息報酬或真實配置價格。"));
           }else if(part==="issuer" && v.status==="ISSUER_OFFICIAL_PDF_EXCERPT_MANUAL_REVIEW_ONLY"){
             area.append(
               el("strong","catalog-nav-value","富達官方配息公告（研究摘錄）"),
@@ -350,7 +381,7 @@ function renderCatalogItem(row){
         }finally{
           clearTimeout(timer);
           trigger.disabled=false;
-          trigger.textContent=part==="nav"?"重新核對境外 NAV":part==="dividend"?"重新檢查配息日期":part==="issuer"?"重新檢查富達公告":"重新檢查含息資料";
+          trigger.textContent=part==="nav"?"重新核對境外 NAV":part==="dividend"?"重新檢查配息日期":part==="issuer-current"?"重新核對富達 10 月公告":part==="issuer"?"重新檢查 7 月歷史公告":"重新檢查含息資料";
         }
       });
       card.append(trigger,area);
