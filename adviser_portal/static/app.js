@@ -632,6 +632,95 @@ async function catalogPage({reset=false,refresh=false}={}){
     more.disabled=false;$("#catalog-refresh").disabled=false;
   }
 }
+const FUND_QUEUE_LABELS={
+  MISSING_ISIN:"ISIN 未提供",
+  INVALID_ISIN:"ISIN 校驗碼異常",
+  MISSING_CURRENCY:"幣別未核實",
+  REUSED_SOURCE_CODE_REVIEW:"來源代碼重用待核對",
+  SHARED_ISIN_IDENTITY_REVIEW:"同一 ISIN 級別待人工核對",
+  AWAITING_LICENSED_NAV_SOURCE:"身分初檢通過，等待合法歷史 NAV 來源"
+};
+const allFundBatch={busy:false,kind:"all",offset:0,snapshot:null};
+async function loadFundBatch(reset=false){
+  if(allFundBatch.busy)return;
+  if(reset){
+    allFundBatch.kind=$("#allfund-queue-kind").value;
+    allFundBatch.offset=0;
+    allFundBatch.snapshot=null;
+  }
+  allFundBatch.busy=true;
+  const start=$("#allfund-queue-button"),next=$("#allfund-queue-next"),
+        status=$("#allfund-queue-status"),holder=$("#allfund-queue-results");
+  start.disabled=true;next.disabled=true;
+  status.textContent="正在核對全市場基金級別資料與固定名錄版本…";
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),45000);
+  try{
+    const url=new URL("/api/fund-batch-queue",location.origin);
+    url.searchParams.set("kind",allFundBatch.kind);
+    url.searchParams.set("offset",String(allFundBatch.offset));
+    url.searchParams.set("limit","100");
+    if(allFundBatch.snapshot)url.searchParams.set("snapshot",allFundBatch.snapshot);
+    const resp=await fetch(url.toString(),{
+      cache:"no-store",credentials:"omit",signal:controller.signal
+    });
+    const result=await resp.json();
+    if(!resp.ok)throw Error(result.error||"批次佇列暫時無法產生");
+    if(result.schema!=="fiveline_allfund_batch_queue_v1"||
+       result.status!=="ALL_FUND_SOURCE_IDENTITIES_BATCH_PLANNED_ONLY"||
+       result.public_directory_snapshot_only!==true||
+       result.history_nav_3y_uploaded_records!==0||
+       result.history_nav_3y_approved_records!==0||
+       result.database_rows_written!==0||
+       result.customer_data_read!==false||
+       result.portfolio_or_strategies_modified!==false||
+       result.production_site_modified!==false||
+       result.kind!==allFundBatch.kind||
+       result.offset!==allFundBatch.offset||
+       !/^[a-f0-9]{64}$/.test(result.snapshot_sha256)||
+       (allFundBatch.snapshot && result.snapshot_sha256!==allFundBatch.snapshot))
+      throw Error("批次名錄來源或驗證狀態不一致");
+    allFundBatch.snapshot=result.snapshot_sha256;
+    holder.replaceChildren();
+    for(const item of result.rows){
+      const line=el("div","selected-line");
+      const description=el("div","");
+      description.append(
+        el("strong","",item.name),
+        el("small","","代碼 "+item.code+" · "+(item.currency||"原幣待查")+
+            (item.isin?" · "+item.isin:" · ISIN 缺漏")),
+        el("small","",item.blockers.length?
+            item.blockers.map(x=>FUND_QUEUE_LABELS[x]||"來源身分待核對").join("；"):
+            FUND_QUEUE_LABELS.AWAITING_LICENSED_NAV_SOURCE)
+      );
+      line.append(description);
+      holder.append(line);
+    }
+    const int=n=>Number.isSafeInteger(n)&&n>=0?n.toLocaleString("zh-TW"):"—";
+    const end=result.offset+result.page_records_checked;
+    const p=result.all_fund_status_counts;
+    status.textContent="全市場已盤點 "+int(result.catalog_fund_records_checked)+
+      " 筆（境內 "+int(result.domestic_fund_records)+"、境外 "+
+      int(result.offshore_fund_records)+"）。目前顯示 "+
+      int(result.offset+1)+"～"+int(end)+"／"+int(result.selected_scope_records)+
+      "；全市場缺 ISIN "+int(p.MISSING_ISIN)+"、待查代碼重用 "+
+      int(result.all_fund_blocker_counts.REUSED_SOURCE_CODE_REVIEW)+
+      "。歷史 NAV 核准：0 筆。所有狀態僅是資料來源工作清單。";
+    allFundBatch.offset=result.next_offset;
+    next.hidden=result.next_offset===null;
+    next.textContent=result.next_offset===null?"已查看最後一批":"檢查下一批 100 筆";
+  }catch(err){
+    status.textContent=err.name==="AbortError"?"批次核對逾時，請稍後再試。":
+      "本批次未完成："+err.message;
+    next.hidden=true;
+  }finally{
+    clearTimeout(timeout);
+    allFundBatch.busy=false;
+    start.disabled=false;
+    next.disabled=false;
+    start.textContent="從第一批重新檢查";
+  }
+}
 async function auditWholeFundMarket(){
   const btn=$("#allfund-audit-button");
   const status=$("#allfund-audit-status");
@@ -675,6 +764,14 @@ function ensureCatalog(){
   if(catalog.initialized)return;
   catalog.initialized=true;
   $("#allfund-audit-button").addEventListener("click",auditWholeFundMarket);
+  $("#allfund-queue-button").addEventListener("click",()=>loadFundBatch(true));
+  $("#allfund-queue-kind").addEventListener("change",()=>{
+    allFundBatch.snapshot=null;allFundBatch.offset=0;
+    $("#allfund-queue-next").hidden=true;
+    $("#allfund-queue-status").textContent="範圍已更換，按開始批次檢查。";
+    $("#allfund-queue-results").replaceChildren();
+  });
+  $("#allfund-queue-next").addEventListener("click",()=>loadFundBatch(false));
   $("#catalog-search-form").addEventListener("submit",e=>{
     e.preventDefault();catalogPage({reset:true});
   });
