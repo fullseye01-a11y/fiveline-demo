@@ -142,6 +142,25 @@ class TestOfficialOffshore(unittest.TestCase):
         self.records["dividend"][1]["基金幣別"]="歐元"
         out=m.dividend_events(FUND["uid"],fetcher=self.fetcher)
         self.assertEqual(out["event_count"],0)
+    def test_dividend_same_code_currency_name_but_second_isin_blocks_event(self):
+        # A different basic ISIN under the same code/name/ccy is ambiguous
+        # because source 3-5 carries no ISIN for any dividend event.
+        self.records["basic"].append({
+            **self.records["basic"][0],"基金ISIN_CODE":"IE00BD5M6819"
+        })
+        out=m.dividend_events(FUND["uid"],fetcher=self.fetcher)
+        self.assertEqual(out["status"],"REVIEW_REQUIRED")
+        self.assertIsNone(out["nav"])
+        self.assertFalse(out["usable_for_portfolio"])
+
+    def test_conflicting_same_day_dividend_frequency_blocks_metadata(self):
+        self.records["dividend"].append({
+            **self.records["dividend"][0],"配息頻率":"年配"
+        })
+        out=m.dividend_events(FUND["uid"],fetcher=self.fetcher)
+        self.assertEqual(out["status"],"REVIEW_REQUIRED")
+        self.assertFalse(out["cash_dividend_per_share_verified"])
+
     def test_no_isin_in_dividend_source_still_unapproved(self):
         out=m.dividend_events(FUND["uid"],fetcher=self.fetcher)
         self.assertFalse(out["class_identity_approved"])
