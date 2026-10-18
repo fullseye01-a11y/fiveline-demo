@@ -99,6 +99,16 @@ class TestIssuerPdfExcerpt(unittest.TestCase):
                 self.assertFalse(r["issuer_document_bytes_verified"])
                 self.assertNotIn("events",r)
 
+    def test_observed_pdf_bytes_fingerprint_is_recorded_but_table_unparsed(self):
+        x=self.report()
+        self.assertEqual(x["issuer_pdf_sha256_registered"],
+            "78166e33f9164cc224bde3853ababe788c5d47456a4b7a06f711b0e0f7eaae10")
+        self.assertEqual(x["issuer_pdf_bytes_registered"],3114338)
+        self.assertTrue(x["issuer_pdf_transport_envelope_checked"])
+        self.assertFalse(x["issuer_pdf_table_content_automatically_parsed"])
+        self.assertFalse(x["issuer_document_bytes_verified"])
+        self.assertEqual(x["issuer_per_unit_payouts_reconciled"],0)
+
     def test_offshore_class_date_source_error_never_approves_amount(self):
         r=self.report({"status":"REVIEW_REQUIRED","reason":"ISIN differs"})
         self.assertEqual(r["status"],"TDCC_SOURCE_REVIEW_REQUIRED")
