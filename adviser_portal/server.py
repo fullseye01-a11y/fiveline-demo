@@ -241,6 +241,30 @@ def offshore_smoke_once():
 
 
 
+
+def issuer_excerpt_smoke_once():
+    """One-shot publisher-to-TDCC excerpt comparison; no amounts in logs."""
+    uid = os.getenv("ADVISER_ISSUER_PDF_SMOKE_UID", "")
+    if not uid:
+        return
+    try:
+        report = issuer_distribution_review(uid)
+        print("ADVISER_FIDELITY_ISSUER_EXCERPT_SMOKE " + json.dumps({
+            "status": report.get("status"),
+            "published_excerpt_periods": report.get("published_monthly_event_count"),
+            "tdcc_matching_dates": report.get("tdcc_matching_ex_date_count"),
+            "tdcc_matching_composition": report.get("tdcc_matching_composition_count"),
+            "tdcc_composition_conflicts": report.get("tdcc_composition_conflict_count"),
+            "issuer_pdf_bytes_verified": False,
+            "issuer_cash_amounts_approved": 0,
+            "total_return_ready": False,
+            "customer_records_saved": False
+        }, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        print("ADVISER_FIDELITY_ISSUER_EXCERPT_SMOKE_FAILED " +
+              type(exc).__name__, flush=True)
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -253,6 +277,8 @@ def main():
         threading.Thread(target=nav_evidence_smoke_once, daemon=True, name="nav-evidence-smoke").start()
     if os.getenv("ADVISER_OFFSHORE_SMOKE_UID", ""):
         threading.Thread(target=offshore_smoke_once, daemon=True, name="offshore-source-smoke").start()
+    if os.getenv("ADVISER_ISSUER_PDF_SMOKE_UID", ""):
+        threading.Thread(target=issuer_excerpt_smoke_once, daemon=True, name="issuer-excerpt-smoke").start()
     try:
         srv.serve_forever()
     finally:
