@@ -225,15 +225,17 @@ function renderCatalogItem(row){
     const note=el("p","catalog-nav-warning",
       "境外基金僅提供最近七日 NAV 證據及配息日期參考。級別未正式核准，不可用於含息回測。");
     card.append(note);
-    ["nav","dividend","readiness"].forEach(part=>{
+    const offshoreParts=["nav","dividend","readiness"];
+    if(row.isin==="LU2156566916")offshoreParts.push("issuer");
+    offshoreParts.forEach(part=>{
       const trigger=el("button","ghost catalog-nav-btn",
-        part==="nav"?"核對境外最近七日 NAV":part==="dividend"?"查看官方配息日期":"檢查含息試算資料完整度");
+        part==="nav"?"核對境外最近七日 NAV":part==="dividend"?"查看官方配息日期":part==="issuer"?"富達官方配息公告對帳":"檢查含息試算資料完整度");
       trigger.type="button";
       const area=el("div","catalog-nav-evidence");
       area.setAttribute("aria-live","polite");
       trigger.addEventListener("click",async()=>{
         trigger.disabled=true;
-        area.replaceChildren(el("span","","核對集保公開資料中，第一次查詢可能較久…"));
+        area.replaceChildren(el("span","",part==="issuer"?"正在核對官方公告摘錄與集保日期／來源比例…":"核對集保公開資料中，第一次查詢可能較久…"));
         const abort=new AbortController();
         const timer=setTimeout(()=>abort.abort(),85000);
         try{
@@ -246,7 +248,13 @@ function renderCatalogItem(row){
           const v=await res.json();
           if(!res.ok)throw Error(v.error||"來源無法核對");
           if(v.instrument_uid!==row.uid)throw Error("標的身分無法核對");
-          if(part==="readiness"){
+          if(part==="issuer"){
+            if(v.ready_for_total_return!==false||v.usable_for_portfolio!==false||
+               v.issuer_document_bytes_verified!==false||
+               v.issuer_per_unit_payouts_reconciled!==0||
+               v.production_backtests_modified!==false)
+               throw Error("發行公司公告對帳尚未具備安全驗證");
+          }else if(part==="readiness"){
             if(v.ready_for_portfolio!==false||v.ready_for_total_return!==false||
                v.ready_for_six_strategies!==false||v.data_modified!==false)
                throw Error("績效來源安全狀態不符");
@@ -296,6 +304,36 @@ function renderCatalogItem(row){
             for(const reason of v.reasons||[]){
               area.append(el("p","catalog-nav-warning",reason));
             }
+          }else if(part==="issuer" && v.status==="ISSUER_OFFICIAL_PDF_EXCERPT_MANUAL_REVIEW_ONLY"){
+            area.append(
+              el("strong","catalog-nav-value","富達官方配息公告（研究摘錄）"),
+              el("small","","ISIN "+v.isin+" · 原幣 "+v.currency+
+                " · 公告版本 "+v.issuer_pdf_edition),
+              el("small","","公告除息紀錄 "+v.published_monthly_event_count+
+                " 期；與集保除息日期重疊 "+v.tdcc_matching_ex_date_count+
+                " 期；收益／本金比例一致 "+v.tdcc_matching_composition_count+" 期")
+            );
+            const source=el("a","catalog-source-link","查看富達公告原始 PDF（第 "+
+              v.issuer_pdf_page+" 頁）↗");
+            // Server response uses a hardcoded publisher HTTPS URL only.
+            if(v.issuer_pdf_url!=="https://www.fidelityinternational.com/legal/documents/FF/TW-zh/fdpc.ff.TW-zh.TW.pdf")
+              throw Error("公告連結來源不符");
+            source.href=v.issuer_pdf_url;source.target="_blank";
+            source.rel="noopener noreferrer";
+            area.append(source);
+            for(const entry of (v.events||[]).slice(0,6)){
+              area.append(el("small","",
+                "除息 "+entry.ex_date+" · 公告每單位 "+entry.issuer_per_unit_distribution_usd+
+                " 美元 · "+(entry.tdcc_comparison_status==="TDCC_DATE_AND_COMPOSITION_AGREE"?
+                  "集保日期／比例相符":
+                  entry.tdcc_comparison_status==="TDCC_COMPOSITION_CONFLICT"?
+                  "集保比例差異，需人工查核":"集保尚未雙重核對")));
+            }
+            if(v.published_monthly_event_count>6){
+              area.append(el("small","","其餘歷史月份請參照官方 PDF；公告摘錄並非完整最新配息。"));
+            }
+            area.append(el("p","catalog-nav-warning",
+              "目前是具出處的官方 PDF 文字摘錄，程式尚未驗證原始 PDF 檔案雜湊；金額核准 0 筆，不能使用於含息績效。"));
           }else{
             area.append(el("p","catalog-nav-warning",
               v.reason||((v.reasons||[]).join("；"))||"級別識別未通過，請人工確認。"));
@@ -306,7 +344,7 @@ function renderCatalogItem(row){
         }finally{
           clearTimeout(timer);
           trigger.disabled=false;
-          trigger.textContent=part==="nav"?"重新核對境外 NAV":part==="dividend"?"重新檢查配息日期":"重新檢查含息資料";
+          trigger.textContent=part==="nav"?"重新核對境外 NAV":part==="dividend"?"重新檢查配息日期":part==="issuer"?"重新檢查富達公告":"重新檢查含息資料";
         }
       });
       card.append(trigger,area);
