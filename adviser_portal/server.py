@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 
 from .catalog import search_catalog, CatalogUnavailable
+from .fund_universe_audit import audit_whole_universe
 from .nav_evidence import evidence, NavEvidenceUnavailable
 from .offshore_evidence import latest_nav, dividend_events, OffshoreUnavailable
 from .income_readiness import readiness
@@ -60,6 +61,16 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlsplit(self.path)
         path = parsed.path
+        if path == "/api/fund-universe-audit":
+            try:
+                if parsed.query:
+                    raise ValueError("全市場品質盤點不接受個別參數")
+                from .catalog import get_catalog
+                return self._json(audit_whole_universe(get_catalog()))
+            except ValueError as exc:
+                return self._json({"error":str(exc)[:100]},400)
+            except CatalogUnavailable:
+                return self._json({"error":"全市場基金名錄暫時無法驗證。"},503)
         if path == "/api/catalog":
             try:
                 args = parse_qs(parsed.query, keep_blank_values=True)
