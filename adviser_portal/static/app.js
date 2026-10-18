@@ -332,8 +332,14 @@ function renderCatalogItem(row){
             if(v.published_monthly_event_count>6){
               area.append(el("small","","其餘歷史月份請參照官方 PDF；公告摘錄並非完整最新配息。"));
             }
+            if(v.issuer_pdf_transport_envelope_checked===true &&
+               typeof v.issuer_pdf_sha256_registered==="string" &&
+               /^[a-f0-9]{64}$/.test(v.issuer_pdf_sha256_registered)){
+              area.append(el("small","","官網檔案指紋（2026/10/18）：SHA-256 "+
+                v.issuer_pdf_sha256_registered.slice(0,16)+"…"));
+            }
             area.append(el("p","catalog-nav-warning",
-              "目前是具出處的官方 PDF 文字摘錄，程式尚未驗證原始 PDF 檔案雜湊；金額核准 0 筆，不能使用於含息績效。"));
+              "已記錄富達官網 PDF 檔案指紋，但尚未用程式逐頁解析驗收配息表格；這是具來源的研究摘錄，金額正式核准 0 筆，不能使用於含息績效。"));
           }else{
             area.append(el("p","catalog-nav-warning",
               v.reason||((v.reasons||[]).join("；"))||"級別識別未通過，請人工確認。"));
