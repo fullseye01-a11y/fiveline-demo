@@ -262,6 +262,32 @@ def latest_nav(uid, fetcher=None, today=None):
     }
 
 
+
+def _component_ratios(row):
+    """3-5 components are percentages OF payment, not amounts of cash.
+
+    The 3-5 '單位數' field is not presumed to be a per-unit cash amount:
+    verify separately against official issuer-level per-unit distribution.
+    """
+    names=("可分配淨利益/配息","本金/配息")
+    values=[]
+    for name in names:
+        value=str(row.get(name,"") or "").strip().replace("％","%")
+        if value.endswith("%"):value=value[:-1].strip()
+        if not value or value.upper() in {"NA","N/A","--"}:
+            return {"status":"INCOMPLETE","income_pct":None,"capital_pct":None}
+        try:
+            num=Decimal(value)
+        except (InvalidOperation,ValueError):
+            return {"status":"INVALID","income_pct":None,"capital_pct":None}
+        if not num.is_finite() or num<0 or num>100:
+            return {"status":"INVALID","income_pct":None,"capital_pct":None}
+        values.append(num)
+    if abs(sum(values)-Decimal("100"))>Decimal("0.10"):
+        return {"status":"CONFLICT","income_pct":None,"capital_pct":None}
+    return {"status":"PROPORTIONS_ONLY",
+            "income_pct":str(values[0]),"capital_pct":str(values[1])}
+
 def dividend_events(uid, fetcher=None, today=None):
     row=choose_instrument(uid)
     if row["category"]!="offshore_fund_share_class":
@@ -292,12 +318,22 @@ def dividend_events(uid, fetcher=None, today=None):
         if ex is None:continue
         d=ex.isoformat()
         freq=str(r.get("配息頻率",""))[:45]
+        composition=_component_ratios(r)
+        if composition["status"] in ("INVALID","CONFLICT"):
+            return _review(row,"官方配息收益與本金來源比例異常，不可當成有效配息金額。")
+        candidate={"ex_date":d,"frequency":freq,
+                   "composition":composition,
+                   "reported_unit_field_present":bool(str(r.get("單位數","") or "").strip()),
+                   "per_unit_cash_amount":None,
+                   "per_unit_cash_amount_verified":False}
         if d in seen:
-            if seen[d]!=freq:
-                return _review(row,"相同除息日出現不同配息頻率紀錄，暫停配對。")
+            # Even a duplicated event must agree on source proportions and
+            # '單位數' field presence, otherwise refuse the entire class.
+            if seen[d]!=candidate:
+                return _review(row,"相同除息日出現矛盾的配息來源資料，暫停配對。")
             continue
-        seen[d]=freq
-        selected.append({"ex_date":d,"frequency":freq})
+        seen[d]=candidate
+        selected.append(candidate)
     selected.sort(key=lambda x:x["ex_date"],reverse=True)
     return {
         "status":"OFFSHORE_DIVIDEND_DATE_METADATA_ONLY",
@@ -307,8 +343,11 @@ def dividend_events(uid, fetcher=None, today=None):
         "event_count":len(selected),
         "events":selected[:10],
         "source":"TDCC","source_dataset":REGISTRY["dividend"]["dataset"],
-        "reason":"官方配息日期檔缺少 ISIN；僅以已確認的基本級別代碼、名稱、幣別提供事件參考，不能推算每單位配息額或含息報酬。",
+        "reason":"官方 3-5 配息來源比例可單獨核對，但資料不含 ISIN；每單位現金配息額仍須向基金公司公告逐筆對帳，不能用比例或「單位數」猜測金額。",
         "class_identity_approved":False,"usable_for_portfolio":False,
         "usable_for_backtest":False,"cash_dividend_per_share_verified":False,
         "dividend_adjustment_ready":False,
+        "proportions_are_percent_not_cash":True,
+        "cash_per_unit_requires_issuer_crosscheck":True,
+        "source_specification":"https://data.gov.tw/dataset/11642",
     }
