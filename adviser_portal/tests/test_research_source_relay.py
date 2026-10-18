@@ -2,7 +2,7 @@ from datetime import date
 from unittest.mock import patch
 import gzip
 import unittest
-from adviser_portal.research_source_relay import relay_source,RelayError,_lock
+from adviser_portal.research_source_relay import relay_source,RelayError,_lock,MAX_CONCURRENCY
 TOKEN='test-only-operator-secret-'+'a'*48
 TODAY=date(2026,10,18)
 class RelayTests(unittest.TestCase):
@@ -30,10 +30,11 @@ class RelayTests(unittest.TestCase):
         with self.assertRaises(RelayError) as e:self.call(fetcher=fail)
         self.assertEqual(e.exception.status,502)
         self.assertNotIn('sensitive',str(e.exception))
-    def test_only_two_source_requests_can_run_at_once(self):
-        _lock.acquire();_lock.acquire()
+    def test_source_concurrency_is_bounded(self):
+        for _ in range(MAX_CONCURRENCY):_lock.acquire()
         try:
             with self.assertRaises(RelayError) as e:self.call(fetcher=lambda d:self.fail('busy'))
             self.assertEqual(e.exception.status,503)
-        finally:_lock.release();_lock.release()
+        finally:
+            for _ in range(MAX_CONCURRENCY):_lock.release()
 if __name__=='__main__':unittest.main()

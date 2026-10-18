@@ -17,7 +17,8 @@ import re
 from .sitca_history_capture import make_public_fetcher,CaptureError,MAX_BYTES
 
 RELAY_URL='https://fiveline-adviser-alpha-20261018.onrender.com/api/operator/research-source'
-_lock=BoundedSemaphore(2)
+MAX_CONCURRENCY=8
+_lock=BoundedSemaphore(MAX_CONCURRENCY)
 _pool_lock=Lock()
 _fetcher_pool=[]
 
