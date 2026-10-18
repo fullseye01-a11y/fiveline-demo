@@ -222,8 +222,70 @@ function renderCatalogItem(row){
     });
     card.append(evidenceButton,evidenceArea);
   }else if(row.category==="offshore_fund_share_class"){
-    card.append(el("p","catalog-nav-warning",
-      "境外基金每單位 NAV 與基金級別尚待獨立核對；不使用來源淨值總額當單位淨值。"));
+    const note=el("p","catalog-nav-warning",
+      "境外基金僅提供最近七日 NAV 證據及配息日期參考。級別未正式核准，不可用於含息回測。");
+    card.append(note);
+    ["nav","dividend"].forEach(part=>{
+      const trigger=el("button","ghost catalog-nav-btn",
+        part==="nav"?"核對境外最近七日 NAV":"查看官方配息日期");
+      trigger.type="button";
+      const area=el("div","catalog-nav-evidence");
+      area.setAttribute("aria-live","polite");
+      trigger.addEventListener("click",async()=>{
+        trigger.disabled=true;
+        area.replaceChildren(el("span","","核對集保公開資料中，第一次查詢可能較久…"));
+        const abort=new AbortController();
+        const timer=setTimeout(()=>abort.abort(),85000);
+        try{
+          const url=new URL("/api/offshore-evidence",location.origin);
+          url.searchParams.set("uid",row.uid);
+          url.searchParams.set("part",part);
+          const res=await fetch(url.toString(),{
+            cache:"no-store",credentials:"omit",signal:abort.signal
+          });
+          const v=await res.json();
+          if(!res.ok)throw Error(v.error||"來源無法核對");
+          if(v.instrument_uid!==row.uid||v.class_identity_approved!==false||
+             v.usable_for_portfolio!==false||v.usable_for_backtest!==false||
+             v.cash_dividend_per_share_verified!==false)
+            throw Error("來源資料安全狀態不符");
+          area.replaceChildren();
+          if(part==="nav" && v.status==="OFFSHORE_RECENT_NAV_EVIDENCE_ONLY"){
+            const n=Number(v.nav);
+            if(!Number.isFinite(n)||n<=0)throw Error("官方淨值格式異常");
+            const display=n.toLocaleString("zh-TW",{minimumFractionDigits:3,maximumFractionDigits:3});
+            area.append(
+              el("strong","catalog-nav-value",display+" "+v.currency+"／單位"),
+              el("small","","淨值日期 "+v.nav_date+" · TDCC · ISIN "+v.isin),
+              el("p","catalog-nav-warning",
+                v.stale_warning?"來源日期超過 14 日，不能當作最新 NAV。":
+                  "僅為近七日 NAV 證據，未完成歷史含息還原或級別正式核准。")
+            );
+          }else if(part==="dividend" && v.status==="OFFSHORE_DIVIDEND_DATE_METADATA_ONLY"){
+            area.append(el("strong","catalog-nav-value","配息事件 "+v.event_count+" 筆"));
+            if(v.events&&v.events.length){
+              for(const evt of v.events){
+                area.append(el("small","",
+                  "除息 "+evt.ex_date+(evt.frequency?" · "+evt.frequency:"")));
+              }
+            }else area.append(el("small","","來源沒有符合此基金的配息事件日期。"));
+            area.append(el("p","catalog-nav-warning",
+              "此來源沒有級別 ISIN 和已核准每單位現金配息額，不能據此計算含息報酬。"));
+          }else{
+            area.append(el("p","catalog-nav-warning",
+              v.reason||"級別識別未通過，請人工確認。"));
+          }
+        }catch(e){
+          area.replaceChildren(el("p","catalog-nav-warning",
+            e.name==="AbortError"?"官方資料讀取逾時，請稍後重試。":e.message));
+        }finally{
+          clearTimeout(timer);
+          trigger.disabled=false;
+          trigger.textContent=part==="nav"?"重新核對境外 NAV":"重新檢查配息日期";
+        }
+      });
+      card.append(trigger,area);
+    });
   }
   card.append(btn);
   return card;
