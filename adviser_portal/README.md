@@ -60,3 +60,20 @@ Alpha 完全不收集登入或真實客戶個資。正式客戶上線前不可�
 - 還原備份分支：`backup/adviser-alpha-before-nav-evidence-20261018`；本版保持原 Render 獨立 Alpha 網址。試跑後務必清空 `ADVISER_NAV_EVIDENCE_SMOKE_UID`，`ADVISER_CATALOG_SMOKE_ON_BOOT=0`。
 
 **後續未完成**：境外逐 share class 每單位 NAV 與配息單位驗證、至少三年連續官方 NAV 歷史、基金拆併/配息/匯率、合法商用授權、NAV/資產配置聯動、27 Excel 表公式對帳、真實登入/租戶隔離及備份還原。任何一項未通過不得當作完整全市場顧問平台上線。
+
+## 2026-10-18｜境外基金級別、近七日 NAV 與配息日期驗證
+
+- 在 Alpha 同一「基金／ETF 搜尋」頁增加境外基金兩個按鍵：「**核對境外最近七日 NAV**」及「**查看官方配息日期**」，手機可獨立開關查詢，尚不支援正式儲存、回測與多幣別配置。
+- 直接連接集保結算所三份各自定義的官方 CSV：
+  - **3-2** 基金基本資料 `https://opendata.tdcc.com.tw/getOD.ashx?id=3-2`；資料集 `https://data.gov.tw/dataset/11639`。
+  - **3-4** 最近七日 NAV `https://opendata.tdcc.com.tw/getOD.ashx?id=3-4`；資料集 `https://data.gov.tw/dataset/11641`。採用 `基金淨值(金額)`，絕不把另一份 3-20 資料的「最新淨值小計(總額)」視為每單位 NAV。
+  - **3-5** 配息資料 `https://opendata.tdcc.com.tw/getOD.ashx?id=3-5`；資料集 `https://data.gov.tw/dataset/11642`。使用除息日期及頻率的 metadata，**不能**直接得出每單位現金配息額。
+- 核對 `UID→基金代碼／經 ISO6166 檢碼的 ISIN／完整級別基金名稱／幣別→官方基本資料→官方最近七日 NAV`。資料不完整、同日兩價、幣別差異、來源更動、日期異常、基金級別不唯一，都會回到 REVIEW_REQUIRED，不拼接錯誤基金。
+- 配息 3-5 沒有 ISIN，因此要求該代碼＋名稱＋幣別在基本資料內只有一筆候選，遇到相同除息日的配息頻率矛盾，也拒絕自動呈現。最多列出最近 10 個事件。使用者每次主動查詢才讀取官方來源，後端最多 1 小時快取；不建立持久用戶檔案。
+- **真實 Render 實測**：`富達基金－全球優質債券基金 (A股C月配息美元)`（ISIN `LU2156566916`），2026/10/18 經官方來源驗證 NAV 身分和日期，回傳 `OFFSHORE_RECENT_NAV_EVIDENCE_ONLY`；同檔官方配息資料符合代碼、名稱、幣別的 **6 筆日期事件**，回傳 `OFFSHORE_DIVIDEND_DATE_METADATA_ONLY`，但 `cash_per_unit_verified=false`，`dividend_adjustment_ready=false`。
+- Render 84／84 項測試通過，部署狀態 Live。測試僅列印有效旗標、證據狀態、事件筆數，**不記錄原始 NAV、配息數額、任何客戶紀錄**。程式碼修改前已存 `backup/adviser-alpha-before-offshore-evidence-20261018`。
+- 正常使用時 `ADVISER_OFFSHORE_SMOKE_UID` 保持空白、`ADVISER_NAV_EVIDENCE_SMOKE_UID` 空白，`ADVISER_CATALOG_SMOKE_ON_BOOT=0`。
+
+### 後續禁止混用的模組
+
+仍未取得全市場持續歷史 NAV、每單位配息/再投入、股票/ETF 分割還原、幣別匯率時間序列、真正基金 RR 適合度、原 Excel 27 張工作表完整公式對帳、使用者/客戶登入與租戶 RLS。這次新增資料仍只用於 **獨立研究及畫面上檢視官方證據**，不會被加入正式五線譜、SD、六策略、資產配置或退休日程。
