@@ -84,7 +84,7 @@ def validate_catalog(doc):
         category = _string(row.get("category"), 90)
         name = _string(row.get("name"), 240)
         code = _string(row.get("code"), 80)
-        if not uid or uid in seen or source not in ALLOWED_SOURCES or category not in KINDS - {"all", "etf"}:
+        if not uid or uid in seen or source not in ALLOWED_SOURCES or category not in KINDS - {"all"}:
             raise CatalogUnavailable("市場級別身分或資料來源異常")
         if not name or not code:
             raise CatalogUnavailable("市場名稱／代碼缺漏")
