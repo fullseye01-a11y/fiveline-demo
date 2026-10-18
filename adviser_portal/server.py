@@ -191,6 +191,29 @@ def nav_evidence_smoke_once():
 
 
 
+
+def offshore_smoke_once():
+    """One named offshore public fund's metadata; no NAV amount in logs."""
+    uid = os.getenv("ADVISER_OFFSHORE_SMOKE_UID", "")
+    if not uid:return
+    try:
+        row = latest_nav(uid)
+        print("ADVISER_OFFSHORE_SMOKE " + json.dumps({
+            "status":row.get("status"),
+            "unit_nav_evidence_present":bool(row.get("nav")),
+            "nav_date_present":bool(row.get("nav_date")),
+            "isin_identity_present":bool(row.get("isin")),
+            "portfolio_eligible":False,
+            "historical_return_approved":False,
+            "client_records_used":False,
+        }, ensure_ascii=False),flush=True)
+    except OffshoreUnavailable as exc:
+        print("ADVISER_OFFSHORE_SMOKE_SOURCE_FAILED "+type(exc).__name__,flush=True)
+    except Exception as exc:
+        print("ADVISER_OFFSHORE_SMOKE_FAILED "+type(exc).__name__,flush=True)
+
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -201,6 +224,8 @@ def main():
         threading.Thread(target=catalog_smoke_once, daemon=True, name="catalog-smoke").start()
     if os.getenv("ADVISER_NAV_EVIDENCE_SMOKE_UID", ""):
         threading.Thread(target=nav_evidence_smoke_once, daemon=True, name="nav-evidence-smoke").start()
+    if os.getenv("ADVISER_OFFSHORE_SMOKE_UID", ""):
+        threading.Thread(target=offshore_smoke_once, daemon=True, name="offshore-source-smoke").start()
     try:
         srv.serve_forever()
     finally:
