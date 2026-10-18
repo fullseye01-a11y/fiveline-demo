@@ -437,6 +437,69 @@ function renderCatalogItem(row){
     });
     card.append(check,area);
   }
+  const prioritySourceUIDs=new Set([
+    "123e331851e3ae6ff190",
+    "2d4e6ba412b83aa270a3",
+    "f0fed6445d13bc10d3fb"
+  ]);
+  if(prioritySourceUIDs.has(row.uid)){
+    const sourceBtn=el("button","ghost catalog-nav-btn","核對發行公司 ISIN 與歷史來源");
+    sourceBtn.type="button";
+    const sourceArea=el("div","catalog-nav-evidence");
+    sourceArea.setAttribute("aria-live","polite");
+    sourceBtn.addEventListener("click",async()=>{
+      sourceBtn.disabled=true;
+      sourceArea.replaceChildren(el("span","","讀取官方基金級別來源…"));
+      const abort=new AbortController();
+      const timer=setTimeout(()=>abort.abort(),30000);
+      try{
+        const url=new URL("/api/fund-source-qualification",location.origin);
+        url.searchParams.set("uid",row.uid);
+        const resp=await fetch(url.toString(),{
+          cache:"no-store",credentials:"omit",signal:abort.signal
+        });
+        const report=await resp.json();
+        if(!resp.ok)throw Error(report.error||"基金來源驗證暫停");
+        if(report.instrument_uid!==row.uid||
+           report.full_history_raw_nav_rows_imported!==0||
+           report.three_year_history_ready!==false||
+           report.ready_for_total_return!==false||
+           report.usable_for_portfolio!==false||
+           report.ready_for_six_strategies!==false)
+          throw Error("基金資料安全狀態不符");
+        sourceArea.replaceChildren();
+        if(report.status==="ISSUER_PUBLISHED_CLASS_IDENTITY_FOUND"){
+          if(!/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(report.verified_issuer_isin))
+            throw Error("官方 ISIN 格式不符");
+          sourceArea.append(
+            el("strong","catalog-nav-value","官方級別 ISIN："+report.verified_issuer_isin),
+            el("small","","原名錄代碼 "+report.existing_catalog_code+
+              " · "+report.currency+" · "+report.issuer_name)
+          );
+          const trusted=new URL(report.official_issuer_url);
+          if(trusted.protocol!=="https:"||
+             !["www.fidelity.com.tw","tw.allianzgi.com","www.eastspring.com.tw"].includes(trusted.hostname))
+            throw Error("非核准的官方來源連結");
+          const link=el("a","catalog-source-link","查看基金公司官方級別資料 ↗");
+          link.href=trusted.href;link.target="_blank";link.rel="noopener noreferrer";
+          sourceArea.append(link,
+            el("p","catalog-nav-warning",
+              "已找到基金級別身分證據，但歷史逐日 NAV、資料提供者授權及估值日清單仍未通過驗收，不能計算正式報酬。"));
+        }else{
+          sourceArea.append(el("p","catalog-nav-warning",
+            report.reason||"發行公司級別資料需重新核對。"));
+        }
+      }catch(e){
+        sourceArea.replaceChildren(el("p","catalog-nav-warning",
+          e.name==="AbortError"?"官方來源查詢逾時":e.message));
+      }finally{
+        clearTimeout(timer);
+        sourceBtn.disabled=false;
+        sourceBtn.textContent="重新核對官方 ISIN";
+      }
+    });
+    card.append(sourceBtn,sourceArea);
+  }
   card.append(btn);
   return card;
 }
