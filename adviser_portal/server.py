@@ -302,8 +302,11 @@ def issuer_pdf_table_smoke_once():
             "portfolio_usage_approved":False,
         },ensure_ascii=False),flush=True)
     except Exception as exc:
-        print("ADVISER_FIDELITY_GLIAM_TABLE_FAILED " +
-              type(exc).__name__,flush=True)
+        # IssuerPdfTableUnverified uses locally authored fixed reason strings.
+        # Never log raw PDF text, fund amounts, end-user inputs or credentials.
+        from .issuer_pdf_table import IssuerPdfTableUnverified
+        diagnostic=(str(exc)[:110] if type(exc) is IssuerPdfTableUnverified else type(exc).__name__)
+        print("ADVISER_FIDELITY_GLIAM_TABLE_FAILED " + diagnostic,flush=True)
 
 
 def main():
