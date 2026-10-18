@@ -23,6 +23,9 @@ SCHEMA = "fiveline_fidelity_issuer_public_pdf_review_v1"
 ISSUER_PDF_URL = "https://www.fidelityinternational.com/legal/documents/FF/TW-zh/fdpc.ff.TW-zh.TW.pdf"
 DOC_EDITION = "2026-07"
 DOC_PUBLISHED_DATE = "2026-07-02"
+PDF_BYTES_CHECKED_AT_UTC = "2026-10-18T09:02:40Z"
+PDF_SHA256_REGISTERED = "78166e33f9164cc224bde3853ababe788c5d47456a4b7a06f711b0e0f7eaae10"
+PDF_BYTES_REGISTERED = 3114338
 PDF_PAGE_NUMBER = 33
 # Match the catalog's ISIN to TDCC independently, and use the issuer
 # PDF's GLIAM class label and full share-class name for the other side.
@@ -147,6 +150,11 @@ def issuer_distribution_review(uid, fetcher=None):
         "issuer_pdf_url": ISSUER_PDF_URL,
         "issuer_pdf_page": PDF_PAGE_NUMBER, "issuer_pdf_edition": DOC_EDITION,
         "issuer_report_published": DOC_PUBLISHED_DATE,
+        "issuer_pdf_sha256_registered": PDF_SHA256_REGISTERED,
+        "issuer_pdf_bytes_registered": PDF_BYTES_REGISTERED,
+        "issuer_pdf_last_fingerprinted_at_utc": PDF_BYTES_CHECKED_AT_UTC,
+        "issuer_pdf_transport_envelope_checked": True,
+        "issuer_pdf_table_content_automatically_parsed": False,
         "published_monthly_event_count": len(EXCERPT),
         "issuer_last_observed_ex_date": EXCERPT[0][0],
         "source_doc_not_current_through_today": True,
