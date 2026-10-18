@@ -99,12 +99,12 @@ class TestIssuerPdfExcerpt(unittest.TestCase):
                 self.assertFalse(r["issuer_document_bytes_verified"])
                 self.assertNotIn("events",r)
 
-    def test_observed_pdf_bytes_fingerprint_is_recorded_but_table_unparsed(self):
+    def test_rotating_live_pdf_hash_never_falsely_attested_as_july(self):
         x=self.report()
-        self.assertEqual(x["issuer_pdf_sha256_registered"],
-            "78166e33f9164cc224bde3853ababe788c5d47456a4b7a06f711b0e0f7eaae10")
-        self.assertEqual(x["issuer_pdf_bytes_registered"],3114338)
-        self.assertTrue(x["issuer_pdf_transport_envelope_checked"])
+        self.assertIsNone(x["issuer_pdf_sha256_registered"])
+        self.assertIsNone(x["issuer_pdf_bytes_registered"])
+        self.assertFalse(x["issuer_pdf_transport_envelope_checked"])
+        self.assertFalse(x["issuer_historical_source_bytes_archived"])
         self.assertFalse(x["issuer_pdf_table_content_automatically_parsed"])
         self.assertFalse(x["issuer_document_bytes_verified"])
         self.assertEqual(x["issuer_per_unit_payouts_reconciled"],0)
