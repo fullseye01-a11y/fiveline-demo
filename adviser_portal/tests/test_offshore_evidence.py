@@ -115,11 +115,11 @@ class TestOfficialOffshore(unittest.TestCase):
         self.assertEqual(out["status"],"REVIEW_REQUIRED")
         self.assertIsNone(out["nav"])
     def test_stale_fund_warning(self):
-        for x in self.records["recent"]:
-            x["日期"]="20260901"
+        for x,day in zip(self.records["recent"],("20260901","20260902","20260903")):
+            x["日期"]=day
         out=m.latest_nav(FUND["uid"],fetcher=self.fetcher,today=date(2026,10,18))
         self.assertTrue(out["stale_warning"])
-        self.assertEqual(out["age_calendar_days"],47)
+        self.assertEqual(out["age_calendar_days"],45)
     def test_future_nav_date_refused(self):
         for x in self.records["recent"]:
             x["日期"]="20261020"
