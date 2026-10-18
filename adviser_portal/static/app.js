@@ -471,8 +471,8 @@ function renderCatalogItem(row){
         );
         for(const item of (report.events||[])){
           if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(item.date)||
-             !/^[0-9]+\\.[0-9]+$/.test(item.previous_nav)||
-             !/^[0-9]+\\.[0-9]+$/.test(item.revised_nav))
+             !/^[0-9]+[.][0-9]+$/.test(item.previous_nav)||
+             !/^[0-9]+[.][0-9]+$/.test(item.revised_nav))
             throw Error("官方 NAV 更正日期或金額格式不符");
           review.append(el("small","",
             item.date+" · 原公布 "+item.previous_nav+
