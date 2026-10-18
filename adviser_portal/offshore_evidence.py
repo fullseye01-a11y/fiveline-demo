@@ -269,14 +269,20 @@ def dividend_events(uid, fetcher=None, today=None):
     ident=_identity(row)
     if ident is None:
         return _review(row,"ISIN 或幣別未通過基本校驗，無法配對配息日期。")
-    basics=_eligible_rows(snapshot("basic",fetcher=fetcher),ident,
-                          "基金ISIN_CODE","計價幣別")
-    if len(basics)!=1:
-        return _review(row,"尚未能以官方基金基本資料唯一核對此級別。")
-    records=snapshot("dividend",fetcher=fetcher)
+    basic_records=snapshot("basic",fetcher=fetcher)
+    basics=_eligible_rows(basic_records,ident,"基金ISIN_CODE","計價幣別")
     code,isin,ccy,name=ident
+    # The dividend 3-5 file has NO ISIN. Another basic share class with
+    # identical code+name+currency but different ISIN would be inseparable.
+    same_without_isin=[r for r in basic_records
+        if str(r.get("基金代碼","")).upper()==code
+        and _ccy(r.get("計價幣別",""))==ccy
+        and _norm_name(r.get("基金名稱",""))==name]
+    if len(basics)!=1 or len(same_without_isin)!=1:
+        return _review(row,"配息來源沒有 ISIN，官方基本資料的代碼、名稱、幣別不足以唯一確認級別。")
+    records=snapshot("dividend",fetcher=fetcher)
     selected=[]
-    seen=set()
+    seen={}
     for r in records:
         if (str(r.get("基金代碼","")).upper()!=code or
             _ccy(r.get("基金幣別",""))!=ccy or
@@ -285,9 +291,13 @@ def dividend_events(uid, fetcher=None, today=None):
         ex=_date(r.get("除息日"))
         if ex is None:continue
         d=ex.isoformat()
-        if d in seen:continue
-        seen.add(d)
-        selected.append({"ex_date":d,"frequency":str(r.get("配息頻率",""))[:45]})
+        freq=str(r.get("配息頻率",""))[:45]
+        if d in seen:
+            if seen[d]!=freq:
+                return _review(row,"相同除息日出現不同配息頻率紀錄，暫停配對。")
+            continue
+        seen[d]=freq
+        selected.append({"ex_date":d,"frequency":freq})
     selected.sort(key=lambda x:x["ex_date"],reverse=True)
     return {
         "status":"OFFSHORE_DIVIDEND_DATE_METADATA_ONLY",
