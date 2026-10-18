@@ -136,7 +136,7 @@ class TestIssuerPdfExcerpt(unittest.TestCase):
 
     def test_iphone_html_has_source_link_and_explicit_unverified_note(self):
         js=(Path(__file__).resolve().parents[1]/"static"/"app.js").read_text(encoding="utf-8")
-        self.assertIn('offshoreParts.push("issuer")',js)
+        self.assertIn('offshoreParts.push("issuer-current","issuer")',js)
         self.assertIn("issuer_document_bytes_verified!==false",js)
         self.assertIn("公告每單位",js)
         self.assertIn("官網 PDF 已更新到 10 月，舊版位元組未保存",js)
