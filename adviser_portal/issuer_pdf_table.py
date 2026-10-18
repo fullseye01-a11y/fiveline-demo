@@ -86,8 +86,11 @@ def parse_gliam_page(page_text:str):
     if not isinstance(page_text,str) or not page_text.strip():
         raise IssuerPdfTableUnverified("Fidelity PDF page text empty")
     txt=unicodedata.normalize("NFKC",page_text).replace("\u00a0"," ")
-    if not re.search(r"2026\s*年",txt) or not re.search(r"7\s*月",txt):
-        raise IssuerPdfTableUnverified("PDF edition / month changed")
+    # Some page text decoders assign the decorated "2026 年" masthead
+    # to the previous PDF page. The official edition identifier is printed
+    # inside this page's content and is separately pinned by SHA-256.
+    if "SITE-MKT-EXMP_2607-01" not in txt or not re.search(r"7\s*月",txt):
+        raise IssuerPdfTableUnverified("PDF edition marker 2607-01 or month changed")
     if txt.count(TARGET_FIDELITY_CLASS)!=1 or txt.count(B_SHARE_CLASS_CODE)!=1:
         raise IssuerPdfTableUnverified("A/B share class markers missing or repeated")
     a=txt.index(TARGET_FIDELITY_CLASS)
