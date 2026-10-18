@@ -183,7 +183,7 @@ def validate_manifest(root, meta, q):
     return matched[0],plan
 
 
-def import_one(root, q):
+def import_one(root, q, initial_days=31):
     root=Path(root)
     if m.sha((root/'tdcc-basic.csv').read_bytes())!=q['basic_source_sha256']: raise ValueError('BASIC_SOURCE_FINGERPRINT_MISMATCH')
     with closing(sqlite3.connect(root/'research.sqlite',timeout=30)) as db:
@@ -193,7 +193,7 @@ def import_one(root, q):
             raise ValueError('PARTITION_RECOVERY_REQUIRES_PRIOR_HTTP_500')
         if db.execute('SELECT 1 FROM research_observations WHERE class_key=? LIMIT 1',(q['class_key'],)).fetchone():
             raise ValueError('EXISTING_CLASS_PRICES_REQUIRE_SEPARATE_REVIEW')
-    manifest,relative,fingerprint=acquire(root,q)
+    manifest,relative,fingerprint=acquire(root,q,initial_days=initial_days)
     invalid=[leaf for leaf in manifest['leaves'] if leaf['source']['http_status']==200 and leaf['status']!='READY']
     if invalid:
         return {'code':q['code'],'status':'SOURCE_REQUIRES_REVIEW','rows_added':0,'manifest':relative,
@@ -257,7 +257,7 @@ def _recover(root, limit=100):
     selected=sorted((q for q in queue if q['class_key'] in eligible),key=lambda q:q['code'] not in positive)[:limit]
     results=[];paused=None
     for q in selected:
-        try: result=import_one(root,q)
+        try: result=import_one(root,q,initial_days=31 if q['code'] in positive else 365)
         except SourceStop as exc: paused=str(exc);break
         results.append(result);print(json.dumps(result,ensure_ascii=False),flush=True)
     result={'schema':'fundclear_partition_recovery_v1','checked_at_utc':m.stamp(),'selected_classes':len(selected),

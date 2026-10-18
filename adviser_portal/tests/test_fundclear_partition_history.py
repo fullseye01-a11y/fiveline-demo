@@ -75,6 +75,17 @@ class PartitionTests(unittest.TestCase):
             self.assertEqual(plan['leaves'][-1]['end'],m.END.isoformat())
             self.assertTrue(all(leaf['status']=='READY' for leaf in plan['leaves']))
 
+    def test_recent_feed_changes_granularity_without_excluding_any_class(self):
+        for recent_positive in (False,True):
+            with self.subTest(recent_positive=recent_positive),tempfile.TemporaryDirectory() as tmp:
+                root,q=self.setup_root(tmp)
+                if recent_positive:(root/'tdcc-recent.csv').write_text('基金代碼,基金淨值(金額)\nLU2156566916,7.791\n')
+                with patch.object(m,'fetch',side_effect=self.source) as source:result=p.recover(root)
+                self.assertEqual(result['selected_classes'],1);self.assertGreater(result['rows_added'],0)
+                spans=[(date.fromisoformat(c.args[1]['endDate'].replace('/','-'))-date.fromisoformat(c.args[1]['startDate'].replace('/','-'))).days+1 for c in source.call_args_list]
+                self.assertEqual(max(spans),31 if recent_positive else 365)
+                self.assertEqual(m.audit_store(root)['actual_nav_rows_verified'],result['rows_added'])
+
     def test_intervals_cover_scope_once_without_overlap(self):
         ranges=list(p.intervals());cursor=m.START
         for start,end in ranges:
