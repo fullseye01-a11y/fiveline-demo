@@ -204,6 +204,12 @@ class BatchIntakeTests(unittest.TestCase):
             with self.assertRaises(b.BatchIntakeError):
                 b._safe_file(root,"link")
 
+    def test_iphone_catalog_discloses_offline_only_batch_intake(self):
+        html=(Path(__file__).resolve().parents[1]/"static"/"index.html").read_text("utf-8")
+        self.assertIn("每批最多 100 檔",html)
+        self.assertIn("網站不開放原始檔上傳",html)
+        self.assertIn("WHOLE_MARKET_NAV_BATCH_INTAKE_RUNBOOK_20261018.md",html)
+
     def test_all_market_9767_are_in_scope_even_if_one_file_submitted(self):
         allrows=[]
         for category,source,prefix,count in (
