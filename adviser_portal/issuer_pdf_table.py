@@ -89,8 +89,13 @@ def parse_gliam_page(page_text:str):
     # Some page text decoders assign the decorated "2026 年" masthead
     # to the previous PDF page. The official edition identifier is printed
     # inside this page's content and is separately pinned by SHA-256.
-    if "SITE-MKT-EXMP_2607-01" not in txt or not re.search(r"7\s*月",txt):
-        raise IssuerPdfTableUnverified("PDF edition marker 2607-01 or month changed")
+    edition=re.search(r"SITE-MKT-EXMP_(\d{4})-01",txt)
+    if edition is None:
+        raise IssuerPdfTableUnverified("PDF edition code absent from text decoder")
+    if edition.group(1)!="2607":
+        raise IssuerPdfTableUnverified("PDF edition does not match pinned July excerpt; edition="+edition.group(1))
+    if not re.search(r"7\s*月",txt):
+        raise IssuerPdfTableUnverified("PDF cover month 7 absent from extracted page")
     if txt.count(TARGET_FIDELITY_CLASS)!=1 or txt.count(B_SHARE_CLASS_CODE)!=1:
         raise IssuerPdfTableUnverified("A/B share class markers missing or repeated")
     a=txt.index(TARGET_FIDELITY_CLASS)
