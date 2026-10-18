@@ -386,6 +386,57 @@ function renderCatalogItem(row){
       card.append(trigger,area);
     });
   }
+  if(row.category==="offshore_fund_share_class" ||
+     row.category==="domestic_fund_share_class"){
+    const check=el("button","ghost catalog-nav-btn","檢查三年以上歷史 NAV");
+    check.type="button";
+    const area=el("div","catalog-nav-evidence");
+    area.setAttribute("aria-live","polite");
+    check.addEventListener("click",async()=>{
+      check.disabled=true;
+      area.replaceChildren(el("span","","核對基金級別與目前資料來源…"));
+      const stop=new AbortController();
+      const timeout=setTimeout(()=>stop.abort(),85000);
+      try{
+        const url=new URL("/api/history-coverage",location.origin);
+        url.searchParams.set("uid",row.uid);
+        const res=await fetch(url.toString(),{
+          cache:"no-store",credentials:"omit",signal:stop.signal
+        });
+        const info=await res.json();
+        if(!res.ok)throw Error(info.error||"來源無法核對");
+        if(info.status!=="THREE_YEAR_NAV_SOURCE_NOT_READY"||
+           info.instrument_uid!==row.uid||
+           info.full_historical_rows_imported!==0||
+           info.historical_three_years_ready!==false||
+           info.validated_annualized_total_return!==null||
+           info.ready_for_portfolio!==false||
+           info.ready_for_six_strategies!==false)
+          throw Error("歷史 NAV 來源證據尚未安全核對");
+        area.replaceChildren(
+          el("strong","catalog-nav-value","三年歷史 NAV：尚未完成"),
+          el("small","","最早需要 "+info.minimum_start_date+
+            "；目前來源："+info.current_source),
+          el("small","","目前僅核對近期日期 "+
+            info.recent_evidence_nav_dates_count+" 筆；最早 "+
+            (info.recent_evidence_first_nav_date||"未有證據")+" · 最近 "+
+            (info.recent_evidence_last_nav_date||"未有證據"))
+        );
+        for(const item of info.requirements||[]){
+          area.append(el("p","catalog-nav-warning",item));
+        }
+        area.append(el("small","","近期來源資料尚未導入完整歷史資料庫，不能計算三年含息年化績效。"));
+      }catch(e){
+        area.replaceChildren(el("p","catalog-nav-warning",
+          e.name==="AbortError"?"來源查詢逾時，請稍後再試。":e.message));
+      }finally{
+        clearTimeout(timeout);
+        check.disabled=false;
+        check.textContent="重新檢查三年 NAV";
+      }
+    });
+    card.append(check,area);
+  }
   card.append(btn);
   return card;
 }
