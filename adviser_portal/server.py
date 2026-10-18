@@ -14,6 +14,7 @@ from urllib.parse import urlsplit, parse_qs
 
 from .catalog import search_catalog, CatalogUnavailable
 from .nav_evidence import evidence, NavEvidenceUnavailable
+from .offshore_evidence import latest_nav, dividend_events, OffshoreUnavailable
 
 from .engine import SAMPLE_POSITIONS, allocation_plan, risk_assessment, retirement_projection
 
@@ -73,6 +74,21 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": str(exc)[:100]}, 400)
             except CatalogUnavailable:
                 return self._json({"error": "官方來源名錄目前無法驗證，請稍後重試。"}, 503)
+        if path == "/api/offshore-evidence":
+            try:
+                args = parse_qs(parsed.query, keep_blank_values=True)
+                if (len(parsed.query)>155 or set(args)!={"uid","part"} or
+                        any(len(v)!=1 for v in args.values())):
+                    raise ValueError("境外基金查詢參數無效")
+                part=args["part"][0]
+                if part not in ("nav","dividend"):
+                    raise ValueError("境外基金資料類型無效")
+                uid=args["uid"][0]
+                return self._json(latest_nav(uid) if part=="nav" else dividend_events(uid))
+            except ValueError as exc:
+                return self._json({"error":str(exc)[:100]},400)
+            except (CatalogUnavailable, OffshoreUnavailable):
+                return self._json({"error":"目前無法驗證集保官方境外基金資料，請稍後再查。"},503)
         if path == "/api/nav-evidence":
             try:
                 args = parse_qs(parsed.query, keep_blank_values=True)
