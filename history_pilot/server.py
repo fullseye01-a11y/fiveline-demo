@@ -188,6 +188,35 @@ def tpex_stock_calendar_worker() -> None:
 
 
 
+
+def tpex_private_three_day_preview_worker() -> None:
+    """One-time limited TPEx research preview: no Neon/published price writes."""
+    STATE["phase"] = "tpex_three_day_preview_running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        from .storage_config import configured_dsn
+        from .tpex_three_day_preview import preview
+        dsn = configured_dsn()
+        if not dsn:
+            raise RuntimeError("Neon not configured; deny TPEx research source check")
+        report=preview(dsn)
+        STATE["phase"] = "tpex_three_day_preview_finished"
+        print("HISTORY_TPEX_THREE_DAY_PREVIEW " + json.dumps({
+            "schema":report["schema"],
+            "status":report["status"],
+            "exchange_requests":report["completed_exchange_requests"],
+            "candidate_instrument_days":report["candidate_instrument_days"],
+            "staged_valid_unadjusted_rows":report["private_staged_source_rows"],
+            "private_spool_deleted":report["ephemeral_raw_sqlite_deleted"],
+            "neon_modified":report["neon_write_performed"],
+            "public_raw_prices":report["raw_quotes_publicly_redistributed"],
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        STATE["phase"] = "tpex_three_day_preview_error"
+        print("HISTORY_TPEX_THREE_DAY_PREVIEW_FAILED " + type(exc).__name__,flush=True)
+
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -218,8 +247,9 @@ def main():
     coverage = os.getenv("PILOT_COVERAGE_AUDIT_ON_BOOT", "0") == "1"
     official_calendar = os.getenv("PILOT_TWSE_CALENDAR_PROBE_ON_BOOT", "0") == "1"
     otc_calendar = os.getenv("PILOT_TPEX_CALENDAR_PROBE_ON_BOOT", "0") == "1"
-    if sum((backfill, initial, coverage, official_calendar, otc_calendar)) > 1:
-        raise RuntimeError("Only one importer/backfill/coverage/calendar probe may run")
+    tpex_preview = os.getenv("PILOT_TPEX_3DAY_PREVIEW_ON_BOOT", "0") == "1"
+    if sum((backfill, initial, coverage, official_calendar, otc_calendar, tpex_preview)) > 1:
+        raise RuntimeError("Only one importer/backfill/coverage/calendar/preview job may run")
     if backfill:
         threading.Thread(target=backfill_worker, daemon=True, name="backfill-worker").start()
     elif initial:
@@ -230,6 +260,8 @@ def main():
         threading.Thread(target=twse_calendar_probe_worker, daemon=True, name="twse-calendar-probe").start()
     elif otc_calendar:
         threading.Thread(target=tpex_stock_calendar_worker, daemon=True, name="tpex-calendar-probe").start()
+    elif tpex_preview:
+        threading.Thread(target=tpex_private_three_day_preview_worker, daemon=True, name="tpex-private-preview").start()
     else:
         print("HISTORY_IMPORTS_DISABLED", flush=True)
     port = int(os.environ.get("PORT", "10000"))
