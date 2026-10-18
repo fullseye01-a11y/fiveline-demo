@@ -482,8 +482,16 @@ function renderCatalogItem(row){
             throw Error("非核准的官方來源連結");
           const link=el("a","catalog-source-link","查看基金公司官方級別資料 ↗");
           link.href=trusted.href;link.target="_blank";link.rel="noopener noreferrer";
-          sourceArea.append(link,
-            el("p","catalog-nav-warning",
+          sourceArea.append(link);
+          if(report.history_query_entry_page_confirmed===true &&
+             report.official_historical_nav_query_url==="https://www.eastspring.com.tw/our-funds/exportnav"){
+            const exportLink=el("a","catalog-source-link","開啟瀚亞官方歷史淨值查詢／Excel 匯出 ↗");
+            exportLink.href=report.official_historical_nav_query_url;
+            exportLink.target="_blank";exportLink.rel="noopener noreferrer";
+            sourceArea.append(exportLink);
+            sourceArea.append(el("small","","官網網頁顯示最多一年；Excel 匯出的三年範圍、原始欄位及商業使用權仍待核准。"));
+          }
+          sourceArea.append(el("p","catalog-nav-warning",
               "已找到基金級別身分證據，但歷史逐日 NAV、資料提供者授權及估值日清單仍未通過驗收，不能計算正式報酬。"));
         }else{
           sourceArea.append(el("p","catalog-nav-warning",
