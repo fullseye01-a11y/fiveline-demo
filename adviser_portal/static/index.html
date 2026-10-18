@@ -113,6 +113,18 @@
           <div class="stat"><span>符合目前搜尋條件</span><strong id="catalog-matched">—</strong><small>目前只顯示一頁、可繼續載入</small></div>
           <div class="stat"><span>名錄資料日期</span><strong id="catalog-asof">—</strong><small>不代表最新 NAV 或歷史行情日期</small></div>
         </div>
+        <article class="surface" aria-label="全市場基金批次盤點">
+          <div class="section-top"><h2>全市場基金資料進度</h2><span class="tag">來源名錄 · 尚非歷史績效</span></div>
+          <p>一次盤點境內及在台核備境外基金所有已收錄級別，不再以三檔測試基金代表全市場。缺 ISIN 和代碼重複屬待查，不會自動刪除基金。</p>
+          <div class="stats-grid">
+            <div class="stat"><span>基金候選紀錄</span><strong id="allfund-total">—</strong><small>境內及在台核備境外基金級別</small></div>
+            <div class="stat"><span>尚缺 ISIN</span><strong id="allfund-missing-isin">—</strong><small>需原廠或授權來源批次補齊</small></div>
+            <div class="stat"><span>同來源重用代碼群組</span><strong id="allfund-code-collisions">—</strong><small>不等於重複基金，需按級別比對</small></div>
+            <div class="stat"><span>三年 NAV 已核准</span><strong id="allfund-history-ready">—</strong><small>尚未完成正式歷史資料驗收</small></div>
+          </div>
+          <button id="allfund-audit-button" type="button" class="ghost">檢查全市場基金品質</button>
+          <p id="allfund-audit-status" role="status" aria-live="polite" class="catalog-status">僅在你點擊時讀取名錄；不會自動下載基金歷史淨值。</p>
+        </article>
         <article class="surface">
           <h2>搜尋代碼、基金名稱或 ISIN</h2>
           <form id="catalog-search-form" class="catalog-search-form">
