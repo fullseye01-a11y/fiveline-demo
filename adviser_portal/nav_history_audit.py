@@ -88,9 +88,11 @@ def _manifest(meta:dict, body:bytes, today:date):
         raise HistoryAuditError("Provider name required")
     if meta.get("source_basis") not in ("issuer_official","licensed_vendor"):
         raise HistoryAuditError("Source basis not identified")
-    # This is self-attested metadata, NOT an independent legal license review.
-    if meta.get("rights_reviewer_approved") not in (True,False):
-        raise HistoryAuditError("Rights review flag must be explicit")
+    # This is reviewer-attested metadata, NOT independent legal approval.
+    if type(meta.get("rights_reviewer_approved")) is not bool:
+        raise HistoryAuditError("Rights review flag must be explicit boolean")
+    if type(meta.get("issuer_identity_reviewed")) is not bool:
+        raise HistoryAuditError("Share-class identity review flag must be explicit boolean")
     cutoff=_three_year_cutoff(today)
     return isin,currency,cutoff,actual
 
@@ -179,8 +181,13 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
     stale=(today-last).days>14
     # A verified list of expected NAV dates may end on the previous dealing
     # day; a date span alone is insufficient to claim history coverage.
+    # Reviewer-attested coverage is not even a provisional pass until the
+    # source-rights and unique share-class identity checks have also passed.
+    rights_ok=meta.get("rights_reviewer_approved") is True
+    class_identity_ok=meta.get("issuer_identity_reviewed") is True
     coverage_ok=(
         window_span and not stale and expected is not None and reviewed
+        and rights_ok and class_identity_ok
         and len(expected)==len(days) and not missing and not unexpected and dupes==0
         and min(expected)<=cutoff and max(expected)==last
     )
@@ -193,7 +200,7 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
     if unexpected:blockers.append("NAV_DATES_NOT_IN_ISSUER_SESSION_LIST")
     if dupes:blockers.append("DUPLICATED_SAME_NAV_DATE")
     if not meta["rights_reviewer_approved"]:blockers.append("DATA_LICENSE_REVIEW_NOT_APPROVED")
-    if not meta.get("issuer_identity_reviewed",False):blockers.append("SHARE_CLASS_OR_PROVIDER_REVIEW_PENDING")
+    if not class_identity_ok:blockers.append("SHARE_CLASS_OR_PROVIDER_REVIEW_PENDING")
     # Reconciliation of dividends, FX, splits and client suitability is
     # a separate strict prerequisite even after individual CSV passes.
     return {
