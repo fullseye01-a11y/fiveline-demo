@@ -15,6 +15,7 @@
       <button class="nav-btn" data-panel="risk"><span class="nav-symbol">▤</span> RR 風險評估</button>
       <button class="nav-btn" data-panel="allocation"><span class="nav-symbol">◫</span> 智能資產配置</button>
       <button class="nav-btn" data-panel="retirement"><span class="nav-symbol">◷</span> 退休財富試算</button>
+      <button class="nav-btn" data-panel="catalog"><span class="nav-symbol">⌕</span> 基金／ETF 搜尋</button>
       <button class="nav-btn" data-panel="data"><span class="nav-symbol">▥</span> 五線譜與資料中心</button>
     </nav>
     <div class="sidebar-foot"><span class="dot"></span>獨立測試環境<br><small>無客戶登入 · 不儲存輸入</small></div>
@@ -102,6 +103,44 @@
           <div id="retirement-results" class="scenarios"><p class="muted">請先執行退休試算。</p></div>
           <div class="soft-note">所有數值皆在當次請求中計算，未儲存至後端。</div>
         </article></div>
+      </section>
+
+      <section id="catalog" class="panel">
+        <div class="page-heading"><div><div class="eyebrow green">MARKET DIRECTORY</div><h1>基金・股票・ETF 搜尋</h1>
+        <p>境內、在台核備境外基金及上市上櫃股票／ETF 的公開來源名錄。搜尋、檢視、加入本次瀏覽的觀察名單；尚不能當作已核准交易標的或正式 NAV 績效。</p></div></div>
+        <div class="stats-grid">
+          <div class="stat"><span>已收錄公開標的紀錄</span><strong id="catalog-total">—</strong><small>各基金級別及股票來源紀錄，非去重後檔數</small></div>
+          <div class="stat"><span>符合目前搜尋條件</span><strong id="catalog-matched">—</strong><small>目前只顯示一頁、可繼續載入</small></div>
+          <div class="stat"><span>名錄資料日期</span><strong id="catalog-asof">—</strong><small>不代表最新 NAV 或歷史行情日期</small></div>
+        </div>
+        <article class="surface">
+          <h2>搜尋代碼、基金名稱或 ISIN</h2>
+          <form id="catalog-search-form" class="catalog-search-form">
+            <label>名稱／代碼／ISIN<input id="catalog-query" name="query" type="search" placeholder="如 安聯、瀚亞、0050、2330" maxlength="80" autocomplete="off"></label>
+            <label>標的類別<select id="catalog-kind" name="kind">
+              <option value="all">全部已收錄類別</option>
+              <option value="domestic_fund_share_class">境內基金</option>
+              <option value="offshore_fund_share_class">在台核備境外基金</option>
+              <option value="etf">上市／上櫃 ETF</option>
+              <option value="listed_stock">上市股票</option>
+              <option value="otc_stock">上櫃股票</option>
+            </select></label>
+            <button class="primary" type="submit">搜尋標的</button>
+          </form>
+          <div class="catalog-actions">
+            <button type="button" id="catalog-refresh" class="ghost">手動更新名錄</button>
+            <a class="catalog-source-link" href="https://fullseye01-a11y.github.io/fiveline-demo/market_universe.html" target="_blank" rel="noopener noreferrer">查看來源名錄 ↗</a>
+          </div>
+          <p id="catalog-state" class="catalog-status" role="status" aria-live="polite">開啟後將載入已公布的市場名錄；不自動重複更新。</p>
+          <div id="catalog-cards" class="catalog-grid" aria-label="公開標的搜尋結果"></div>
+          <button id="catalog-more" type="button" class="ghost catalog-more" hidden>顯示下一頁</button>
+        </article>
+        <article class="surface catalog-watch">
+          <div class="section-top"><h2>本次瀏覽的候選觀察名單</h2><span class="tag">未儲存 · 非正式配置</span></div>
+          <p>只保存於目前打開的瀏覽器頁面，關閉或重新整理即消失。不同基金幣別、避險／配息級別不會自動合併。</p>
+          <div id="catalog-selected" class="catalog-selected">尚未加入標的。</div>
+        </article>
+        <p class="muted footnote">來源名錄的「紀錄數」不等於已完成 NAV、配息還原、RR 商品風險或持倉穿透分析。未取得真實授權、核准級別及完整績效前，不將此處候選直接寫入智能資產配置或客戶資料。</p>
       </section>
 
       <section id="data" class="panel">
