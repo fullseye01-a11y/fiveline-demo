@@ -94,5 +94,39 @@ class ContinuousImportTests(unittest.TestCase):
         self.assertNotIn(DAY,requested)
         self.assertEqual(r['research_nav_rows_persisted'],3)
 
+    def test_transient_storage_reopen_reuses_received_bytes_without_refetch(self):
+        from adviser_portal.sitca_history_capture import capture_days as actual_capture
+        calls=[];attempts=[]
+        def source(d):calls.append(d);return page(d,nav=str(d.toordinal()))
+        def transient(days,root,**kwargs):
+            attempts.append(days[0])
+            if len(attempts)==1:
+                kwargs['fetcher'](days[0])
+                raise sqlite3.OperationalError('attempt to write a readonly database')
+            return actual_capture(days,root,**kwargs)
+        with patch('adviser_portal.continuous_history_import.capture_days',side_effect=transient):
+            r=self.run_range(fetcher=source)
+        self.assertEqual(len(calls),3)
+        self.assertEqual(r['research_nav_rows_persisted'],3)
+        self.assertEqual(attempts.count(DAY),2)
+
+    def test_database_file_replacement_between_import_and_ledger_reopens_connection(self):
+        from adviser_portal.sitca_history_capture import capture_days as actual_capture
+        import shutil,os
+        replaced=[]
+        def swap(days,root,**kwargs):
+            r=actual_capture(days,root,**kwargs)
+            if not replaced:
+                original=Path(root)/'research.sqlite'
+                other=Path(root)/'replacement.sqlite'
+                shutil.copyfile(original,other)
+                os.replace(other,original)
+                replaced.append(True)
+            return r
+        with patch('adviser_portal.continuous_history_import.capture_days',side_effect=swap):
+            r=self.run_range()
+        self.assertEqual(r['attempted_calendar_dates'],3)
+        self.assertEqual(r['research_nav_rows_persisted'],3)
+
 
 if __name__=='__main__':unittest.main()

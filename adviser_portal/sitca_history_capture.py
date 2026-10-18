@@ -5,6 +5,7 @@ Dates bind to the submitted date and response's form echo, not an independently
 verified row-level date. Public response bytes are retained outside the repo.
 """
 from datetime import date
+from contextlib import closing
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from html.parser import HTMLParser
@@ -124,7 +125,7 @@ def capture_days(days, root, *, fetcher=None, minimum_rows=1000):
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     if fetcher is None:fetcher=make_public_fetcher()
     summaries=[]
-    with sqlite3.connect(root/'research.sqlite') as db:
+    with closing(sqlite3.connect(root/'research.sqlite',timeout=30)) as db:
         db.execute('''CREATE TABLE IF NOT EXISTS source_snapshots (
             raw_sha256 TEXT PRIMARY KEY, requested_date TEXT NOT NULL,
             table_sha256 TEXT NOT NULL, metadata_json TEXT NOT NULL)''')

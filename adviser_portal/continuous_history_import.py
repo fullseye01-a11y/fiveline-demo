@@ -5,6 +5,7 @@ never assumed holidays, zero prices or proof that fund history is complete.
 No unattended scheduler, customer DB access or commercial approval.
 """
 from datetime import date, datetime, timedelta, timezone
+from contextlib import closing
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from hashlib import sha256
@@ -19,7 +20,8 @@ from .sitca_history_capture import capture_days, make_public_fetcher, CaptureErr
 
 
 def import_range(start, end, root, *, fetcher=None, max_dates=None,
-                 minimum_rows=1000, retry_failures=False, progress=None):
+                 minimum_rows=1000, retry_failures=False, progress=None,
+                 delay_after_fetch=True):
     if (type(start) is not date or type(end) is not date or start>end or
             (end-start).days>2000 or end>date.today()):
         raise ValueError('HISTORY_CALENDAR_RANGE_INVALID')
@@ -27,7 +29,8 @@ def import_range(start, end, root, *, fetcher=None, max_dates=None,
         raise ValueError('HISTORY_DATE_BUDGET_INVALID')
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     fetcher=fetcher or make_public_fetcher()
-    with sqlite3.connect(root/'research.sqlite') as db:
+    db=sqlite3.connect(root/'research.sqlite',timeout=30)
+    try:
         db.execute('''CREATE TABLE IF NOT EXISTS acquisition_dates (
             requested_date TEXT PRIMARY KEY, status TEXT NOT NULL,
             error_code TEXT, raw_sha256 TEXT, attempts INTEGER NOT NULL,
@@ -36,6 +39,8 @@ def import_range(start, end, root, *, fetcher=None, max_dates=None,
         current=start;executed=0;transport_failures=0;paused=None
         while current<=end:
             day=current.isoformat()
+            db.close()
+            db=sqlite3.connect(root/'research.sqlite',timeout=30)
             prior=db.execute('SELECT status,attempts FROM acquisition_dates WHERE requested_date=?',(day,)).fetchone()
             if prior and prior[0]=='IMPORTED_UNAPPROVED_RESEARCH':
                 if not ((root/(day+'.html')).exists() or (root/(day+'.html.gz')).exists()):
@@ -47,13 +52,23 @@ def import_range(start, end, root, *, fetcher=None, max_dates=None,
             if max_dates is not None and executed>=max_dates:paused='DATE_BUDGET_REACHED';break
             received=[]
             def tracked_fetcher(requested):
+                if received:return received[-1]
                 raw=fetcher(requested)
                 if not isinstance(raw,bytes) or len(raw)>MAX_BYTES:
                     raise CaptureError('CAPTURE_RESPONSE_TOO_LARGE')
                 received.append(raw)
                 return raw
             try:
-                result=capture_days([current],root,fetcher=tracked_fetcher,minimum_rows=minimum_rows)
+                for storage_attempt in range(3):
+                    try:
+                        result=capture_days([current],root,fetcher=tracked_fetcher,minimum_rows=minimum_rows)
+                        break
+                    except sqlite3.OperationalError as exc:
+                        # Reopen only the local transaction, keeping the exact
+                        # received source bytes. Never consume a prefetch twice.
+                        retryable=any(x in str(exc).lower() for x in ('readonly','read-only','locked','busy'))
+                        if not retryable or storage_attempt==2:raise
+                        time.sleep(0.2)
                 digest=result['snapshots'][0]['raw_sha256']
                 state='IMPORTED_UNAPPROVED_RESEARCH';code=None
                 transport_failures=0
@@ -78,6 +93,8 @@ def import_range(start, end, root, *, fetcher=None, max_dates=None,
                     rejected=root/'rejected';rejected.mkdir(exist_ok=True)
                     with gzip.open(rejected/(day+'.html.gz'),'wb') as output:output.write(received[-1])
             checked=datetime.now(timezone.utc).isoformat()
+            db.close()
+            db=sqlite3.connect(root/'research.sqlite',timeout=30)
             with db:
                 db.execute('INSERT OR REPLACE INTO acquisition_dates VALUES (?,?,?,?,?,?)',
                            (day,state,code,digest,(prior[1] if prior else 0)+1,checked))
@@ -88,10 +105,12 @@ def import_range(start, end, root, *, fetcher=None, max_dates=None,
             if transport_failures>=3:paused='CONSECUTIVE_SOURCE_TRANSPORT_FAILURES'
             if paused:break
             current+=timedelta(days=1)
-            if received:time.sleep(0.5)
+            if received and delay_after_fetch:time.sleep(0.5)
         report=range_report(db,start,end,executed,paused)
         _write_report(root,report)
         return report
+    finally:
+        db.close()
 
 
 def import_range_parallel(start, end, root, *, workers=4, max_dates=None,
@@ -109,7 +128,7 @@ def import_range_parallel(start, end, root, *, workers=4, max_dates=None,
         raise ValueError('HISTORY_CALENDAR_RANGE_INVALID')
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
     done=set()
-    with sqlite3.connect(root/'research.sqlite') as db:
+    with closing(sqlite3.connect(root/'research.sqlite',timeout=30)) as db:
         exists=db.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='acquisition_dates'").fetchone()[0]
         if exists:
             done={d for d,status in db.execute('SELECT requested_date,status FROM acquisition_dates')
@@ -144,7 +163,8 @@ def import_range_parallel(start, end, root, *, workers=4, max_dates=None,
             return result
         try:
             return import_range(start,end,root,fetcher=ordered_fetcher,max_dates=max_dates,
-                                retry_failures=retry_failures,minimum_rows=minimum_rows,progress=progress)
+                                retry_failures=retry_failures,minimum_rows=minimum_rows,progress=progress,
+                                delay_after_fetch=False)
         finally:
             for future in pending.values():future.cancel()
 
