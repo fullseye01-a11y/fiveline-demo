@@ -139,7 +139,7 @@ class TestIssuerPdfExcerpt(unittest.TestCase):
         self.assertIn('offshoreParts.push("issuer")',js)
         self.assertIn("issuer_document_bytes_verified!==false",js)
         self.assertIn("公告每單位",js)
-        self.assertIn("尚未驗證原始 PDF 檔案雜湊",js)
+        self.assertIn("尚未用程式逐頁解析驗收配息表格",js)
 
 
 class TestIssuerHttp(unittest.TestCase):
