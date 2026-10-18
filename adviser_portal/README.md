@@ -99,3 +99,11 @@ Alpha 完全不收集登入或真實客戶個資。正式客戶上線前不可�
 - 即使現有文件表格核對 12 期成功，**獨立集保每單位現金配息金額正式對帳仍為 0**、`ready_for_total_return=false`，不推算三年績效、再投入或客戶配置，原網站／Excel／六策略未修改。
 - 新增 `issuer_current.py`、`issuer_pdf_table.py` 和相應測試；Render 最新測試通過 `137/137`，獨立服務 Live。UI 尚待 iPhone 實機點按驗收。一次性 `ADVISER_FIDELITY_PDF_TABLE_PROBE_ON_BOOT` 應在驗收後恢復 `0`。
 - 來源及文件版本詳見 `adviser_portal/FIDELITY_OCTOBER_2026_PDF_AUTO_VERIFICATION.md`。修改前保留 `backup/adviser-alpha-before-fidelity-issuer-evidence-20261018`。
+
+## 2026-10-18｜三年 NAV 來源稽核上線（非回補完成）
+
+- 境內／境外基金卡新增「檢查三年以上歷史 NAV」，後端 `GET /api/history-coverage?uid=...`。依已核實基金級別、SITCA 最新 NAV／TDCC 最近七日 NAV 實際日數，顯示至少三年前應有的起始日、資料來源與待補證據；不猜測每日 NAV、不假定已有三年績效。
+- `nav_history_audit.py` 是**離線原始歷史 CSV 品質驗證器**：須提供同一 ISIN、幣別、原始每單位 NAV、資料來源 HTTPS/ SHA256、至少三年日期跨度、外部人工複核的 NAV 估值日期清單與資料授權聲明。允許星期與節日不同的基金估值日。拒絕未核對來源、多價、重複、缺漏、未授權等情況；合格結果仍僅為 provisional，不授權實際配置或年化報酬。
+- **實際資料回補數仍為 0；**不是已匯入市場上全部基金歷史 NAV。需先取得基金公司或授權資料商的正式原始歷史序列與同級別估值日證據。
+- Render 163/163 測試通過、服務 Live。2026/10/18 一次性官方驗收：富達 `LU2156566916` 核對到 TDCC 近期 **4 個 NAV 日期**，三年未通過；境內 SITCA 同次連線無法取得最新可驗證來源，未顯示猜測值。關閉一次性測試後正常運作。
+- 進一步來源調查、手動匯入格式、完整阻擋閘門及稽核說明在 `adviser_portal/NAV_HISTORY_SOURCE_AUDIT_20261018.md`。新功能建立前另存 `backup/adviser-alpha-before-nav-history-gate-20261018`。
