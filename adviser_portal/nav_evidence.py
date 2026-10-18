@@ -174,5 +174,20 @@ def evidence(uid, fetcher=None, today=None):
         # Even if an upstream directory claims approval, this isolated
         # research function may not derive investment eligibility from it.
         pass
-    payload = _upstream_search(row, fetcher=fetcher)
+    if fetcher is not None:
+        # Injected upstream data for deterministic tests; never use network.
+        payload = _upstream_search(row, fetcher=fetcher)
+    else:
+        try:
+            payload = _upstream_search(row)
+        except NavEvidenceUnavailable:
+            # If the separate free Render NAV service is unavailable, verify
+            # the original official SITCA per-unit CSV. No stale fallback.
+            from .sitca_direct_nav import lookup, SITCAUnavailable
+            try:
+                payload = lookup(row)
+            except SITCAUnavailable as exc:
+                raise NavEvidenceUnavailable(
+                    "原獨立 NAV 服務及官方 SITCA 檔案均暫時無法驗證"
+                ) from exc
     return match_domestic_evidence(row,payload,today=today)
