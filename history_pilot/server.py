@@ -217,6 +217,35 @@ def tpex_private_three_day_preview_worker() -> None:
 
 
 
+
+def tpex_guarded_three_day_neon_worker() -> None:
+    """Append six validated unadjusted official bars only with backup attestation."""
+    STATE["phase"] = "tpex_six_row_archive_running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        from .storage_config import configured_dsn
+        from .tpex_three_day_guarded_neon import run_guarded_import
+        result=run_guarded_import(
+            configured_dsn(),
+            backup_proof=os.getenv("PILOT_TPEX_BACKUP_BRANCH_PROOF",""),
+        )
+        STATE["phase"] = "tpex_six_row_archive_finished"
+        print("HISTORY_TPEX_SIX_ROW_NEON_ARCHIVE " + json.dumps({
+            "status":result["status"],
+            "source_days":result["official_request_days"],
+            "new_versions":result["inserted_new_versions"],
+            "neon_approved_before":result["neon_approved_before"],
+            "neon_approved_after":result["neon_approved_after"],
+            "neon_pending_after":result["neon_pending_after"],
+            "temporary_quote_spool_deleted":result["temporary_quote_spool_deleted"],
+            "production_backtests_modified":result["production_backtests_modified"],
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        STATE["phase"] = "tpex_six_row_archive_error"
+        print("HISTORY_TPEX_SIX_ROW_NEON_ARCHIVE_FAILED " + type(exc).__name__,flush=True)
+
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -248,8 +277,9 @@ def main():
     official_calendar = os.getenv("PILOT_TWSE_CALENDAR_PROBE_ON_BOOT", "0") == "1"
     otc_calendar = os.getenv("PILOT_TPEX_CALENDAR_PROBE_ON_BOOT", "0") == "1"
     tpex_preview = os.getenv("PILOT_TPEX_3DAY_PREVIEW_ON_BOOT", "0") == "1"
-    if sum((backfill, initial, coverage, official_calendar, otc_calendar, tpex_preview)) > 1:
-        raise RuntimeError("Only one importer/backfill/coverage/calendar/preview job may run")
+    tpex_archive = os.getenv("PILOT_TPEX_3DAY_ARCHIVE_ON_BOOT", "0") == "1"
+    if sum((backfill, initial, coverage, official_calendar, otc_calendar, tpex_preview, tpex_archive)) > 1:
+        raise RuntimeError("Only one importer/backfill/calendar/preview/archive job may run")
     if backfill:
         threading.Thread(target=backfill_worker, daemon=True, name="backfill-worker").start()
     elif initial:
@@ -262,6 +292,8 @@ def main():
         threading.Thread(target=tpex_stock_calendar_worker, daemon=True, name="tpex-calendar-probe").start()
     elif tpex_preview:
         threading.Thread(target=tpex_private_three_day_preview_worker, daemon=True, name="tpex-private-preview").start()
+    elif tpex_archive:
+        threading.Thread(target=tpex_guarded_three_day_neon_worker, daemon=True, name="tpex-six-row-archive").start()
     else:
         print("HISTORY_IMPORTS_DISABLED", flush=True)
     port = int(os.environ.get("PORT", "10000"))
