@@ -437,6 +437,67 @@ function renderCatalogItem(row){
     });
     card.append(check,area);
   }
+  if(row.uid==="2d4e6ba412b83aa270a3"){
+    const reviseBtn=el("button","ghost catalog-nav-btn","查看安聯歷史 NAV 官方更正");
+    reviseBtn.type="button";
+    const review=el("div","catalog-nav-evidence");
+    review.setAttribute("aria-live","polite");
+    reviseBtn.addEventListener("click",async()=>{
+      reviseBtn.disabled=true;
+      review.replaceChildren(el("span","","核對發行公司修正公告…"));
+      const abort=new AbortController();
+      const timer=setTimeout(()=>abort.abort(),30000);
+      try{
+        const url=new URL("/api/fund-nav-corrections",location.origin);
+        url.searchParams.set("uid",row.uid);
+        const res=await fetch(url.toString(),{
+          cache:"no-store",credentials:"omit",signal:abort.signal
+        });
+        const report=await res.json();
+        if(!res.ok)throw Error(report.error||"來源無法核對");
+        if(report.instrument_uid!==row.uid||
+           report.share_class_isin!=="TW000T3604Y3"||
+           report.status!=="ISSUER_CORRECTION_NOTICE_RESEARCH_EVIDENCE"||
+           report.event_count!==2||
+           report.three_year_history_ready!==false||
+           report.usable_for_portfolio!==false||
+           report.ready_for_total_return!==false||
+           report.history_source_rows_checked!==0)
+          throw Error("官方修正公告驗收狀態不符");
+        review.replaceChildren(
+          el("strong","catalog-nav-value","官方歷史 NAV 更正：2 個日期"),
+          el("small","","安聯台灣科技基金 · ISIN "+report.share_class_isin+
+              " · 公告日期 "+report.announcement_date)
+        );
+        for(const item of (report.events||[])){
+          if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(item.date)||
+             !/^[0-9]+\\.[0-9]+$/.test(item.previous_nav)||
+             !/^[0-9]+\\.[0-9]+$/.test(item.revised_nav))
+            throw Error("官方 NAV 更正日期或金額格式不符");
+          review.append(el("small","",
+            item.date+" · 原公布 "+item.previous_nav+
+            " → 修正 "+item.revised_nav+" TWD／單位"));
+        }
+        if(report.official_notice_url!==
+           "https://tw.allianzgi.com/zh-tw/announcement/product-announcement/2026-03-04-1")
+          throw Error("非預期的公告來源");
+        const official=el("a","catalog-source-link","開啟安聯投信更正公告 ↗");
+        official.href=report.official_notice_url;
+        official.target="_blank";official.rel="noopener noreferrer";
+        review.append(official,
+          el("p","catalog-nav-warning",
+            "這是原廠修正證據，歷史匯入若仍含舊淨值會被拒絕；三年資料尚未匯入，也不能用兩筆數字推算績效。"));
+      }catch(error){
+        review.replaceChildren(el("p","catalog-nav-warning",
+          error.name==="AbortError"?"公告查詢逾時":error.message));
+      }finally{
+        clearTimeout(timer);
+        reviseBtn.disabled=false;
+        reviseBtn.textContent="重新核對歷史 NAV 更正";
+      }
+    });
+    card.append(reviseBtn,review);
+  }
   const prioritySourceUIDs=new Set([
     "123e331851e3ae6ff190",
     "2d4e6ba412b83aa270a3",
