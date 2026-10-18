@@ -72,7 +72,9 @@ CCYS={
     "人民幣":"CNY","CNY":"CNY","RMB":"CNY",
     "南非幣":"ZAR","ZAR":"ZAR",
     "加幣":"CAD","加元":"CAD","CAD":"CAD",
-    "紐幣":"NZD","紐元":"NZD","NZD":"NZD",
+    "紐幣":"NZD","紐元":"NZD","紐西蘭幣":"NZD","NZD":"NZD",
+    "新加坡幣":"SGD","新加坡元":"SGD","星幣":"SGD","SGD":"SGD",
+    "瑞典幣":"SEK","瑞典克朗":"SEK","SEK":"SEK",
     "瑞士法郎":"CHF","CHF":"CHF",
 }
 def _ccy(value):
@@ -197,13 +199,13 @@ def _identity(row):
     return code,isin,currency,fundname
 
 
-def _review(row,reason):
+def _review(row,reason,reason_code="REVIEW_REQUIRED"):
     return {
       "status":"REVIEW_REQUIRED","instrument_uid":row["uid"],
       "display_name":row["name"],"code":row["code"],"isin":row["isin"],
       "currency":row["currency"],"nav":None,"nav_date":None,
       "recent_nav_days":[],"dividend_event_count":None,
-      "reason":reason,"class_identity_approved":False,
+      "reason":reason,"reason_code":reason_code,"class_identity_approved":False,
       "usable_for_portfolio":False,"usable_for_backtest":False,
       "cash_dividend_per_share_verified":False,
     }
@@ -229,11 +231,11 @@ def latest_nav_for_row(row, fetcher=None, today=None):
         raise ValueError("非境外基金標的")
     ident=_identity(row)
     if ident is None:
-        return _review(row,"基金代碼、ISIN 校驗碼、原幣別或完整級別名稱不足，不能自動配對。")
+        return _review(row,"基金代碼、ISIN 校驗碼、原幣別或完整級別名稱不足，不能自動配對。","IDENTITY_INCOMPLETE")
     basic=snapshot("basic",fetcher=fetcher)
     bs=_eligible_rows(basic,ident,"基金ISIN_CODE","計價幣別")
     if len(bs)!=1:
-        return _review(row,"TDCC 基本資料未能唯一確認代碼、ISIN、級別名稱及幣別。")
+        return _review(row,"TDCC 基本資料未能唯一確認代碼、ISIN、級別名稱及幣別。","BASIC_IDENTITY_NOT_UNIQUE")
     recent=snapshot("recent",fetcher=fetcher)
     matched=_eligible_rows(recent,ident,"ISINCODE","計價幣別")
     latest={}
@@ -243,15 +245,15 @@ def latest_nav_for_row(row, fetcher=None, today=None):
         if day is None or nav is None:continue
         k=day.isoformat()
         if k in latest and latest[k]!=nav:
-            return _review(row,"官方同級別、同日期 NAV 有互相衝突的紀錄，需人工審核。")
+            return _review(row,"官方同級別、同日期 NAV 有互相衝突的紀錄，需人工審核。","SAME_DATE_NAV_CONFLICT")
         latest[k]=nav
     if not latest:
-        return _review(row,"官方最近七日 NAV 檔未找到相同 ISIN、幣別及名稱的有效級別。")
+        return _review(row,"官方最近七日 NAV 檔未找到相同 ISIN、幣別及名稱的有效級別。","NO_VALID_RECENT_OBSERVATIONS")
     day=max(latest)
     asof=today or datetime.now(timezone.utc).date()
     age=(asof-date.fromisoformat(day)).days
     if age<0:
-        return _review(row,"資料日期晚於目前時間，拒絕判定為最新淨值。")
+        return _review(row,"資料日期晚於目前時間，拒絕判定為最新淨值。","FUTURE_NAV_DATE")
     return {
       "status":"OFFSHORE_RECENT_NAV_EVIDENCE_ONLY",
       "instrument_uid":row["uid"],"display_name":row["name"],
