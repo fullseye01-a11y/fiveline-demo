@@ -632,9 +632,49 @@ async function catalogPage({reset=false,refresh=false}={}){
     more.disabled=false;$("#catalog-refresh").disabled=false;
   }
 }
+async function auditWholeFundMarket(){
+  const btn=$("#allfund-audit-button");
+  const status=$("#allfund-audit-status");
+  btn.disabled=true;
+  status.textContent="正在批次盤點整個境內及在台核備境外基金名錄…";
+  const abort=new AbortController();
+  const timer=setTimeout(()=>abort.abort(),60000);
+  try{
+    const response=await fetch("/api/fund-universe-audit",{
+      method:"GET",cache:"no-store",credentials:"omit",signal:abort.signal
+    });
+    const result=await response.json();
+    if(!response.ok)throw Error(result.error||"來源稽核失敗");
+    if(result.schema!=="fiveline_fund_universe_batch_readiness_v1"||
+       result.status!=="WHOLE_FUND_MARKET_CATALOG_AUDITED_METADATA_ONLY"||
+       result.source_snapshot_only!==true||
+       result.official_price_history_ingested_by_this_audit!==0||
+       result.historical_nav_3y_ready_records!==0||
+       result.db_rows_written!==0||
+       result.portfolio_backtests_modified!==false)
+      throw Error("全市場資料驗證狀態不符");
+    const int=n=>Number.isSafeInteger(n)&&n>=0?n.toLocaleString("zh-TW"):"未驗證";
+    $("#allfund-total").textContent=int(result.fund_records_processed);
+    $("#allfund-missing-isin").textContent=int(result.missing_isin_records);
+    $("#allfund-code-collisions").textContent=int(result.source_code_collision_groups);
+    $("#allfund-history-ready").textContent="0";
+    status.textContent="境內 "+int(result.domestic_fund_records)+
+      "、境外 "+int(result.offshore_fund_records)+
+      " 筆；重用代碼影響 "+int(result.source_code_collision_rows)+
+      " 筆紀錄，需逐級別查證。名錄非全球所有基金；完整三年 NAV／配息／授權仍待取得，不能作為正式配置。";
+  }catch(err){
+    status.textContent=err.name==="AbortError"?"市場名錄盤點逾時，請稍後重試。":
+      "全市場名錄目前未通過驗證："+err.message;
+  }finally{
+    clearTimeout(timer);
+    btn.disabled=false;
+    btn.textContent="重新檢查全市場基金品質";
+  }
+}
 function ensureCatalog(){
   if(catalog.initialized)return;
   catalog.initialized=true;
+  $("#allfund-audit-button").addEventListener("click",auditWholeFundMarket);
   $("#catalog-search-form").addEventListener("submit",e=>{
     e.preventDefault();catalogPage({reset:true});
   });
