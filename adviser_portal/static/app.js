@@ -16,6 +16,7 @@ function switchPanel(id) {
     b.setAttribute("aria-current",b.dataset.panel===id?"page":"false");
   });
   window.scrollTo({top:0,behavior:"smooth"});
+  if(id==="catalog") ensureCatalog();
 }
 document.addEventListener("click",(e)=>{
   const btn=e.target.closest("[data-goto],[data-panel]");
@@ -125,3 +126,121 @@ document.addEventListener("DOMContentLoaded",async()=>{
     await assess();await allocate();await retire();
   }catch(err){showToast("初始化尚未完成："+err.message);}
 });
+
+
+// Catalog is a public identity directory only. This page never saves selected
+// fund/share-class identifiers or uses them to manufacture portfolio returns.
+const catalog = {initialized:false, busy:false, query:"", kind:"all", offset:0,
+                 matched:0, selected:new Map()};
+const KIND_LABELS = {
+  domestic_fund_share_class:"境內基金",
+  offshore_fund_share_class:"在台核備境外基金",
+  etf:"上市／上櫃 ETF",
+  listed_stock:"上市股票",
+  otc_stock:"上櫃股票"
+};
+function renderCatalogSelection(){
+  const holder=$("#catalog-selected");
+  holder.replaceChildren();
+  if(!catalog.selected.size){holder.textContent="尚未加入標的。";return;}
+  for(const row of catalog.selected.values()){
+    const card=el("div","selected-line");
+    const description=el("div","");
+    description.append(el("strong","",row.name),el("small","",
+      row.code+"　"+(row.currency||"幣別未標示")+"　"+(row.isin||"ISIN 尚無資料")));
+    const remove=el("button","ghost","移除");
+    remove.type="button";remove.dataset.removeUid=row.uid;
+    remove.setAttribute("aria-label","移除 "+row.name);
+    card.append(description,remove);holder.append(card);
+  }
+}
+function renderCatalogItem(row){
+  const card=el("article","catalog-record");
+  const title=el("strong","",row.name);
+  const kind=el("span","catalog-kind",KIND_LABELS[row.category]||"市場標的");
+  const info=el("div","catalog-identity","代碼 "+row.code+" · "+(row.currency||"幣別待核對")+
+       (row.isin?" · ISIN "+row.isin:" · ISIN 未提供"));
+  const note=el("p","catalog-note","身分及級別尚待核准；非即時淨值與回測績效");
+  const btn=el("button","ghost",catalog.selected.has(row.uid)?"已加入候選":"加入候選觀察");
+  btn.type="button";
+  btn.setAttribute("aria-label","將 "+row.name+" 加入本次候選觀察名單");
+  btn.disabled=catalog.selected.has(row.uid);
+  btn.addEventListener("click",()=>{
+    if(catalog.selected.size>=20){showToast("單次最多暫存 20 個候選標的");return;}
+    catalog.selected.set(row.uid,row);
+    btn.textContent="已加入候選";btn.disabled=true;
+    renderCatalogSelection();
+  });
+  card.append(kind,title,info,note,btn);
+  return card;
+}
+async function catalogPage({reset=false,refresh=false}={}){
+  if(catalog.busy)return;
+  if(reset){
+    catalog.offset=0;
+    catalog.query=$("#catalog-query").value.trim();
+    catalog.kind=$("#catalog-kind").value;
+  }
+  catalog.busy=true;
+  const more=$("#catalog-more"), cards=$("#catalog-cards"),state=$("#catalog-state");
+  more.disabled=true;$("#catalog-refresh").disabled=true;
+  state.textContent="正在讀取公開市場名錄，首次載入可能較久…";
+  const abort=new AbortController();
+  const timer=setTimeout(()=>abort.abort(),38000);
+  try{
+    const url=new URL("/api/catalog",location.origin);
+    url.searchParams.set("query",catalog.query);
+    url.searchParams.set("kind",catalog.kind);
+    url.searchParams.set("offset",String(catalog.offset));
+    url.searchParams.set("limit","30");
+    if(refresh)url.searchParams.set("refresh","1");
+    const response=await fetch(url.toString(),{cache:"no-store",credentials:"omit",signal:abort.signal});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"名錄讀取失敗");
+    if(data.schema!=="fiveline_adviser_catalog_search_v1" ||
+       data.status!=="PUBLIC_DIRECTORY_ONLY" || data.real_prices_available!==false)
+       throw Error("市場來源安全狀態未驗證");
+    if(reset)cards.replaceChildren();
+    data.items.forEach(row=>cards.append(renderCatalogItem(row)));
+    catalog.offset+=data.items.length;
+    catalog.matched=data.matched_rows;
+    $("#catalog-total").textContent=Number(data.total_catalog_rows).toLocaleString("zh-TW");
+    $("#catalog-matched").textContent=Number(data.matched_rows).toLocaleString("zh-TW");
+    const checked=new Date(data.checked_at_utc);
+    $("#catalog-asof").textContent=isNaN(checked.valueOf())?"日期未核對":checked.toLocaleDateString("zh-TW",{timeZone:"Asia/Taipei"});
+    state.textContent=data.matched_rows?
+      "目前顯示 "+catalog.offset+"／"+data.matched_rows+" 筆來源紀錄；名錄不含已核准歷史 NAV。":
+      "找不到符合條件的已收錄標的。可改用其他名稱、代碼或切換類別。";
+    more.hidden=catalog.offset>=data.matched_rows;
+  }catch(err){
+    state.textContent=err.name==="AbortError"?"公開名錄載入逾時，請稍後重試。":
+                      "名錄暫時無法載入："+err.message;
+    if(reset){cards.replaceChildren();more.hidden=true;}
+  }finally{
+    clearTimeout(timer);
+    catalog.busy=false;
+    more.disabled=false;$("#catalog-refresh").disabled=false;
+  }
+}
+function ensureCatalog(){
+  if(catalog.initialized)return;
+  catalog.initialized=true;
+  $("#catalog-search-form").addEventListener("submit",e=>{
+    e.preventDefault();catalogPage({reset:true});
+  });
+  $("#catalog-refresh").addEventListener("click",()=>catalogPage({reset:true,refresh:true}));
+  $("#catalog-more").addEventListener("click",()=>catalogPage());
+  $("#catalog-selected").addEventListener("click",e=>{
+    const btn=e.target.closest("[data-remove-uid]");
+    if(!btn)return;
+    catalog.selected.delete(btn.dataset.removeUid);
+    renderCatalogSelection();
+    // Refresh the visible per-item disabled states without a network fetch.
+    document.querySelectorAll(".catalog-record button").forEach(button=>{
+      if(button.textContent==="已加入候選"){
+        button.disabled=false;button.textContent="加入候選觀察";
+      }
+    });
+  });
+  catalogPage({reset:true});
+}
