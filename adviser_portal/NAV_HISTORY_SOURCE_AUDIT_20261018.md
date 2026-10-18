@@ -38,3 +38,10 @@ python -m adviser_portal.nav_history_audit --manifest /private/<share-class>.jso
 先從特別關注且已有當期證據的 `LU2156566916`（富達全球優質債券 A 股 C 月配息美元）、安聯台灣科技基金、瀚亞多重收益 B 美元等逐檔開始。每個來源**先確認基金級別與可用區間，接著核對資料授權、NAV日期與配息再投入方式**，最後再考慮採集量放大到 5,295 在台核備境外來源紀錄與全境內來源紀錄。不能因有完整基金名錄就宣稱已擁有全部歷史 NAV。
 
 備份：`backup/adviser-alpha-before-nav-history-gate-20261018`。本階段服務只部署到獨立的 `fiveline-adviser-alpha-20261018`，原站、Excel、五線譜、SD、六策略、客戶資料不變。
+
+## Render 官方近期來源一次性驗收結果
+
+- 2026/10/18 09:57 UTC，使用富達全球優質債券 A 股 C 月配息美元級別（ISIN `LU2156566916`）實際讀取 TDCC 3-2／3-4，結果為 `OFFSHORE_RECENT_NAV_EVIDENCE_ONLY`，核對到 **4 個近期 NAV 日期**。因此三年就緒結果仍為 `false`，並沒有把這 4 天當成歷史完整度。
+- 同次境內 SITCA 基金驗收遭遇 `NavEvidenceUnavailable`，尚未獲得當次來源資料；**此輪不可宣稱安聯台灣科技基金 NAV 查詢成功**。網站將來源無法驗證的情況以錯誤回覆，不退回舊日價格。
+- 最新 Render build 已完成 **163/163** 自動測試，獨立 Alpha 服務狀態 Live。該測試只檢查演算法與傳輸錯誤處理，不等同三年歷史實際資料可用。
+- 此次使用一次性開機探測旗標 `ADVISER_NAV_HISTORY_COVERAGE_SMOKE_ON_BOOT=1`；最終狀態須設為 `0`。
