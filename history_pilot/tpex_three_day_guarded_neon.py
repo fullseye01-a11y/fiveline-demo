@@ -69,7 +69,7 @@ def run_guarded_import(dsn, *, backup_proof, read_dates=None,
     if not dsn:
         raise RuntimeError("Neon not configured; refuse any official requests")
     if backup_proof!=BACKUP_BRANCH:
-        raise ValueError("matching Neon restore branch proof is required")
+        raise ValueError("matching Neon backup branch proof is required")
     reader=read_dates or neon_read_only_dates
     pdf=fetch_pdf or fetch_official_pdf
     quote_fetch=fetch_quotes or fetch_json
