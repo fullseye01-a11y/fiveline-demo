@@ -225,9 +225,9 @@ function renderCatalogItem(row){
     const note=el("p","catalog-nav-warning",
       "境外基金僅提供最近七日 NAV 證據及配息日期參考。級別未正式核准，不可用於含息回測。");
     card.append(note);
-    ["nav","dividend"].forEach(part=>{
+    ["nav","dividend","readiness"].forEach(part=>{
       const trigger=el("button","ghost catalog-nav-btn",
-        part==="nav"?"核對境外最近七日 NAV":"查看官方配息日期");
+        part==="nav"?"核對境外最近七日 NAV":part==="dividend"?"查看官方配息日期":"檢查含息試算資料完整度");
       trigger.type="button";
       const area=el("div","catalog-nav-evidence");
       area.setAttribute("aria-live","polite");
@@ -245,10 +245,16 @@ function renderCatalogItem(row){
           });
           const v=await res.json();
           if(!res.ok)throw Error(v.error||"來源無法核對");
-          if(v.instrument_uid!==row.uid||v.class_identity_approved!==false||
-             v.usable_for_portfolio!==false||v.usable_for_backtest!==false||
-             v.cash_dividend_per_share_verified!==false)
-            throw Error("來源資料安全狀態不符");
+          if(v.instrument_uid!==row.uid)throw Error("標的身分無法核對");
+          if(part==="readiness"){
+            if(v.ready_for_portfolio!==false||v.ready_for_total_return!==false||
+               v.ready_for_six_strategies!==false||v.data_modified!==false)
+               throw Error("績效來源安全狀態不符");
+          }else if(v.class_identity_approved!==false||
+                    v.usable_for_portfolio!==false||v.usable_for_backtest!==false||
+                    v.cash_dividend_per_share_verified!==false){
+             throw Error("來源資料安全狀態不符");
+          }
           area.replaceChildren();
           if(part==="nav" && v.status==="OFFSHORE_RECENT_NAV_EVIDENCE_ONLY"){
             const n=Number(v.nav);
@@ -270,10 +276,22 @@ function renderCatalogItem(row){
               }
             }else area.append(el("small","","來源沒有符合此基金的配息事件日期。"));
             area.append(el("p","catalog-nav-warning",
-              "此來源沒有級別 ISIN 和已核准每單位現金配息額，不能據此計算含息報酬。"));
+              "此來源的配息收益／本金欄位是比例，不能當成現金配息額；原幣每單位金額仍需與基金公司公告對帳。"));
+          }else if(part==="readiness" && v.status==="RESEARCH_ONLY_ADJUSTMENT_NOT_READY"){
+            area.append(
+              el("strong","catalog-nav-value","含息績效：資料尚未齊全"),
+              el("small","","近七日 NAV 觀測："+v.recent_nav_observations+
+                 " 天；已顯示配息事件："+v.displayed_dividend_event_count+" 筆"),
+              el("small","","配息來源比例核對："+v.displayed_income_principal_ratio_verified_count+
+                "／"+v.displayed_dividend_event_count+
+                "；已完成發行公司每單位配息對帳："+v.issuer_per_unit_payouts_reconciled+" 筆")
+            );
+            for(const reason of v.reasons||[]){
+              area.append(el("p","catalog-nav-warning",reason));
+            }
           }else{
             area.append(el("p","catalog-nav-warning",
-              v.reason||"級別識別未通過，請人工確認。"));
+              v.reason||((v.reasons||[]).join("；"))||"級別識別未通過，請人工確認。"));
           }
         }catch(e){
           area.replaceChildren(el("p","catalog-nav-warning",
@@ -281,7 +299,7 @@ function renderCatalogItem(row){
         }finally{
           clearTimeout(timer);
           trigger.disabled=false;
-          trigger.textContent=part==="nav"?"重新核對境外 NAV":"重新檢查配息日期";
+          trigger.textContent=part==="nav"?"重新核對境外 NAV":part==="dividend"?"重新檢查配息日期":"重新檢查含息資料";
         }
       });
       card.append(trigger,area);
