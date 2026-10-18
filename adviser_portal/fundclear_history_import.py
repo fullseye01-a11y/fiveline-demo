@@ -331,7 +331,7 @@ def audit_store(root):
         catalog_binding=json.loads((root/'catalog-bindings.json').read_text())
         if catalog_binding['catalog_file_sha256']!=sha((root/'website-catalog.json').read_bytes()) or catalog_binding['basic_source_sha256']!=basic_sha:raise ValueError('CATALOG_BINDING_FINGERPRINT_MISMATCH')
         bound={b['class_key']:b for b in catalog_binding['bindings']}
-    checked=0;observations=0;start_late=0;end_early=0;gaps=[];counts=[];reviews=[]
+    checked=0;observations=0;start_late=0;end_early=0;gaps=[];counts=[];reviews=[];class_dates=defaultdict(list);partition_plans={};partition_sources=defaultdict(set);partition_reviews=defaultdict(list)
     with closing(sqlite3.connect(root/'research.sqlite',timeout=30)) as db:
         db.execute('BEGIN')
         if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('DATABASE_INTEGRITY_FAILED')
@@ -342,29 +342,45 @@ def audit_store(root):
             if q['basic_source_sha256']!=basic_sha:raise ValueError('BASIC_SOURCE_FINGERPRINT_MISMATCH')
             if body['fundClassCode']!=q['code'] or body['organizeCode']!=q['organize_code']:raise ValueError('CLASS_REQUEST_MISMATCH')
             if meta['path']!='/api/offshore/nav-profit/query-history':raise ValueError('UNEXPECTED_SOURCE')
-            if body['startDate']!=START.strftime('%Y/%m/%d') or body['endDate']!=END.strftime('%Y/%m/%d'):raise ValueError('REQUEST_RANGE_MISMATCH')
+            if 'partition_manifest_file' in meta:
+                from .fundclear_partition_history import validate_manifest
+                (request_start,request_end),plan=validate_manifest(root,meta,q)
+                partition_plans[(key,meta['partition_manifest_file'])]=plan
+                partition_sources[(key,meta['partition_manifest_file'])].add((raw_sha,body['startDate'],body['endDate']))
+            else:
+                if body['startDate']!=START.strftime('%Y/%m/%d') or body['endDate']!=END.strftime('%Y/%m/%d'):raise ValueError('REQUEST_RANGE_MISMATCH')
+                request_start,request_end=START,END
             if not re.fullmatch(r'raw/[a-f0-9]{64}\.[a-f0-9]{64}\.json\.gz',meta['raw_file']):raise ValueError('INVALID_RAW_REFERENCE')
             raw=gzip.decompress((root/meta['raw_file']).read_bytes())
             if sha(raw)!=raw_sha:raise ValueError('RAW_FINGERPRINT_MISMATCH')
-            parsed=parse_history(raw,q['currency'])
+            parsed=parse_history(raw,q['currency'],request_start,request_end)
             stored=db.execute('SELECT valuation_date,nav_per_unit,currency,status FROM research_observations WHERE class_key=? AND raw_sha256=? ORDER BY valuation_date',(key,raw_sha)).fetchall()
             if stored!=[(d,n,q['currency'],STATUS) for d,n in parsed]:raise ValueError('PRICE_ROWS_DIFFER_FROM_RAW')
-            checked+=1;observations+=len(parsed);counts.append(len(parsed))
-            start_late+=parsed[0][0]>START.isoformat();end_early+=parsed[-1][0]<END.isoformat()
-            dates=[date.fromisoformat(d) for d,n in parsed]
+            checked+=1;observations+=len(parsed);class_dates[key].extend(d for d,n in parsed)
+        for identity,plan in partition_plans.items():
+            expected={(leaf['source']['raw_sha256'],leaf['source']['request']['startDate'],leaf['source']['request']['endDate']) for leaf in plan['leaves'] if leaf['status']=='READY'}
+            if expected!=partition_sources[identity]:raise ValueError('PARTITION_PRICE_SNAPSHOT_MISSING')
+            partition_reviews[identity[0]].extend({'from':leaf['start'],'to':leaf['end'],'reason':leaf['reason']} for leaf in plan['leaves'] if leaf['status']!='READY')
+        for key,days in class_dates.items():
+            q=queue[key];days=sorted(days);counts.append(len(days))
+            start_late+=days[0]>START.isoformat();end_early+=days[-1]<END.isoformat()
+            dates=[date.fromisoformat(d) for d in days]
             spans=[{'from':a.isoformat(),'to':b.isoformat(),'calendar_days':(b-a).days} for a,b in zip(dates,dates[1:]) if (b-a).days>10]
             gaps.append(max(((b-a).days for a,b in zip(dates,dates[1:])),default=0))
-            if spans or parsed[0][0]>START.isoformat() or parsed[-1][0]<END.isoformat():
+            if spans or days[0]>START.isoformat() or days[-1]<END.isoformat() or partition_reviews[key]:
                 reviews.append({'class_key':key,'code':q['code'],'isin':q.get('isin'),'name':q.get('name'),'currency':q['currency'],
-                  'observations':len(parsed),'first_date':parsed[0][0],'last_date':parsed[-1][0],'observed_gaps_over_ten_calendar_days':spans,
+                  'observations':len(days),'first_date':days[0],'last_date':days[-1],'observed_gaps_over_ten_calendar_days':spans,
+                  'source_request_review_ranges':partition_reviews[key],
                   'expected_valuation_dates_not_inferred':True,'fund_inception_not_inferred':True,'status':'TEMPORAL_COVERAGE_REVIEW'})
         actual=db.execute('SELECT count(*) FROM research_observations').fetchone()[0]
         if actual!=observations:raise ValueError('UNREFERENCED_PRICE_ROWS')
-    result={'checked_at_utc':stamp(),'raw_fingerprints_verified':checked,'actual_nav_rows_verified':actual,'class_dates_unique':True,
+    result={'checked_at_utc':stamp(),'raw_fingerprints_verified':checked,'imported_classes_verified':len(class_dates),'actual_nav_rows_verified':actual,'class_dates_unique':True,
       'classes_starting_after_requested_start':start_late,'classes_ending_before_requested_end':end_early,
       'fewest_observations_per_imported_class':min(counts,default=0),'most_observations_per_imported_class':max(counts,default=0),
       'largest_observed_calendar_gap_days':max(gaps,default=0),'gaps_over_ten_calendar_days':sum(x>10 for x in gaps),
-      'website_catalog_bindings_verified':checked if catalog_binding is not None else 0,
+      'website_catalog_bindings_verified':len(class_dates) if catalog_binding is not None else 0,
+      'partition_manifests_verified':len(partition_plans),
+      'classes_with_partition_source_review_ranges':sum(bool(v) for v in partition_reviews.values()),
       'temporal_review_classes':len(reviews),
       'calendar_completeness_approved':False,'formal_three_year_approved_funds':0,'commercial_rights_verified':False}
     (root/'audit-report.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
@@ -381,7 +397,7 @@ def reconcile_recent_source(root,recent_file):
     reader=csv.DictReader(raw.decode('utf-8-sig').splitlines())
     required={'基金代碼','基金名稱','ISINCODE','計價幣別','日期','基金淨值(金額)'}
     if not required<=set(reader.fieldnames or []):raise ValueError('RECENT_SOURCE_SCHEMA_INVALID')
-    values=defaultdict(set);identity_reviews=0;unavailable=0;total=0
+    values=defaultdict(set);identity_reviews=0;identity_details=[];unavailable=0;total=0
     with closing(sqlite3.connect(root/'research.sqlite',timeout=30)) as db:
         db.execute('BEGIN');imported={r[0] for r in db.execute('SELECT DISTINCT class_key FROM source_snapshots')}
         for r in reader:
@@ -391,7 +407,12 @@ def reconcile_recent_source(root,recent_file):
             if not q or q['class_key'] not in imported:continue
             if (r['ISINCODE'].strip()!=q['isin'] or norm(r['基金名稱'])!=norm(q['name']) or
                 not (norm(r['計價幣別'])==norm(basic[q['code']]['計價幣別']) or r['計價幣別'].strip()==q['currency'])):
-                identity_reviews+=1;continue
+                identity_reviews+=1
+                identity_details.append({'code':q['code'],'date':r['日期'].strip(),
+                  'expected':{'isin':q['isin'],'name':q['name'],'currency':q['currency']},
+                  'recent':{'isin':r['ISINCODE'].strip(),'name':r['基金名稱'],'currency':r['計價幣別'].strip()},
+                  'status':'IDENTITY_FIELDS_REQUIRE_REVIEW','prices_changed':False})
+                continue
             d=r['日期'].strip()
             try:
                 day=date(int(d[:4]),int(d[4:6]),int(d[6:])) if re.fullmatch(r'\d{8}',d) else date.fromisoformat(d.replace('/','-'))
@@ -411,7 +432,7 @@ def reconcile_recent_source(root,recent_file):
             else:matched+=1
     result={'checked_at_utc':stamp(),'recent_source_url':'https://opendata.tdcc.com.tw/getOD.ashx?id=3-4','recent_raw_sha256':sha(raw),
       'same_class_same_date_equal_values':matched,'missing_history_but_available_in_official_recent':missing,'conflicting_values':conflicts,
-      'recent_source_duplicate_value_conflicts':recent_conflicts,'identity_review_rows':identity_reviews,'unavailable_recent_rows':unavailable,
+      'recent_source_duplicate_value_conflicts':recent_conflicts,'identity_review_rows':identity_reviews,'identity_review_details':identity_details,'unavailable_recent_rows':unavailable,
       'rows_modified_or_backfilled':0,'calendar_completeness_approved':False,'commercial_rights_verified':False}
     frozen.write_bytes(raw);(root/'recent-reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
     return {k:(len(v) if isinstance(v,list) else v) for k,v in result.items()}
