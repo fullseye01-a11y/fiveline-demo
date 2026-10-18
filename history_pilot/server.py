@@ -155,6 +155,39 @@ def twse_calendar_probe_worker() -> None:
 
 
 
+
+def tpex_stock_calendar_worker() -> None:
+    """One official TPEx 115 stock calendar PDF and date-only Neon audit."""
+    STATE["phase"] = "tpex_stock_calendar_running"
+    STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        from .storage_config import configured_dsn
+        from .tpex_official_stock_calendar import run_probe
+        dsn = configured_dsn()
+        if not dsn:
+            raise RuntimeError("Neon not configured")
+        report = run_probe(dsn)
+        STATE["phase"] = "tpex_stock_calendar_finished"
+        print("HISTORY_TPEX_OFFICIAL_STOCK_CALENDAR " + json.dumps({
+            "schema":report["schema"], "stock_schedule_markers_verified":
+            report["annual_stock_holiday_markers_validated"],
+            "pilot_expected_sessions":report["pilot_expected_sessions"],
+            "expanded_expected_sessions":report["expanded_expected_sessions"],
+            "symbols":report["instrument_count"],
+            "pilot_missing":report["pilot_missing_planned_quote_days"],
+            "expanded_gap_candidates":report["expanded_unverified_gap_candidates"],
+            "closed_day_quote_count":report["official_announced_closed_session_quote_count"],
+            "source_sha256":report["source_pdf_sha256"],
+            "actual_daily_sessions_verified":report["actual_daily_trading_calendar_independently_verified"],
+            "full_history_verified":report["complete_history_verified"],
+            "database_mutated":report["database_mutated"],
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        STATE["phase"] = "tpex_stock_calendar_error"
+        print("HISTORY_TPEX_CALENDAR_FAILED " + type(exc).__name__,flush=True)
+
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -184,7 +217,8 @@ def main():
     initial = os.getenv("PILOT_FETCH_ON_BOOT", "0") == "1"
     coverage = os.getenv("PILOT_COVERAGE_AUDIT_ON_BOOT", "0") == "1"
     official_calendar = os.getenv("PILOT_TWSE_CALENDAR_PROBE_ON_BOOT", "0") == "1"
-    if sum((backfill, initial, coverage, official_calendar)) > 1:
+    otc_calendar = os.getenv("PILOT_TPEX_CALENDAR_PROBE_ON_BOOT", "0") == "1"
+    if sum((backfill, initial, coverage, official_calendar, otc_calendar)) > 1:
         raise RuntimeError("Only one importer/backfill/coverage/calendar probe may run")
     if backfill:
         threading.Thread(target=backfill_worker, daemon=True, name="backfill-worker").start()
@@ -194,6 +228,8 @@ def main():
         threading.Thread(target=coverage_audit_worker, daemon=True, name="coverage-audit").start()
     elif official_calendar:
         threading.Thread(target=twse_calendar_probe_worker, daemon=True, name="twse-calendar-probe").start()
+    elif otc_calendar:
+        threading.Thread(target=tpex_stock_calendar_worker, daemon=True, name="tpex-calendar-probe").start()
     else:
         print("HISTORY_IMPORTS_DISABLED", flush=True)
     port = int(os.environ.get("PORT", "10000"))
