@@ -1,0 +1,33 @@
+# 歷史基金 NAV 下一階段｜官方級別身分及資料授權閘門
+
+研究版日期：2026-10-18。**尚未取得三年逐日 NAV 或商業授權，不可用於客戶正式配置。**
+
+## 實際確認的三個優先基金級別
+
+| 基金 | 現行市場名錄代碼 | 官方基金級別 ISIN | 原幣 | 發行公司公開身分證據 |
+|---|---|---|---|---|
+| 安聯台灣科技基金 | DDO04 | TW000T3604Y3 | TWD | [安聯投信](https://tw.allianzgi.com/zh-tw/products-solutions/taiwan-onshore/allianz-global-investors-taiwan-technology-fund) |
+| 瀚亞多重收益優化組合基金 B 類型－美元 | DIOB3 | TW000T0759D2 | USD | [瀚亞投信](https://www.eastspring.com.tw/our-funds/all-funds/funddetails?isincode=TW000T0759D2) |
+| 富達基金－全球優質債券基金 A 股 C 月配息美元 | LU2156566916 | LU2156566916 | USD | [富達官方級別頁](https://www.fidelity.com.tw/fund-and-service/fundui/funds/Fidelity-Funds-Global-Income-Fund-A-MCDIST-G-USD/overview) |
+
+- 兩檔台灣境內基金原先 SITCA 搜尋快照 ISIN 為空；本次以官方產品頁對應精確名稱、在台代碼與級別後**額外補上唯讀來源對照**，不擅自改寫全市場候選名錄。
+- 官方級別名稱、原幣或代碼有任何差異，API 不回傳這筆 ISIN。尤其 B 美元與 B 台幣、A 美元不可因字面相似就合併。
+- `GET /api/fund-source-qualification?uid=...` 由使用者點擊時回覆對照結果、官方連結及阻擋原因。只支援上列三個人工查核級別；其餘基金回覆待驗證，不複製別檔 ISIN。
+- 目前 `commercial_data_rights_approved=false`、`three_year_history_ready=false`、`full_history_raw_nav_rows_imported=0`、`ready_for_total_return=false`。官網有 NAV/績效圖不代表已提供可再散布的完整逐日 NAV 原檔與商用授權。
+
+## 本輪檢查與來源發現
+
+1. TDCC 公開 `3-2` 基本資料含基金級別及 ISIN，`3-4` 為近期淨值；**不能用它假稱已掌握完整三年**。
+2. 富達官方頁證實 A 股 C 月配息美元 ISIN，而 Yahoo、StockQ 等第三方歷史淨值可幫助找出資料差異與公開查詢途徑，但**不當作經授權批次蒐集與客戶服務來源**；沒有自動下載或入庫。
+3. 原有 `adviser_portal/nav_history_audit.py` 存在品質閘門缺口：此前商用授權審查為 false 時，仍可能回傳「provisional coverage passed」。本輪已修正：**需要授權人工審查=true、級別身分人工審查=true、逐日歷史日期與官方估值日清單完全對帳**，才可能進入「暫定覆蓋通過」。即使兩個旗標為 true，程式仍強調這只是填表者聲明，未獨立驗證來源權利；不啟用總報酬。
+4. 三筆官方級別身分補充證據可讓下一階段完整歷史原檔對帳採用統一 `ISIN+currency+nav_date` 索引，且保留 SITCA/TDCC 來源代碼。
+
+## 實際下一步資料匯入路徑
+
+從上述三檔逐檔尋找基金公司正式 NAV 日期序列／授權資料商導出；取得原始 CSV、最少三年估值日清單、來源檔 SHA256、基金級別與期限、授權商用條款核准後，使用**離線** `python -m adviser_portal.nav_history_audit` 測試。通過者仍不能直接寫入個資資料庫、客戶資產配置或六策略，先建獨立私有試跑資料庫及回復備份。
+
+**未完成：** 全市場三年歷史資料、實際基金原始檔匯入、客戶身份隔離、原 Excel 27 張工作表、基金現金配息再投入、TWD 匯率、合法再散布核准及策略回測品質驗收。
+
+僅修改 `feature/adviser-client-platform-v1` 的獨立 Alpha；主站、原 Excel、正式五線譜、Neon 客戶資料、六策略保持原樣。
+
+備份分支：`backup/adviser-alpha-before-licensed-nav-source-20261018`。
