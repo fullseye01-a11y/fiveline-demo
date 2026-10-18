@@ -112,5 +112,62 @@ class TestOfficialAllianzCorrections(unittest.TestCase):
         self.assertFalse(detail["official_adjustment_evidence_available"])
 
 
+
+class TestCorrectionHttp(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from http.server import ThreadingHTTPServer
+        from threading import Thread
+        from adviser_portal.server import Handler
+        cls.server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
+        cls.url=f"http://127.0.0.1:{cls.server.server_address[1]}"
+        cls.thread=Thread(target=cls.server.serve_forever,daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=3)
+
+    def test_issuer_correction_api_has_no_history_prices(self):
+        from urllib.request import urlopen
+        from unittest.mock import patch
+        result={
+            "status":"ISSUER_CORRECTION_NOTICE_RESEARCH_EVIDENCE",
+            "instrument_uid":"2d4e6ba412b83aa270a3",
+            "event_count":2,
+            "history_source_rows_checked":0,
+            "three_year_history_ready":False,
+            "ready_for_total_return":False,
+            "usable_for_portfolio":False,
+        }
+        with patch("adviser_portal.server.correction_notice_for",return_value=result) as fn:
+            with urlopen(self.url+
+                         "/api/fund-nav-corrections?uid=2d4e6ba412b83aa270a3",timeout=3) as response:
+                import json
+                actual=json.load(response)
+        fn.assert_called_once_with("2d4e6ba412b83aa270a3")
+        self.assertFalse(actual["three_year_history_ready"])
+        self.assertNotIn("annualized_performance",actual)
+
+    def test_issuer_api_invalid_request_rejected(self):
+        from urllib.request import urlopen
+        from urllib.error import HTTPError
+        for bad in ("?uid=x&uid=y","?uid=x&source=http://evil.invalid","?uid=",""):
+            with self.subTest(bad=bad),self.assertRaises(HTTPError) as cm:
+                urlopen(self.url+"/api/fund-nav-corrections"+bad,timeout=3)
+            self.assertEqual(cm.exception.code,400)
+            cm.exception.close()
+
+    def test_ui_displays_official_correction_without_edit(self):
+        from pathlib import Path
+        js=(Path(__file__).resolve().parents[1]/"static"/"app.js").read_text("utf-8")
+        self.assertIn('"/api/fund-nav-corrections"',js)
+        self.assertIn("查看安聯歷史 NAV 官方更正",js)
+        self.assertIn("report.history_source_rows_checked!==0",js)
+        self.assertIn("三年資料尚未匯入",js)
+
+
 if __name__=="__main__":
     unittest.main()
