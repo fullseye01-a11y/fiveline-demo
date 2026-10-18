@@ -151,6 +151,9 @@ def _session_evidence(official_dates,isin,currency,meta):
     if not isinstance(raw,list) or not raw or len(raw)>MAX_OBSERVATIONS or len(raw)!=len(set(raw)):
         raise HistoryAuditError("Expected NAV-date evidence missing, duplicated or oversized")
     expected={_date_iso(x) for x in raw}
+    digest=sha256("\n".join(sorted(raw)).encode("utf-8")).hexdigest()
+    if digest!=official_dates["source_sha256"]:
+        raise HistoryAuditError("Issuer NAV-date list bytes do not match hash")
     checked=official_dates.get("reviewer_approved") is True
     return expected,checked
 
