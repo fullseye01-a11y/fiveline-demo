@@ -207,6 +207,15 @@ def offshore_smoke_once():
             "historical_return_approved":False,
             "client_records_used":False,
         }, ensure_ascii=False),flush=True)
+        div = dividend_events(uid)
+        print("ADVISER_OFFSHORE_DIVIDEND_SMOKE " + json.dumps({
+            "status": div.get("status"),
+            "event_count": div.get("event_count"),
+            "cash_per_unit_verified":False,
+            "class_identity_approved":False,
+            "dividend_adjustment_ready":False,
+            "historical_return_approved":False,
+        },ensure_ascii=False),flush=True)
     except OffshoreUnavailable as exc:
         print("ADVISER_OFFSHORE_SMOKE_SOURCE_FAILED "+type(exc).__name__,flush=True)
     except Exception as exc:
