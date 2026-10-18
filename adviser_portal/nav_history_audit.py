@@ -22,6 +22,7 @@ import re
 from urllib.parse import urlsplit
 
 from .offshore_evidence import valid_isin
+from .nav_correction_evidence import compare_official_corrections
 
 REQUIRED_COLUMNS=("nav_date","isin","currency","nav_per_unit")
 MAX_CSV_BYTES=8_000_000
@@ -174,6 +175,8 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
     expected,reviewed=_session_evidence(expected_sessions,isin,currency,meta)
     missing=set() if expected is None else expected-set(days)
     unexpected=set() if expected is None else set(days)-expected
+    corrections=compare_official_corrections(isin,currency,observations)
+    corrections_ok=corrections["all_in_range_corrections_valid"]
     window_span=(first<=cutoff)
     # Fund NAV is not published on every calendar day: weekends, holidays
     # and issuer-specific closed days are validated by the supplied official
@@ -187,7 +190,7 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
     class_identity_ok=meta.get("issuer_identity_reviewed") is True
     coverage_ok=(
         window_span and not stale and expected is not None and reviewed
-        and rights_ok and class_identity_ok
+        and rights_ok and class_identity_ok and corrections_ok
         and len(expected)==len(days) and not missing and not unexpected and dupes==0
         and min(expected)<=cutoff and max(expected)==last
     )
@@ -201,6 +204,9 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
     if dupes:blockers.append("DUPLICATED_SAME_NAV_DATE")
     if not meta["rights_reviewer_approved"]:blockers.append("DATA_LICENSE_REVIEW_NOT_APPROVED")
     if not class_identity_ok:blockers.append("SHARE_CLASS_OR_PROVIDER_REVIEW_PENDING")
+    if corrections["missing_count"]:blockers.append("OFFICIAL_CORRECTION_NAV_DATE_MISSING")
+    if corrections["outdated_count"]:blockers.append("OUTDATED_BEFORE_OFFICIAL_NAV_CORRECTION")
+    if corrections["conflicting_count"]:blockers.append("OFFICIAL_REVISED_NAV_VALUE_CONFLICT")
     # Reconciliation of dividends, FX, splits and client suitability is
     # a separate strict prerequisite even after individual CSV passes.
     return {
@@ -220,6 +226,14 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
         "sample_missing_dates":[d.isoformat() for d in sorted(missing)[:8]],
         "reviewed_issuer_nav_calendar":reviewed,
         "source_license_approved_attested_only":meta["rights_reviewer_approved"],
+        "official_nav_correction_notice":corrections["source_url"],
+        "official_nav_correction_dates_expected":corrections["expected_correction_count"],
+        "official_nav_correction_dates_checked":corrections["checked_count"],
+        "official_nav_correction_missing":corrections["missing_count"],
+        "official_nav_correction_outdated":corrections["outdated_count"],
+        "official_nav_correction_conflicting":corrections["conflicting_count"],
+        "official_nav_correction_cases":corrections["cases"],
+        "official_nav_revision_gate_passed":corrections_ok,
         "calendar_coverage_provisional_pass":coverage_ok,
         "issuer_amounts_distributions_checked":False,
         "fx_history_verified":False,
