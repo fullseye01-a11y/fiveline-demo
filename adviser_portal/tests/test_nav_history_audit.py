@@ -139,7 +139,27 @@ class HistoricalNavAuditTests(unittest.TestCase):
         m={**self.meta,"rights_reviewer_approved":False}
         x=self.audit(meta=m)
         self.assertIn("DATA_LICENSE_REVIEW_NOT_APPROVED",x["blockers"])
+        self.assertFalse(x["calendar_coverage_provisional_pass"])
         self.assertFalse(x["ready_for_portfolio"])
+    def test_rights_reviewer_not_approved_must_not_provisionally_pass(self):
+        m={**self.meta,"rights_reviewer_approved":False}
+        x=self.audit(meta=m)
+        self.assertFalse(x["calendar_coverage_provisional_pass"])
+        self.assertEqual(x["status"],"HISTORY_SOURCE_NEEDS_REVIEW")
+        self.assertIn("DATA_LICENSE_REVIEW_NOT_APPROVED",x["blockers"])
+
+    def test_identity_reviewer_not_approved_must_not_provisionally_pass(self):
+        m={**self.meta,"issuer_identity_reviewed":False}
+        x=self.audit(meta=m)
+        self.assertFalse(x["calendar_coverage_provisional_pass"])
+        self.assertIn("SHARE_CLASS_OR_PROVIDER_REVIEW_PENDING",x["blockers"])
+
+    def test_manifest_rights_and_identity_must_be_actual_booleans(self):
+        for key in ("rights_reviewer_approved","issuer_identity_reviewed"):
+            for value in (1,"yes",None):
+                with self.subTest(key=key,value=value),self.assertRaises(a.HistoryAuditError):
+                    self.audit(meta={**self.meta,key:value})
+
     def test_wrong_nav_type_and_total_rejected(self):
         for v in ("adjusted_nav","total_nav_aggregate","total_return_nav"):
             with self.subTest(value=v),self.assertRaises(a.HistoryAuditError):
