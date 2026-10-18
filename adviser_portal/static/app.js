@@ -344,8 +344,7 @@ function renderCatalogItem(row){
                 " 期；與集保除息日期重疊 "+v.tdcc_matching_ex_date_count+
                 " 期；收益／本金比例一致 "+v.tdcc_matching_composition_count+" 期")
             );
-            const source=el("a","catalog-source-link","查看富達公告原始 PDF（第 "+
-              v.issuer_pdf_page+" 頁）↗");
+            const source=el("a","catalog-source-link","開啟富達目前官網 PDF（可能已更新，非此歷史摘錄）↗");
             // Server response uses a hardcoded publisher HTTPS URL only.
             if(v.issuer_pdf_url!=="https://www.fidelityinternational.com/legal/documents/FF/TW-zh/fdpc.ff.TW-zh.TW.pdf")
               throw Error("公告連結來源不符");
@@ -370,7 +369,7 @@ function renderCatalogItem(row){
                 v.issuer_pdf_sha256_registered.slice(0,16)+"…"));
             }
             area.append(el("p","catalog-nav-warning",
-              "已記錄富達官網 PDF 檔案指紋，但尚未用程式逐頁解析驗收配息表格；這是具來源的研究摘錄，金額正式核准 0 筆，不能使用於含息績效。"));
+              "這是 2026/07 歷史配息人工摘錄。官網 PDF 已更新到 10 月，舊版位元組未保存；不能拿目前網址或雜湊當作舊版自動驗證。此處金額正式核准 0 筆，不能用於含息績效。"));
           }else{
             area.append(el("p","catalog-nav-warning",
               v.reason||((v.reasons||[]).join("；"))||"級別識別未通過，請人工確認。"));
