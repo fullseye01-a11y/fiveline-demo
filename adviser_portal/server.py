@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 
 from .catalog import search_catalog, CatalogUnavailable
+from .nav_evidence import evidence, NavEvidenceUnavailable
 
 from .engine import SAMPLE_POSITIONS, allocation_plan, risk_assessment, retirement_projection
 
@@ -72,6 +73,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": str(exc)[:100]}, 400)
             except CatalogUnavailable:
                 return self._json({"error": "官方來源名錄目前無法驗證，請稍後重試。"}, 503)
+        if path == "/api/nav-evidence":
+            try:
+                args = parse_qs(parsed.query, keep_blank_values=True)
+                if len(parsed.query) > 130 or set(args) != {"uid"} or len(args["uid"]) != 1:
+                    raise ValueError("基金級別查詢參數不正確")
+                return self._json(evidence(args["uid"][0]))
+            except ValueError as exc:
+                return self._json({"error": str(exc)[:100]}, 400)
+            except (CatalogUnavailable, NavEvidenceUnavailable):
+                return self._json({"error":"官方基金淨值來源暫時無法核對，請稍後再查。"},503)
         if path == "/health":
             return self._json({"ok": True, "service": "fiveline-adviser-preview",
                                "data_mode": "synthetic_only", "client_records": False})
