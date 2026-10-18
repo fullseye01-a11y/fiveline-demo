@@ -62,6 +62,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlsplit(self.path)
         path = parsed.path
+        if path == "/api/operator/research-source":
+            from .research_source_relay import relay_source,RelayError
+            try:
+                if len(parsed.query)>80:
+                    return self._json({"error":"EXACT_SOURCE_DATE_REQUIRED"},400)
+                body=relay_source(parse_qs(parsed.query,keep_blank_values=True),
+                                  self.headers.get("Authorization",""))
+                self._headers(200,"application/gzip",len(body))
+                self.wfile.write(body)
+                return
+            except RelayError as exc:
+                return self._json({"error":str(exc)},exc.status)
         if path == "/api/fund-batch-queue":
             try:
                 args=parse_qs(parsed.query,keep_blank_values=True)

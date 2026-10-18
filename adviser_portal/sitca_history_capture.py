@@ -17,6 +17,7 @@ import re
 import sqlite3
 import ssl
 import time
+import gzip
 
 URL = 'https://www.sitca.org.tw/ROC/Industry/IN2106.aspx?pid=IN2213_02'
 MAX_BYTES = 8_000_000
@@ -89,30 +90,39 @@ def parse_capture(raw, requested_day, *, minimum_rows=1000):
             'observations':observations}
 
 
+def make_public_fetcher():
+    """Reuse one anonymous public form/session, without repeated landing GETs."""
+    fields=None
+    context=ssl.create_default_context()
+    if hasattr(ssl,'VERIFY_X509_STRICT'):context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    opener=build_opener(HTTPCookieProcessor(CookieJar()),HTTPSHandler(context=context))
+    def read(request):
+        with opener.open(request,timeout=30) as response:
+            if response.status!=200 or response.geturl()!=URL:
+                raise CaptureError('PUBLIC_QUERY_TRANSPORT_MISMATCH')
+            raw=response.read(MAX_BYTES+1)
+            if len(raw)>MAX_BYTES:raise CaptureError('CAPTURE_RESPONSE_TOO_LARGE')
+            return raw
+    def fetcher(day):
+        nonlocal fields
+        if fields is None:
+            page=_Page();page.feed(read(URL).decode('utf-8-sig'))
+            fields={k:v for k,(t,v) in page.inputs.items() if t=='hidden'}
+        submitted=dict(fields)
+        submitted.update({DATE_FIELD:day.strftime('%Y%m%d'),
+                       'ctl00$ContentPlaceHolder1$ddlQ_Comid':'',
+                       'ctl00$ContentPlaceHolder1$BtnQuery':'查詢'})
+        return read(Request(URL,data=urlencode(submitted).encode()))
+    return fetcher
+
+
 def capture_days(days, root, *, fetcher=None, minimum_rows=1000):
     """Explicit bounded batch, maximum 31 dates; persists after every good date."""
     if (not isinstance(days,list) or not 1<=len(days)<=31 or
             any(type(d) is not date or d>date.today() for d in days) or len(set(days))!=len(days)):
         raise CaptureError('EXPLICIT_DATE_BATCH_INVALID')
     root=Path(root);root.mkdir(parents=True,exist_ok=True)
-    if fetcher is None:
-        context=ssl.create_default_context()
-        if hasattr(ssl,'VERIFY_X509_STRICT'):context.verify_flags &= ~ssl.VERIFY_X509_STRICT
-        opener=build_opener(HTTPCookieProcessor(CookieJar()),HTTPSHandler(context=context))
-        def read(request):
-            with opener.open(request,timeout=30) as response:
-                if response.status!=200 or response.geturl()!=URL:
-                    raise CaptureError('PUBLIC_QUERY_TRANSPORT_MISMATCH')
-                raw=response.read(MAX_BYTES+1)
-                if len(raw)>MAX_BYTES:raise CaptureError('CAPTURE_RESPONSE_TOO_LARGE')
-                return raw
-        def fetcher(day):
-            page=_Page();page.feed(read(URL).decode('utf-8-sig'))
-            fields={k:v for k,(t,v) in page.inputs.items() if t=='hidden'}
-            fields.update({DATE_FIELD:day.strftime('%Y%m%d'),
-                           'ctl00$ContentPlaceHolder1$ddlQ_Comid':'',
-                           'ctl00$ContentPlaceHolder1$BtnQuery':'查詢'})
-            return read(Request(URL,data=urlencode(fields).encode()))
+    if fetcher is None:fetcher=make_public_fetcher()
     summaries=[]
     with sqlite3.connect(root/'research.sqlite') as db:
         db.execute('''CREATE TABLE IF NOT EXISTS source_snapshots (
@@ -126,8 +136,12 @@ def capture_days(days, root, *, fetcher=None, minimum_rows=1000):
             PRIMARY KEY(raw_sha256,source_class_key))''')
         for day in days:
             target=root/(day.isoformat()+'.html')
-            reused=target.exists()
-            raw=target.read_bytes() if reused else fetcher(day)
+            compressed=target.with_suffix('.html.gz')
+            reused=target.exists() or compressed.exists()
+            if target.exists():raw=target.read_bytes()
+            elif compressed.exists():
+                with gzip.open(compressed,'rb') as source:raw=source.read(MAX_BYTES+1)
+            else:raw=fetcher(day)
             captured=parse_capture(raw,day,minimum_rows=minimum_rows)
             summary={k:v for k,v in captured.items() if k!='observations'}
             prior_dates=db.execute('SELECT requested_date FROM source_snapshots WHERE table_sha256=?',
