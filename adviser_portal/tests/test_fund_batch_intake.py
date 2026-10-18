@@ -106,7 +106,11 @@ class BatchIntakeTests(unittest.TestCase):
         other_snapshot=snapshot([OFF,twin])
         one=submission(OFF,snap=other_snapshot)
         two=submission(twin,snap=other_snapshot)
-        # Even distinct raw files would not be acceptable until the
+        # These MUST be distinct CSV bytes, otherwise the duplicate-export
+        # gate (a separate guard) masks the shared-ISIN identity rejection.
+        two["raw_csv"]=two["raw_csv"].replace(b"10.0000",b"10.0001",1)
+        two["manifest"]["source_sha256"]=sha256(two["raw_csv"]).hexdigest()
+        # Even distinct raw files cannot be assigned until the
         # duplicative ISIN/currency/name catalog identity is reconciled.
         r=self.audit([one,two],other_snapshot)
         self.assertEqual(r["provisional_source_date_quality_pass_count"],0)
