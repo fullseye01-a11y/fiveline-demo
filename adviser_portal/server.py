@@ -265,6 +265,25 @@ def issuer_excerpt_smoke_once():
               type(exc).__name__, flush=True)
 
 
+
+def issuer_pdf_bytes_smoke_once():
+    """One explicit official publisher PDF request; log digest, never raw PDF."""
+    try:
+        from .issuer_source_attestation import fetch_once
+        result=fetch_once()
+        print("ADVISER_FIDELITY_ISSUER_PDF_BYTES " + json.dumps({
+            "status":"TRANSPORT_ENVELOPE_FINGERPRINT_ONLY",
+            "sha256":result["pdf_sha256"],
+            "pdf_bytes":result["pdf_bytes"],
+            "exact_table_page_parsed":False,
+            "issuer_cash_amounts_approved":0,
+            "customer_records_saved":False,
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        print("ADVISER_FIDELITY_ISSUER_PDF_BYTES_FAILED " +
+              type(exc).__name__,flush=True)
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -279,6 +298,8 @@ def main():
         threading.Thread(target=offshore_smoke_once, daemon=True, name="offshore-source-smoke").start()
     if os.getenv("ADVISER_ISSUER_PDF_SMOKE_UID", ""):
         threading.Thread(target=issuer_excerpt_smoke_once, daemon=True, name="issuer-excerpt-smoke").start()
+    if os.getenv("ADVISER_ISSUER_PDF_BYTES_PROBE_ON_BOOT", "0") == "1":
+        threading.Thread(target=issuer_pdf_bytes_smoke_once, daemon=True, name="issuer-pdf-bytes").start()
     try:
         srv.serve_forever()
     finally:
