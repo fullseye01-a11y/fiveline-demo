@@ -166,6 +166,10 @@ def nav_evidence_smoke_once():
             "usable_for_portfolio": False,
             "client_data_used": False,
         }, ensure_ascii=False), flush=True)
+    except NavEvidenceUnavailable as exc:
+        # These reason phrases are authored inside this private adapter and
+        # contain no URLs, raw NAV values, secrets, client inputs or payloads.
+        print("ADVISER_NAV_EVIDENCE_SMOKE_REVIEW " + str(exc)[:100], flush=True)
     except Exception as exc:
         print("ADVISER_NAV_EVIDENCE_SMOKE_FAILED " + type(exc).__name__, flush=True)
 
