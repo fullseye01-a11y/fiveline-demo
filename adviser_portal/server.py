@@ -14,6 +14,7 @@ from urllib.parse import urlsplit, parse_qs
 
 from .catalog import search_catalog, CatalogUnavailable
 from .fund_universe_audit import audit_whole_universe
+from .fund_batch_queue import queue_page
 from .nav_evidence import evidence, NavEvidenceUnavailable
 from .offshore_evidence import latest_nav, dividend_events, OffshoreUnavailable
 from .income_readiness import readiness
@@ -61,6 +62,24 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlsplit(self.path)
         path = parsed.path
+        if path == "/api/fund-batch-queue":
+            try:
+                args=parse_qs(parsed.query,keep_blank_values=True)
+                if (len(parsed.query)>240 or
+                        any(len(vals)!=1 for vals in args.values()) or
+                        set(args)-{"kind","offset","limit","snapshot"}):
+                    raise ValueError("全市場基金批次參數無效")
+                get=lambda key,default:args.get(key,[default])[0]
+                from .catalog import get_catalog
+                return self._json(queue_page(
+                    get_catalog(),kind=get("kind","all"),
+                    offset=int(get("offset","0")),
+                    limit=int(get("limit","100")),
+                    expected_snapshot=get("snapshot",None)))
+            except ValueError as exc:
+                return self._json({"error":str(exc)[:110]},400)
+            except CatalogUnavailable:
+                return self._json({"error":"全市場基金快照來源不可用，不能執行批次檢查。"},503)
         if path == "/api/fund-universe-audit":
             try:
                 if parsed.query:
