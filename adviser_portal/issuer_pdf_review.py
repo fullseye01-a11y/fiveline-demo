@@ -24,15 +24,12 @@ ISSUER_PDF_URL = "https://www.fidelityinternational.com/legal/documents/FF/TW-zh
 DOC_EDITION = "2026-07"
 DOC_PUBLISHED_DATE = "2026-07-02"
 PDF_PAGE_NUMBER = 33
-# The ISIN of A股C月配息美元 confirmed separately in Fidelity's share-class
-# profile (the PDF labels the specific class GLIAM rather than printing ISIN).
+# Match the catalog's ISIN to TDCC independently, and use the issuer
+# PDF's GLIAM class label and full share-class name for the other side.
+# The issuer PDF section does not itself print this share class's ISIN.
 TARGET_ISIN = "LU2156566916"
 TARGET_FIDELITY_CLASS = "GLIAM"
 TARGET_LABEL = "富達基金－全球優質債券基金 (A股C月配息美元)"
-SOURCE_PROFILE_URL = (
-    "https://www.fidelity.com.tw/fund-and-service/fundui/funds/"
-    "Fidelity-Funds-Global-Income-Fund-A-MCDIST-G-USD/overview"
-)
 
 # Limited public issuer text transcription; descending ex-dates.
 # Fields: ex_date, cash_distribution_per_unit_USD, income%, capital%.
@@ -147,7 +144,7 @@ def issuer_distribution_review(uid, fetcher=None):
         "instrument_uid": row["uid"], "display_name": row["name"],
         "isin": TARGET_ISIN, "issuer_share_class_code": TARGET_FIDELITY_CLASS,
         "currency": "USD",
-        "issuer_pdf_url": ISSUER_PDF_URL, "issuer_profile_url": SOURCE_PROFILE_URL,
+        "issuer_pdf_url": ISSUER_PDF_URL,
         "issuer_pdf_page": PDF_PAGE_NUMBER, "issuer_pdf_edition": DOC_EDITION,
         "issuer_report_published": DOC_PUBLISHED_DATE,
         "published_monthly_event_count": len(EXCERPT),
