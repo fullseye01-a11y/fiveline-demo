@@ -38,10 +38,8 @@ def fingerprint_pdf(raw: bytes):
             "document_bytes_archived":False}
 
 
-def fetch_once(reader=None):
-    """One bounded request, no retries, redirects allowed only to exact URL."""
-    if reader:
-        return fingerprint_pdf(reader())
+def download_pdf_once():
+    """Return bytes from one fixed HTTPS official source, never from user input."""
     req=Request(ISSUER_PDF_URL,headers={
         "User-Agent":"Mozilla/5.0 (compatible; FivelineIssuerResearch/0.1)",
         "Accept":"application/pdf","Accept-Encoding":"identity",
@@ -58,4 +56,9 @@ def fetch_once(reader=None):
             data=resp.read(MAX_PDF_BYTES+1)
     except (OSError,TimeoutError) as exc:
         raise PdfFingerprintUnavailable("issuer PDF fetch failed") from exc
-    return fingerprint_pdf(data)
+    return data
+
+
+def fetch_once(reader=None):
+    """Inspect a single official PDF; no retries, store no bytes."""
+    return fingerprint_pdf(reader() if reader is not None else download_pdf_once())
