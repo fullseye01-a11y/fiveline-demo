@@ -103,19 +103,17 @@ class TestCatalogIdentity(unittest.TestCase):
             catalog.validate_catalog(doc)
 
     def test_explicit_refresh_rate_limited(self):
-        with patch.object(catalog,"get_catalog",wraps=catalog.get_catalog) as _:
-            # Override _download for no external request.
-            snap=self.catalog
-            with patch.object(catalog,"_download",return_value=snap) as downloader:
-                old_cache,old_time=catalog._cache,catalog._last_fetch
-                catalog._cache=None
-                catalog._last_fetch=0
-                try:
-                    catalog.get_catalog(refresh=True)
-                    catalog.get_catalog(refresh=True)
-                    self.assertEqual(downloader.call_count,1)
-                finally:
-                    catalog._cache, catalog._last_fetch=old_cache,old_time
+        self.patcher.stop()  # Exercise real cache; mock only the network.
+        with patch.object(catalog,"_download",return_value=self.catalog) as downloader:
+            old_cache,old_time=catalog._cache,catalog._last_fetch
+            catalog._cache=None
+            catalog._last_fetch=0
+            try:
+                catalog.get_catalog(refresh=True)
+                catalog.get_catalog(refresh=True)
+                self.assertEqual(downloader.call_count,1)
+            finally:
+                catalog._cache,catalog._last_fetch=old_cache,old_time
 
     def test_static_mobile_page_has_catalog(self):
         base=Path(__file__).resolve().parents[1]/"static"
