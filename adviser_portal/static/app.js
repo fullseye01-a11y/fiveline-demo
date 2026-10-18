@@ -162,7 +162,7 @@ function renderCatalogItem(row){
        (row.isin?" · ISIN "+row.isin:" · ISIN 未提供"));
   const note=el("p","catalog-note","身分及級別尚待核准；非即時淨值與回測績效");
   const btn=el("button","ghost",catalog.selected.has(row.uid)?"已加入候選":"加入候選觀察");
-  btn.type="button";
+  btn.type="button";btn.dataset.addUid=row.uid;
   btn.setAttribute("aria-label","將 "+row.name+" 加入本次候選觀察名單");
   btn.disabled=catalog.selected.has(row.uid);
   btn.addEventListener("click",()=>{
@@ -236,10 +236,10 @@ function ensureCatalog(){
     catalog.selected.delete(btn.dataset.removeUid);
     renderCatalogSelection();
     // Refresh the visible per-item disabled states without a network fetch.
-    document.querySelectorAll(".catalog-record button").forEach(button=>{
-      if(button.textContent==="已加入候選"){
-        button.disabled=false;button.textContent="加入候選觀察";
-      }
+    document.querySelectorAll(".catalog-record button[data-add-uid]").forEach(button=>{
+      const exists=catalog.selected.has(button.dataset.addUid);
+      button.disabled=exists;
+      button.textContent=exists?"已加入候選":"加入候選觀察";
     });
   });
   catalogPage({reset:true});
