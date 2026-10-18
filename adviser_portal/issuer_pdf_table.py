@@ -81,6 +81,58 @@ def extract_page_text(pdf_bytes:bytes, *, decoder=None):
         raise IssuerPdfTableUnverified("official PDF page text extraction failed") from exc
 
 
+
+def locate_current_class_page(pdf_bytes:bytes, decoder=None):
+    """Find GLIAM+BGIGU page in SHA-locked PDF; never assume constant page."""
+    if decoder is not None:
+        return decoder(pdf_bytes,PDF_PAGE_NUMBER),PDF_PAGE_NUMBER
+    if shutil.which("pdftotext"):
+        try:
+            result=subprocess.run(
+                ["pdftotext","-layout","-enc","UTF-8","-","-"],
+                input=pdf_bytes,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                timeout=35,check=False,
+            )
+            if result.returncode==0 and len(result.stdout)<20_000_000:
+                sections=result.stdout.decode("utf-8",errors="strict").split("\f")
+                positions=[i+1 for i,page in enumerate(sections)
+                           if TARGET_FIDELITY_CLASS in page and
+                              B_SHARE_CLASS_CODE in page and
+                              "SITE-MKT-EXMP_2610-01" in page]
+                if len(positions)==1:
+                    return sections[positions[0]-1],positions[0]
+                if positions:
+                    raise IssuerPdfTableUnverified(
+                        "GLIAM/BGIGU occur on multiple PDF pages"
+                    )
+        except (OSError,subprocess.SubprocessError,UnicodeError):
+            pass
+    try:
+        pdf=importlib.import_module("pypdf").PdfReader(BytesIO(pdf_bytes),strict=True)
+        if pdf.is_encrypted or not 1<=len(pdf.pages)<=100:
+            raise IssuerPdfTableUnverified("Publisher PDF page count/encryption unexpected")
+        positions=[]
+        for i,page in enumerate(pdf.pages):
+            raw=page.extract_text(extraction_mode="plain") or ""
+            if (TARGET_FIDELITY_CLASS in raw and
+                B_SHARE_CLASS_CODE in raw and
+                "SITE-MKT-EXMP_2610-01" in raw):
+                positions.append((i+1,raw))
+        if len(positions)!=1:
+            raise IssuerPdfTableUnverified(
+                "Could not uniquely locate current GLIAM/BGIGU PDF page"
+            )
+        return positions[0][1],positions[0][0]
+    except (ImportError,ModuleNotFoundError) as exc:
+        raise IssuerPdfTableUnverified(
+            "Could not locate GLIAM page; PDF decoder not available"
+        ) from exc
+    except IssuerPdfTableUnverified:
+        raise
+    except Exception as exc:
+        raise IssuerPdfTableUnverified("PDF full-page class location failed") from exc
+
+
 def parse_gliam_page(page_text:str):
     """Extract exactly one target class, ending before next B share class."""
     if not isinstance(page_text,str) or not page_text.strip():
@@ -227,7 +279,7 @@ def verify_single_official_version(*, fetcher=None, decoder=None):
     if (observed["pdf_sha256"]!=PDF_SHA256_REGISTERED or
         observed["pdf_bytes"]!=PDF_BYTES_REGISTERED):
         raise IssuerPdfTableUnverified("official Oct PDF version changed; refuse old table")
-    extracted=extract_page_text(raw,decoder=decoder)
+    extracted, actual_page=locate_current_class_page(raw,decoder=decoder)
     rows,overlap,new_rows=parse_current_oct_gliam_page(extracted)
     return {
         "schema":SCHEMA,
@@ -236,7 +288,7 @@ def verify_single_official_version(*, fetcher=None, decoder=None):
         "issuer_source":ISSUER_PDF_URL,
         "pdf_sha256":observed["pdf_sha256"],
         "pdf_bytes":observed["pdf_bytes"],
-        "page_number":PDF_PAGE_NUMBER,
+        "page_number":actual_page,
         "publisher_class_code":TARGET_FIDELITY_CLASS,
         "matching_catalog_isin":TARGET_ISIN,
         "pdf_edition":CURRENT_LABEL,
