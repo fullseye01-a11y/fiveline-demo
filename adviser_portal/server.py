@@ -18,6 +18,7 @@ from .offshore_evidence import latest_nav, dividend_events, OffshoreUnavailable
 from .income_readiness import readiness
 from .history_coverage import coverage
 from .fund_source_registry import source_qualification
+from .nav_correction_evidence import correction_notice_for
 from .issuer_pdf_review import issuer_distribution_review
 from .issuer_current import current_october_issuer
 from .issuer_pdf_table import IssuerPdfTableUnverified
@@ -102,6 +103,17 @@ class Handler(BaseHTTPRequestHandler):
             except (CatalogUnavailable, OffshoreUnavailable,
                     IssuerPdfTableUnverified, PdfFingerprintUnavailable):
                 return self._json({"error":"本次官方配息來源版本未通過驗證，請稍後重試；未核准任何報酬。"},503)
+        if path == "/api/fund-nav-corrections":
+            try:
+                args=parse_qs(parsed.query,keep_blank_values=True)
+                if (len(parsed.query)>115 or set(args)!={"uid"} or
+                        len(args["uid"])!=1):
+                    raise ValueError("基金 NAV 修正公告參數無效")
+                return self._json(correction_notice_for(args["uid"][0]))
+            except ValueError as exc:
+                return self._json({"error":str(exc)[:90]},400)
+            except CatalogUnavailable:
+                return self._json({"error":"基金名錄暫時無法核對。"},503)
         if path == "/api/fund-source-qualification":
             try:
                 args=parse_qs(parsed.query,keep_blank_values=True)
