@@ -16,6 +16,7 @@ from .catalog import search_catalog, CatalogUnavailable
 from .nav_evidence import evidence, NavEvidenceUnavailable
 from .offshore_evidence import latest_nav, dividend_events, OffshoreUnavailable
 from .income_readiness import readiness
+from .history_coverage import coverage
 from .issuer_pdf_review import issuer_distribution_review
 from .issuer_current import current_october_issuer
 from .issuer_pdf_table import IssuerPdfTableUnverified
@@ -100,6 +101,17 @@ class Handler(BaseHTTPRequestHandler):
             except (CatalogUnavailable, OffshoreUnavailable,
                     IssuerPdfTableUnverified, PdfFingerprintUnavailable):
                 return self._json({"error":"本次官方配息來源版本未通過驗證，請稍後重試；未核准任何報酬。"},503)
+        if path == "/api/history-coverage":
+            try:
+                args = parse_qs(parsed.query, keep_blank_values=True)
+                if (len(parsed.query)>115 or set(args)!={"uid"} or
+                        len(args["uid"])!=1):
+                    raise ValueError("歷史淨值核對參數無效")
+                return self._json(coverage(args["uid"][0]))
+            except ValueError as exc:
+                return self._json({"error":str(exc)[:100]},400)
+            except (CatalogUnavailable, OffshoreUnavailable, NavEvidenceUnavailable):
+                return self._json({"error":"歷史 NAV 來源目前無法核對，請稍後再試。"},503)
         if path == "/api/nav-evidence":
             try:
                 args = parse_qs(parsed.query, keep_blank_values=True)
