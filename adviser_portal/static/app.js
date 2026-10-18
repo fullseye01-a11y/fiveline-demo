@@ -483,6 +483,18 @@ function renderCatalogItem(row){
           const link=el("a","catalog-source-link","查看基金公司官方級別資料 ↗");
           link.href=trusted.href;link.target="_blank";link.rel="noopener noreferrer";
           sourceArea.append(link);
+          if(report.provider_code_current==="GLIAM" &&
+             report.provider_code_legacy==="GGIAM" &&
+             report.provider_code_change_date==="2026-02-23" &&
+             report.provider_code_alias_history_reconciled===false){
+            sourceArea.append(el("small","","富達級別代碼變更：GGIAM → GLIAM（2026/02/23）；ISIN 不變。歷史代碼尚未逐筆對帳。"));
+            if(report.provider_code_change_proof_url==="https://www.fidelity.com.tw/s3files/documents/announcement/web_announcement_20251212_3.pdf"){
+              const codeProof=el("a","catalog-source-link","查看富達基金代碼變更公告 ↗");
+              codeProof.href=report.provider_code_change_proof_url;
+              codeProof.target="_blank";codeProof.rel="noopener noreferrer";
+              sourceArea.append(codeProof);
+            }
+          }
           if(report.history_query_entry_page_confirmed===true &&
              report.official_historical_nav_query_url==="https://www.eastspring.com.tw/our-funds/exportnav"){
             const exportLink=el("a","catalog-source-link","開啟瀚亞官方歷史淨值查詢／Excel 匯出 ↗");
