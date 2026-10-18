@@ -38,3 +38,8 @@
 - 富達 GLIAM、安聯台灣科技、瀚亞 B 美元三筆基金級別均已在 Render 的官方名錄載入時做實際對照，三筆都回傳 `ISSUER_PUBLISHED_CLASS_IDENTITY_FOUND`，沒有 ISIN/幣別/級別衝突；歷史 NAV 仍 **0 筆**。
 - 品質程式已修正：任一 `rights_reviewer_approved=false` 或 `issuer_identity_reviewed=false`，即使宣稱歷史日數全部吻合，也不得回傳暫定三年覆蓋通過。新增合成測試守護此條件。
 - 程式不自動下載 Excel、不從前端上傳 CSV，也不會自動把瀚亞公告或富達配息資料寫入正式回測。每個商用資料使用方式，仍須確認基金公司或資料商授權。
+
+## 富達歷史級別代碼變更（2026/02/23）
+
+- 富達官方 [2025/12/12 基金代碼變更通知](https://www.fidelity.com.tw/s3files/documents/announcement/web_announcement_20251212_3.pdf) 第 9 頁公告，同一 ISIN **LU2156566916** 對應 **舊代碼 GGIAM → 新代碼 GLIAM**，新基金代碼 2026/02/23 生效。公告說明是代碼轉換，非另一個配息級別，也不能據此推定每單位 NAV／單位數發生分割。
+- Alpha 官方來源卡新增兩個代碼與切換日期；後續三年歷史 NAV 匯入要以 ISIN 為主鍵，保留不同期間的來源代碼；若資料商使用兩套代碼，需要逐筆核對來源資料。**目前歷史代碼序列尚未對帳**，`provider_code_alias_history_reconciled=false`。
