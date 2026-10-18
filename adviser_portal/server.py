@@ -70,12 +70,21 @@ class Handler(BaseHTTPRequestHandler):
                         set(args)-{"kind","offset","limit","snapshot"}):
                     raise ValueError("全市場基金批次參數無效")
                 get=lambda key,default:args.get(key,[default])[0]
+                offset=int(get("offset","0"))
+                limit=int(get("limit","100"))
+                kind=get("kind","all")
+                token=get("snapshot",None)
+                # Reject malformed requests before any external catalog read.
+                if (kind not in ("all","domestic","offshore") or
+                    not 0<=offset<=24000 or not 1<=limit<=200 or
+                    (offset and token is None) or
+                    (token is not None and
+                     (len(token)!=64 or any(c not in "0123456789abcdef" for c in token)))):
+                    raise ValueError("全市場基金批次參數無效")
                 from .catalog import get_catalog
                 return self._json(queue_page(
-                    get_catalog(),kind=get("kind","all"),
-                    offset=int(get("offset","0")),
-                    limit=int(get("limit","100")),
-                    expected_snapshot=get("snapshot",None)))
+                    get_catalog(),kind=kind,offset=offset,limit=limit,
+                    expected_snapshot=token))
             except ValueError as exc:
                 return self._json({"error":str(exc)[:110]},400)
             except CatalogUnavailable:

@@ -220,6 +220,11 @@ def _eligible_rows(rows, ident, isin_field, currency_field):
 
 def latest_nav(uid, fetcher=None, today=None):
     row=choose_instrument(uid)
+    return latest_nav_for_row(row, fetcher=fetcher, today=today)
+
+
+def latest_nav_for_row(row, fetcher=None, today=None):
+    """Shared matcher for trusted catalog rows, including offline batch scans."""
     if row["category"]!="offshore_fund_share_class":
         raise ValueError("非境外基金標的")
     ident=_identity(row)
