@@ -284,6 +284,28 @@ def issuer_pdf_bytes_smoke_once():
               type(exc).__name__,flush=True)
 
 
+
+def issuer_pdf_table_smoke_once():
+    """One official PDF download, SHA+GLIAM table; count-only private logs."""
+    try:
+        from .issuer_pdf_table import verify_single_official_version
+        verified=verify_single_official_version()
+        print("ADVISER_FIDELITY_GLIAM_TABLE_VERIFIED " + json.dumps({
+            "status":verified["status"],
+            "page_number":verified["page_number"],
+            "pdf_sha256":verified["pdf_sha256"],
+            "class_code":verified["publisher_class_code"],
+            "ex_date_rows":verified["verified_ex_date_count"],
+            "issuer_pdf_unit_amount_rows":verified["issuer_per_unit_amounts_verified_against_pdf"],
+            "tdcc_cash_amounts_reconciled":0,
+            "total_return_approved":False,
+            "portfolio_usage_approved":False,
+        },ensure_ascii=False),flush=True)
+    except Exception as exc:
+        print("ADVISER_FIDELITY_GLIAM_TABLE_FAILED " +
+              type(exc).__name__,flush=True)
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -300,6 +322,8 @@ def main():
         threading.Thread(target=issuer_excerpt_smoke_once, daemon=True, name="issuer-excerpt-smoke").start()
     if os.getenv("ADVISER_ISSUER_PDF_BYTES_PROBE_ON_BOOT", "0") == "1":
         threading.Thread(target=issuer_pdf_bytes_smoke_once, daemon=True, name="issuer-pdf-bytes").start()
+    if os.getenv("ADVISER_FIDELITY_PDF_TABLE_PROBE_ON_BOOT", "0") == "1":
+        threading.Thread(target=issuer_pdf_table_smoke_once, daemon=True, name="fidelity-pdf-table").start()
     try:
         srv.serve_forever()
     finally:
