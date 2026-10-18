@@ -22,3 +22,20 @@
 ## 未完成
 
 本次驗證限固定六筆、不等同全市場多年的歷史資料、連續交易日人工核准、個別上市/櫃歷程、除權息、ETF 分割、總報酬與六策略績效更新。正式客戶資料與商用再分發權限仍需另行確認。
+
+## 2026-10-18 真實執行紀錄（完成）
+
+- 官方 TPEx 115 股票休市 PDF 已通過內容比對，3 次正式 TPEX 日別 API 抓取 6488、8069 共 **6 筆**。
+- Render Build 首次 105 項測試有一項「備份錯誤訊息大小寫」比對失敗，因此該次部署被阻擋，未寫入 Neon。修正錯誤訊息後重新建置，`105 / 105` 通過，`Build successful`。
+- Render 執行 `HISTORY_TPEX_SIX_ROW_NEON_ARCHIVE`：`PRIVATE_NEON_BOUNDED_SIX_ROW_ARCHIVED`；`source_days=3`、`new_versions=6`、`approved_before=66`、`approved_after=72`、`pending=0`、`temporary_quote_spool_deleted=true`，未更新正式回測。
+- Neon 以 SQL 再驗證：`bar_versions=72`、`approved_bars=72`、`sync_runs=3`、`version>1=0`、`approved=false=0`。
+- 原 TWSE：`2330=28`、`0050=28`；TPEx：`6488=8`、`8069=8`。新增加日期只有各自 2026/10/01、10/02、10/05。
+- Neo n（Neon）已於匯入前建立 `backup-before-tpex-six-20261018`，無 compute，並實際查到 `Ready`，父分支為 `main`；此副本不等於異地加密備份。
+- 執行完已將 `PILOT_TPEX_3DAY_ARCHIVE_ON_BOOT=0`、`PILOT_TPEX_BACKUP_BRANCH_PROOF` 清空，所有其他歷史抓取 / TPEx 日曆 / preview 開關亦為 `0`，並再次部署 `live`。Render 日誌有 `HISTORY_IMPORTS_DISABLED`、`HISTORY_PILOT_SERVER_READY`，最後建置 `105/105` 通過。
+
+## 下一階段品質閘門
+
+- 個股停復牌與掛牌起訖仍待官方證據；此批取得原始交易行情，不能因此核准所有多年歷史完整性。
+- 增補實際除權息及股票/ETF 分割事件（事件類別、公告日、除權息日、支付日、現金每單位及比率、來源證據與版本）；先計算對照，再決定是否建立**額外的還原價序列**。不得覆蓋 `history_stage.bar_versions` 原價。
+- 釐清分割/除權與含息報酬的不同定義；檢查配息再投入、股數調整、報酬率與策略結果一致性。尚未取得官方事件及授權就保持正式回測禁用。
+- 每次新行情寫入前建立新的有效 Neon 還原分支，並確認 **72 筆的加密異地備份**，才能擴大下一批。
