@@ -273,6 +273,13 @@ function renderCatalogItem(row){
               for(const evt of v.events){
                 area.append(el("small","",
                   "除息 "+evt.ex_date+(evt.frequency?" · "+evt.frequency:"")));
+                if(evt.composition?.status==="PROPORTIONS_ONLY"){
+                  area.append(el("small","",
+                    "配息來源比例：可分配淨利益 "+evt.composition.income_pct+
+                    "% · 本金 "+evt.composition.capital_pct+"%（非現金金額）"));
+                }else{
+                  area.append(el("small","","配息收益／本金來源比例尚未核實。"));
+                }
               }
             }else area.append(el("small","","來源沒有符合此基金的配息事件日期。"));
             area.append(el("p","catalog-nav-warning",
