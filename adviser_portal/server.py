@@ -359,6 +359,29 @@ def historical_source_smoke_once():
 
 
 
+
+def issuer_source_registry_smoke_once():
+    """Match three issuer-class proofs to the actual public catalog; no NAV."""
+    for uid in (
+        "2d4e6ba412b83aa270a3",
+        "f0fed6445d13bc10d3fb",
+        "123e331851e3ae6ff190",
+    ):
+        try:
+            result=source_qualification(uid)
+            print("ADVISER_ISSUER_CLASS_SOURCE_SMOKE "+
+                  json.dumps({
+                      "status":result.get("status"),
+                      "official_isin_found":bool(result.get("verified_issuer_isin")),
+                      "history_source_approved":False,
+                      "three_year_nav_imported":0,
+                      "client_records_accessed":False
+                  },ensure_ascii=False),flush=True)
+        except Exception as exc:
+            print("ADVISER_ISSUER_CLASS_SOURCE_SMOKE_FAILED "+type(exc).__name__,flush=True)
+
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -379,6 +402,8 @@ def main():
         threading.Thread(target=issuer_pdf_table_smoke_once, daemon=True, name="fidelity-pdf-table").start()
     if os.getenv("ADVISER_NAV_HISTORY_COVERAGE_SMOKE_ON_BOOT", "0") == "1":
         threading.Thread(target=historical_source_smoke_once, daemon=True, name="history-coverage-smoke").start()
+    if os.getenv("ADVISER_ISSUER_SOURCE_SMOKE_ON_BOOT", "0") == "1":
+        threading.Thread(target=issuer_source_registry_smoke_once, daemon=True, name="issuer-class-source-smoke").start()
     try:
         srv.serve_forever()
     finally:
