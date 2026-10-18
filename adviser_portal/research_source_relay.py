@@ -4,7 +4,7 @@ Moves compression close to the official source. No customer records, upload,
 DB writes, arbitrary URLs or public price endpoint. Credentials stay server-side.
 """
 from datetime import date, timedelta
-from threading import BoundedSemaphore
+from threading import BoundedSemaphore,Lock
 from urllib.error import HTTPError,URLError
 from urllib.parse import urlencode
 from urllib.request import Request,urlopen
@@ -17,8 +17,9 @@ import re
 from .sitca_history_capture import make_public_fetcher,CaptureError,MAX_BYTES
 
 RELAY_URL='https://fiveline-adviser-alpha-20261018.onrender.com/api/operator/research-source'
-_lock=BoundedSemaphore(1)
-_fetcher=None
+_lock=BoundedSemaphore(2)
+_pool_lock=Lock()
+_fetcher_pool=[]
 
 
 class RelayError(ValueError):
@@ -38,11 +39,12 @@ def relay_source(query,authorization,*,fetcher=None,today=None):
     asof=today or date.today()
     if day>asof or day<asof-timedelta(days=2000):raise RelayError('SOURCE_DATE_OUTSIDE_WINDOW',400)
     if not _lock.acquire(blocking=False):raise RelayError('RESEARCH_SOURCE_BUSY',503)
+    reusable=None
     try:
-        global _fetcher
         if fetcher is None:
-            if _fetcher is None:_fetcher=make_public_fetcher()
-            fetcher=_fetcher
+            with _pool_lock:
+                reusable=_fetcher_pool.pop() if _fetcher_pool else make_public_fetcher()
+            fetcher=reusable
         raw=fetcher(day)
         if not isinstance(raw,bytes) or not 0<len(raw)<=MAX_BYTES:
             raise RelayError('SOURCE_RESPONSE_SIZE_INVALID',502)
@@ -51,7 +53,10 @@ def relay_source(query,authorization,*,fetcher=None,today=None):
         raise RelayError('OFFICIAL_SOURCE_HTTP_FAILURE',exc.code if exc.code in (401,403,429) else 502) from None
     except (URLError,OSError,TimeoutError,CaptureError):
         raise RelayError('OFFICIAL_SOURCE_UNAVAILABLE',502) from None
-    finally:_lock.release()
+    finally:
+        if reusable is not None:
+            with _pool_lock:_fetcher_pool.append(reusable)
+        _lock.release()
 
 
 def make_relay_fetcher(token):

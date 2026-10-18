@@ -95,7 +95,8 @@ def import_range(start, end, root, *, fetcher=None, max_dates=None,
 
 
 def import_range_parallel(start, end, root, *, workers=4, max_dates=None,
-                          retry_failures=False, minimum_rows=1000, progress=None):
+                          retry_failures=False, minimum_rows=1000, progress=None,
+                          fetcher_factory=None):
     """Bounded public-source prefetch; imports/ledger writes remain serial.
 
     At most 8 responses are in flight, and global new requests are spaced by
@@ -122,7 +123,7 @@ def import_range_parallel(start, end, root, *, workers=4, max_dates=None,
     if max_dates is not None:days=days[:max_dates]
     tls=local();pace=Lock();last=[0.0]
     def fetch(day):
-        if not hasattr(tls,'fetcher'):tls.fetcher=make_public_fetcher()
+        if not hasattr(tls,'fetcher'):tls.fetcher=(fetcher_factory or make_public_fetcher)()
         with pace:
             remaining=1.0-(time.monotonic()-last[0])
             if remaining>0:time.sleep(remaining)

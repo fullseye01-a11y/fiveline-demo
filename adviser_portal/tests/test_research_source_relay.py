@@ -30,10 +30,10 @@ class RelayTests(unittest.TestCase):
         with self.assertRaises(RelayError) as e:self.call(fetcher=fail)
         self.assertEqual(e.exception.status,502)
         self.assertNotIn('sensitive',str(e.exception))
-    def test_only_one_source_request_can_run_at_once(self):
-        _lock.acquire()
+    def test_only_two_source_requests_can_run_at_once(self):
+        _lock.acquire();_lock.acquire()
         try:
             with self.assertRaises(RelayError) as e:self.call(fetcher=lambda d:self.fail('busy'))
             self.assertEqual(e.exception.status,503)
-        finally:_lock.release()
+        finally:_lock.release();_lock.release()
 if __name__=='__main__':unittest.main()
