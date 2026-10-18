@@ -150,6 +150,27 @@ def catalog_smoke_once():
 
 
 
+
+def nav_evidence_smoke_once():
+    """One-shot named-public-fund verification; log status only, never NAV."""
+    uid = os.getenv("ADVISER_NAV_EVIDENCE_SMOKE_UID", "")
+    if not uid:
+        return
+    try:
+        result = evidence(uid)
+        print("ADVISER_NAV_EVIDENCE_SMOKE " + json.dumps({
+            "status": result.get("status"),
+            "official_unit_nav_present": bool(result.get("nav")),
+            "nav_date_present": bool(result.get("nav_date")),
+            "class_identity_approved": False,
+            "usable_for_portfolio": False,
+            "client_data_used": False,
+        }, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        print("ADVISER_NAV_EVIDENCE_SMOKE_FAILED " + type(exc).__name__, flush=True)
+
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -158,6 +179,8 @@ def main():
     print("ADVISER_PREVIEW_READY synthetic_only=true login=false", flush=True)
     if os.getenv("ADVISER_CATALOG_SMOKE_ON_BOOT", "0") == "1":
         threading.Thread(target=catalog_smoke_once, daemon=True, name="catalog-smoke").start()
+    if os.getenv("ADVISER_NAV_EVIDENCE_SMOKE_UID", ""):
+        threading.Thread(target=nav_evidence_smoke_once, daemon=True, name="nav-evidence-smoke").start()
     try:
         srv.serve_forever()
     finally:
