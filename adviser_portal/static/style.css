@@ -28,3 +28,15 @@
 .selected-line button{flex:none;min-height:44px}
 @media(max-width:900px){.catalog-grid{grid-template-columns:1fr}.catalog-search-form{grid-template-columns:1fr 1fr}.catalog-search-form .primary{grid-column:1/-1}}
 @media(max-width:600px){.catalog-search-form{grid-template-columns:1fr}.catalog-search-form .primary{grid-column:auto}.catalog-record{padding:14px}.catalog-actions{gap:10px}.selected-line{align-items:flex-start}}
+
+
+/* Actual official NAV source evidence remains distinct from asset allocation. */
+.catalog-nav-btn{min-height:44px;max-width:100%;justify-content:center}
+.catalog-nav-btn:disabled{opacity:.58;cursor:wait}
+.catalog-nav-evidence{width:100%;min-width:0;font-size:12px;color:#517267;line-height:1.65;overflow-wrap:anywhere}
+.catalog-nav-evidence:empty{display:none}
+.catalog-nav-evidence strong{display:block;font-size:18px;color:#135d4a;font-variant-numeric:tabular-nums}
+.catalog-nav-evidence small{display:block;color:#657a73;margin-top:4px}
+.catalog-nav-warning{border-left:3px solid #c7a255;padding:9px 11px;background:#fff9ed;border-radius:7px;
+  color:#7b5b25!important;line-height:1.65!important;font-size:11px!important;margin:4px 0!important}
+@media(max-width:600px){.catalog-nav-btn{width:100%}.catalog-nav-evidence strong{font-size:16px}}
