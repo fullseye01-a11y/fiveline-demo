@@ -40,3 +40,13 @@
 .catalog-nav-warning{border-left:3px solid #c7a255;padding:9px 11px;background:#fff9ed;border-radius:7px;
   color:#7b5b25!important;line-height:1.65!important;font-size:11px!important;margin:4px 0!important}
 @media(max-width:600px){.catalog-nav-btn{width:100%}.catalog-nav-evidence strong{font-size:16px}}
+
+/* All-market fund source QA: 100 records per scrollable mobile page. */
+.allfund-batch-panel{margin-top:20px;border-top:1px solid var(--line, #e0e4e8);padding-top:16px}
+.allfund-batch-panel h3{font-size:1rem;margin:0 0 8px}
+.allfund-batch-panel label{display:block;margin:12px 0}
+.allfund-batch-panel select{max-width:100%;min-width:0}
+.allfund-queue-scroller{max-height:380px;overflow-y:auto;overscroll-behavior:contain;margin:12px 0}
+.allfund-queue-scroller .selected-line{padding:9px 4px;border-bottom:1px solid var(--line, #e0e4e8)}
+.allfund-queue-scroller .selected-line>div{min-width:0;overflow-wrap:anywhere}
+.allfund-queue-scroller small{display:block;margin-top:3px;line-height:1.4}
