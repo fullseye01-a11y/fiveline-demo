@@ -30,7 +30,7 @@ from .issuer_source_attestation import download_pdf_once, fingerprint_pdf
 PDF_PAGE_NUMBER=33
 B_SHARE_CLASS_CODE="BGIGU"
 SOURCE_VERSION="2026-07"
-SCHEMA="fiveline_fidelity_gl iam_pdf_page_table_verified_v1".replace(" ","")
+SCHEMA="fiveline_fidelity_gliam_pdf_page_table_verified_v1"
 # Row: ex-date, return month, distribution USD/unit, ex-date ref NAV,
 # distribution rate, calendar-month total return, income%, capital%.
 ROW_RE=re.compile(
@@ -81,7 +81,7 @@ def extract_page_text(pdf_bytes:bytes, *, decoder=None):
         raise IssuerPdfTableUnverified("official PDF page text extraction failed") from exc
 
 
-def parse_gl iam_page(page_text:str):
+def parse_gliam_page(page_text:str):
     """Extract exactly one target class, ending before next B share class."""
     if not isinstance(page_text,str) or not page_text.strip():
         raise IssuerPdfTableUnverified("Fidelity PDF page text empty")
@@ -133,7 +133,7 @@ def verify_single_official_version(*, fetcher=None, decoder=None):
         observed["pdf_bytes"]!=PDF_BYTES_REGISTERED):
         raise IssuerPdfTableUnverified("official PDF version changed; refuse old table")
     extracted=extract_page_text(raw,decoder=decoder)
-    rows=parse_gl iam_page(extracted)
+    rows=parse_gliam_page(extracted)
     return {
         "schema":SCHEMA,
         "status":"PUBLISHER_DOCUMENT_TABLE_AUTOMATICALLY_VERIFIED",
