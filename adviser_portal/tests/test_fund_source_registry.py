@@ -71,6 +71,22 @@ class TestIssuerRegistry(unittest.TestCase):
         self.assertEqual(r["status"],"ISSUER_SHARE_CLASS_IDENTITY_NOT_YET_REVIEWED")
         self.assertIsNone(r["verified_issuer_isin"])
 
+    def test_eastspring_export_page_is_query_only_not_three_year_verified(self):
+        item=FUNDS[1]
+        r=s.source_qualification(item[0],chooser=lambda _uid:self.row(item))
+        self.assertEqual(r["official_historical_nav_query_url"],
+                         "https://www.eastspring.com.tw/our-funds/exportnav")
+        self.assertTrue(r["history_query_entry_page_confirmed"])
+        self.assertFalse(r["exported_three_years_verified"])
+        self.assertFalse(r["commercial_data_rights_approved"])
+        self.assertEqual(r["full_history_raw_nav_rows_imported"],0)
+
+    def test_allianz_and_fidelity_have_no_assumed_excel_export(self):
+        for item in (FUNDS[0],FUNDS[2]):
+            r=s.source_qualification(item[0],chooser=lambda _uid:self.row(item))
+            self.assertIsNone(r["official_historical_nav_query_url"])
+            self.assertFalse(r["history_query_entry_page_confirmed"])
+
     def test_missing_source_regression_no_history_fabricated(self):
         for item in FUNDS:
             r=s.source_qualification(item[0],chooser=lambda _uid:self.row(item))
@@ -84,6 +100,7 @@ class TestIssuerRegistry(unittest.TestCase):
         self.assertIn('"/api/fund-source-qualification"',script)
         self.assertIn('report.three_year_history_ready!==false',script)
         self.assertIn('report.full_history_raw_nav_rows_imported!==0',script)
+        self.assertIn('https://www.eastspring.com.tw/our-funds/exportnav',script)
 
 
 class TestSourceQualificationHttp(unittest.TestCase):
