@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
@@ -119,12 +120,33 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+
+def catalog_smoke_once():
+    """Opt-in deploy-time identity-only source validation; no prices or clients."""
+    try:
+        from .catalog import get_catalog
+        result = get_catalog()
+        print("ADVISER_CATALOG_SMOKE " + json.dumps({
+            "catalog_rows": result["total_rows"],
+            "category_counts": result["category_counts"],
+            "checked_at_utc": result["checked_at_utc"],
+            "private_customer_data_used": False,
+            "live_nav_enabled": False,
+        }, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        # Do not echo URL bodies or caller/search data into server logs.
+        print("ADVISER_CATALOG_SMOKE_FAILED " + type(exc).__name__, flush=True)
+
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
     port = int(os.getenv("PORT", "10000"))
     srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print("ADVISER_PREVIEW_READY synthetic_only=true login=false", flush=True)
+    if os.getenv("ADVISER_CATALOG_SMOKE_ON_BOOT", "0") == "1":
+        threading.Thread(target=catalog_smoke_once, daemon=True, name="catalog-smoke").start()
     try:
         srv.serve_forever()
     finally:
