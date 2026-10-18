@@ -190,7 +190,7 @@ def _safe_file(root:Path,relative:str):
     if not isinstance(relative,str) or len(relative)>140 or not re.fullmatch(r"[a-zA-Z0-9_./-]+",relative):
         raise BatchIntakeError("INVALID_PRIVATE_FILE_REFERENCE")
     target=Path(relative)
-    if target.is_absolute() or any(p in (".","..") for p in target.parts):
+    if target.is_absolute() or relative.startswith("./") or any(p in (".","..") for p in target.parts):
         raise BatchIntakeError("PRIVATE_FILE_PATH_TRAVERSAL_REJECTED")
     parent=root.resolve(strict=True)
     resolved=(parent/target).resolve(strict=True)
