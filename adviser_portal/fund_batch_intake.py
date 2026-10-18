@@ -58,10 +58,13 @@ def _official_identity(row, manifest, identity):
     if not isinstance(url,str) or len(url)>500:
         raise BatchIntakeError("IDENTITY_OFFICIAL_HTTPS_URL_REQUIRED")
     parsed=urlsplit(url)
-    if (parsed.scheme!="https" or not parsed.hostname or
-        parsed.username is not None or parsed.password is not None or
-        parsed.fragment or parsed.port not in (None,443)):
-        raise BatchIntakeError("IDENTITY_OFFICIAL_HTTPS_URL_REQUIRED")
+    try:
+        if (parsed.scheme!="https" or not parsed.hostname or
+            parsed.username is not None or parsed.password is not None or
+            parsed.fragment or parsed.port not in (None,443)):
+            raise BatchIntakeError("IDENTITY_OFFICIAL_HTTPS_URL_REQUIRED")
+    except ValueError as exc:
+        raise BatchIntakeError("IDENTITY_OFFICIAL_HTTPS_URL_REQUIRED") from exc
     evidence_sha=identity.get("source_document_sha256")
     if not isinstance(evidence_sha,str) or not re.fullmatch("[a-f0-9]{64}",evidence_sha):
         raise BatchIntakeError("IDENTITY_SOURCE_SHA256_REQUIRED")
@@ -77,7 +80,7 @@ def audit_intake_batch(snapshot, submissions, *, today=None, expected_snapshot=N
     """
     if not isinstance(submissions,list) or not 1<=len(submissions)<=MAX_SUBMISSIONS:
         raise BatchIntakeError("BATCH_SIZE_NOT_IN_1_TO_100")
-    rows,snapshot_digest,_,_= _identity_index(snapshot)
+    rows,snapshot_digest,_,shared_isin= _identity_index(snapshot)
     if expected_snapshot is not None and expected_snapshot!=snapshot_digest:
         raise BatchIntakeError("PUBLIC_CATALOG_SNAPSHOT_CHANGED")
     by_uid={item["uid"]:item for item in rows}
@@ -136,6 +139,10 @@ def audit_intake_batch(snapshot, submissions, *, today=None, expected_snapshot=N
             if manifest.get("source_uid")!=uid:
                 raise BatchIntakeError("MANIFEST_SOURCE_UID_MISMATCH")
             row=by_uid[uid]
+            # Two catalog share-class records reusing one ISIN cannot be
+            # allocated source NAV files until independently disambiguated.
+            if uid in shared_isin:
+                raise BatchIntakeError("SHARED_ISIN_CLASS_REQUIRES_REVIEW")
             if (manifest.get("source")!=row["source"] or
                 manifest.get("catalog_code")!=row["code"] or
                 manifest.get("catalog_name")!=row["name"] or
@@ -154,10 +161,12 @@ def audit_intake_batch(snapshot, submissions, *, today=None, expected_snapshot=N
                 findings["provisional_nav_coverage_pass"]=True
             else:
                 findings["status"]="REJECTED_NEEDS_REVIEW"
-        except (BatchIntakeError,HistoryAuditError,ValueError) as exc:
-            # Locally-authored validation strings only; never echo source
-            # paths, NAV values, CSV snippets, secrets, or user input.
+        except (BatchIntakeError, HistoryAuditError) as exc:
+            # Both exception types use controlled local validation strings.
             findings["blockers"]=[str(exc)[:110]]
+        except (ValueError, TypeError, KeyError, OverflowError):
+            # Python library errors could include untrusted URL/CSV excerpts.
+            findings["blockers"]=["INVALID_UNTRUSTED_SOURCE_STRUCTURE"]
     counters=Counter(r["status"] for r in results)
     counted=sum(r["provisional_nav_coverage_pass"] for r in results)
     return {
