@@ -169,20 +169,13 @@ def audit_history(meta:dict,raw_csv:bytes,expected_sessions=None,today=None):
     expected,reviewed=_session_evidence(expected_sessions,isin,currency,meta)
     missing=set() if expected is None else expected-set(days)
     unexpected=set() if expected is None else set(days)-expected
-    window_span=first<=cutoff and last>=today.replace(day=today.day) if False else first<=cutoff
-    # The audit does not require a same-day published NAV; some funds price
-    # after timezone conversion / non-dealing weekends. Still warn if stale.
+    window_span=(first<=cutoff)
+    # Fund NAV is not published on every calendar day: weekends, holidays
+    # and issuer-specific closed days are validated by the supplied official
+    # NAV-date list, never by manufactured weekday expectations.
     stale=(today-last).days>14
-    coverage_ok=(
-        window_span and not stale and
-        expected is not None and reviewed and
-        not missing and not unexpected and dupes==0 and
-        len(expected)==len(days) and
-        min(expected)<=cutoff and max(expected)>=today.replace(day=today.day)
-        if False else False
-    )
-    # The above deliberately leaves no use of today as a mandatory NAV day.
-    # A valid reviewed session list can end on the fund's previous dealing day.
+    # A verified list of expected NAV dates may end on the previous dealing
+    # day; a date span alone is insufficient to claim history coverage.
     coverage_ok=(
         window_span and not stale and expected is not None and reviewed
         and len(expected)==len(days) and not missing and not unexpected and dupes==0
