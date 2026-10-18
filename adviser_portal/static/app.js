@@ -171,7 +171,61 @@ function renderCatalogItem(row){
     btn.textContent="已加入候選";btn.disabled=true;
     renderCatalogSelection();
   });
-  card.append(kind,title,info,note,btn);
+  card.append(kind,title,info,note);
+  if(row.category==="domestic_fund_share_class" && row.source==="sitca_domestic_funds"){
+    const evidenceButton=el("button","ghost catalog-nav-btn","查看官方每單位 NAV");
+    evidenceButton.type="button";
+    const evidenceArea=el("div","catalog-nav-evidence");
+    evidenceArea.setAttribute("aria-live","polite");
+    evidenceButton.addEventListener("click",async()=>{
+      evidenceButton.disabled=true;
+      evidenceButton.textContent="核對官方來源中…";
+      evidenceArea.replaceChildren(el("span","","首次查詢可能需等待免費後端喚醒。"));
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),35000);
+      try{
+        const url=new URL("/api/nav-evidence",location.origin);
+        url.searchParams.set("uid",row.uid);
+        const response=await fetch(url.toString(),{
+          cache:"no-store",credentials:"omit",signal:controller.signal
+        });
+        const value=await response.json();
+        if(!response.ok)throw Error(value.error||"官方資料暫時無法核對");
+        if(value.instrument_uid!==row.uid || value.usable_for_portfolio!==false
+           || value.class_identity_approved!==false)throw Error("基金級別安全驗證未通過");
+        evidenceArea.replaceChildren();
+        if(value.status==="LATEST_NAV_EVIDENCE_ONLY" && value.nav!==null){
+          const nav=Number(value.nav);
+          if(!Number.isFinite(nav)||nav<=0)throw Error("NAV 格式異常");
+          const shown=nav.toLocaleString("zh-TW",{
+            minimumFractionDigits:3,maximumFractionDigits:3
+          });
+          evidenceArea.append(
+            el("strong","catalog-nav-value",shown+" "+value.currency+"／單位"),
+            el("small","","淨值有效日 "+value.nav_date+" · 來源：SITCA 公開資料")
+          );
+          evidenceArea.append(el("p","catalog-nav-warning",value.stale_warning
+            ?"來源已超過七天，請確認資料日期；此配對僅供人工核對，不可直接試算。"
+            :"名稱、代碼及幣別已一致，但基金級別與含息報酬仍未正式核准。"));
+        }else{
+          evidenceArea.append(el("p","catalog-nav-warning",
+            value.reason||"尚未找到可唯一核對的單位 NAV，不能自動配對。"));
+        }
+      }catch(error){
+        evidenceArea.replaceChildren(el("p","catalog-nav-warning",
+          error.name==="AbortError"?"官方 NAV 查詢逾時，請稍後重試。":error.message));
+      }finally{
+        clearTimeout(timeout);
+        evidenceButton.disabled=false;
+        evidenceButton.textContent="重新核對官方 NAV";
+      }
+    });
+    card.append(evidenceButton,evidenceArea);
+  }else if(row.category==="offshore_fund_share_class"){
+    card.append(el("p","catalog-nav-warning",
+      "境外基金每單位 NAV 與基金級別尚待獨立核對；不使用來源淨值總額當單位淨值。"));
+  }
+  card.append(btn);
   return card;
 }
 async function catalogPage({reset=false,refresh=false}={}){
