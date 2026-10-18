@@ -87,6 +87,17 @@ class TestIssuerRegistry(unittest.TestCase):
             self.assertIsNone(r["official_historical_nav_query_url"])
             self.assertFalse(r["history_query_entry_page_confirmed"])
 
+    def test_fidelity_old_and_new_internal_codes_stay_one_isin(self):
+        item=FUNDS[2]
+        r=s.source_qualification(item[0],chooser=lambda _uid:self.row(item))
+        self.assertEqual(r["verified_issuer_isin"],"LU2156566916")
+        self.assertEqual(r["provider_code_legacy"],"GGIAM")
+        self.assertEqual(r["provider_code_current"],"GLIAM")
+        self.assertEqual(r["provider_code_change_date"],"2026-02-23")
+        self.assertFalse(r["provider_code_alias_history_reconciled"])
+        self.assertFalse(r["three_year_history_ready"])
+        self.assertFalse(r["ready_for_total_return"])
+
     def test_missing_source_regression_no_history_fabricated(self):
         for item in FUNDS:
             r=s.source_qualification(item[0],chooser=lambda _uid:self.row(item))
@@ -101,6 +112,7 @@ class TestIssuerRegistry(unittest.TestCase):
         self.assertIn('report.three_year_history_ready!==false',script)
         self.assertIn('report.full_history_raw_nav_rows_imported!==0',script)
         self.assertIn('https://www.eastspring.com.tw/our-funds/exportnav',script)
+        self.assertIn("GGIAM → GLIAM（2026/02/23）",script)
 
 
 class TestSourceQualificationHttp(unittest.TestCase):
