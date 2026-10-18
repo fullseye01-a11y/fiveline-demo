@@ -326,6 +326,27 @@ def issuer_pdf_table_smoke_once():
         print("ADVISER_FIDELITY_GLIAM_TABLE_FAILED " + diagnostic,flush=True)
 
 
+
+def historical_source_smoke_once():
+    """One-off public-source identity/coverage checks; never log raw NAV."""
+    from .history_coverage import coverage
+    for uid in ("123e331851e3ae6ff190", "2d4e6ba412b83aa270a3"):
+        try:
+            result=coverage(uid)
+            print("ADVISER_NAV_HISTORY_COVERAGE_SMOKE " + json.dumps({
+                "source_status":result.get("source_identity_status"),
+                "recent_observed_dates":result.get("recent_evidence_nav_dates_count"),
+                "historical_three_years_ready":False,
+                "total_return_validated":False,
+                "portfolio_ready":False,
+                "customer_records_used":False,
+            }, ensure_ascii=False),flush=True)
+        except Exception as exc:
+            print("ADVISER_NAV_HISTORY_COVERAGE_SMOKE_FAILED "+
+                  type(exc).__name__,flush=True)
+
+
+
 def main():
     # Dedicated independent free Render preview. No Neon URL, account secret,
     # customer identifiers or private backend endpoints at this stage.
@@ -344,6 +365,8 @@ def main():
         threading.Thread(target=issuer_pdf_bytes_smoke_once, daemon=True, name="issuer-pdf-bytes").start()
     if os.getenv("ADVISER_FIDELITY_PDF_TABLE_PROBE_ON_BOOT", "0") == "1":
         threading.Thread(target=issuer_pdf_table_smoke_once, daemon=True, name="fidelity-pdf-table").start()
+    if os.getenv("ADVISER_NAV_HISTORY_COVERAGE_SMOKE_ON_BOOT", "0") == "1":
+        threading.Thread(target=historical_source_smoke_once, daemon=True, name="history-coverage-smoke").start()
     try:
         srv.serve_forever()
     finally:
