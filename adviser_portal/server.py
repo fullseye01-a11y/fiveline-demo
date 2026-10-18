@@ -17,6 +17,9 @@ from .nav_evidence import evidence, NavEvidenceUnavailable
 from .offshore_evidence import latest_nav, dividend_events, OffshoreUnavailable
 from .income_readiness import readiness
 from .issuer_pdf_review import issuer_distribution_review
+from .issuer_current import current_october_issuer
+from .issuer_pdf_table import IssuerPdfTableUnverified
+from .issuer_source_attestation import PdfFingerprintUnavailable
 
 from .engine import SAMPLE_POSITIONS, allocation_plan, risk_assessment, retirement_projection
 
@@ -83,18 +86,20 @@ class Handler(BaseHTTPRequestHandler):
                         any(len(v)!=1 for v in args.values())):
                     raise ValueError("境外基金查詢參數無效")
                 part=args["part"][0]
-                if part not in ("nav","dividend","readiness","issuer"):
+                if part not in ("nav","dividend","readiness","issuer","issuer-current"):
                     raise ValueError("境外基金資料類型無效")
                 uid=args["uid"][0]
                 result = (latest_nav(uid) if part=="nav"
                           else dividend_events(uid) if part=="dividend"
                           else readiness(uid) if part=="readiness"
-                          else issuer_distribution_review(uid))
+                          else issuer_distribution_review(uid) if part=="issuer"
+                          else current_october_issuer(uid))
                 return self._json(result)
             except ValueError as exc:
                 return self._json({"error":str(exc)[:100]},400)
-            except (CatalogUnavailable, OffshoreUnavailable):
-                return self._json({"error":"目前無法驗證集保官方境外基金資料，請稍後再查。"},503)
+            except (CatalogUnavailable, OffshoreUnavailable,
+                    IssuerPdfTableUnverified, PdfFingerprintUnavailable):
+                return self._json({"error":"本次官方配息來源版本未通過驗證，請稍後重試；未核准任何報酬。"},503)
         if path == "/api/nav-evidence":
             try:
                 args = parse_qs(parsed.query, keep_blank_values=True)
