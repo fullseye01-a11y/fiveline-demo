@@ -31,3 +31,10 @@
 僅修改 `feature/adviser-client-platform-v1` 的獨立 Alpha；主站、原 Excel、正式五線譜、Neon 客戶資料、六策略保持原樣。
 
 備份分支：`backup/adviser-alpha-before-licensed-nav-source-20261018`。
+
+## 本輪官方網站進一步查核及真實線上驗收
+
+- **瀚亞**網站提供 [歷史淨值查詢與 Excel 匯出](https://www.eastspring.com.tw/our-funds/exportnav)。頁面有日期起迄、網頁顯示與 Excel 匯出兩種模式；網頁顯示說明「最多一年資訊」。這是**實際可訪問的官方查詢入口**，不是證明某次 Excel 下載已得到三年完整原始逐日資料，也不是商業轉載授權。Alpha 在瀚亞 B 美元基金卡只提供這個來源連結，`exported_three_years_verified=false`，不對其他基金類推。
+- 富達 GLIAM、安聯台灣科技、瀚亞 B 美元三筆基金級別均已在 Render 的官方名錄載入時做實際對照，三筆都回傳 `ISSUER_PUBLISHED_CLASS_IDENTITY_FOUND`，沒有 ISIN/幣別/級別衝突；歷史 NAV 仍 **0 筆**。
+- 品質程式已修正：任一 `rights_reviewer_approved=false` 或 `issuer_identity_reviewed=false`，即使宣稱歷史日數全部吻合，也不得回傳暫定三年覆蓋通過。新增合成測試守護此條件。
+- 程式不自動下載 Excel、不從前端上傳 CSV，也不會自動把瀚亞公告或富達配息資料寫入正式回測。每個商用資料使用方式，仍須確認基金公司或資料商授權。
