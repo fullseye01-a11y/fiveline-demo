@@ -9,7 +9,9 @@ import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
+
+from .catalog import search_catalog, CatalogUnavailable
 
 from .engine import SAMPLE_POSITIONS, allocation_plan, risk_assessment, retirement_projection
 
@@ -45,7 +47,30 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        path = urlsplit(self.path).path
+        parsed = urlsplit(self.path)
+        path = parsed.path
+        if path == "/api/catalog":
+            try:
+                args = parse_qs(parsed.query, keep_blank_values=True)
+                if len(parsed.query) > 320 or not all(len(x) == 1 for x in args.values()):
+                    raise ValueError("搜尋參數無效")
+                accepted = {"query", "kind", "offset", "limit", "refresh"}
+                if set(args) - accepted:
+                    raise ValueError("不支援的搜尋參數")
+                raw = lambda name, default: args.get(name, [default])[0]
+                refresh = raw("refresh", "0")
+                if refresh not in ("0", "1"):
+                    raise ValueError("更新參數無效")
+                result = search_catalog(
+                    query=raw("query", ""), kind=raw("kind", "all"),
+                    offset=int(raw("offset", "0")),
+                    limit=int(raw("limit", "30")),
+                    refresh=(refresh == "1"))
+                return self._json(result)
+            except ValueError as exc:
+                return self._json({"error": str(exc)[:100]}, 400)
+            except CatalogUnavailable:
+                return self._json({"error": "官方來源名錄目前無法驗證，請稍後重試。"}, 503)
         if path == "/health":
             return self._json({"ok": True, "service": "fiveline-adviser-preview",
                                "data_mode": "synthetic_only", "client_records": False})
