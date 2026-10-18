@@ -26,6 +26,27 @@ BGIGU 富達基金–全球優質債券基金 (B 股 C 月配息美元)
 06/01/26 05/26 0.0673 9.5150 0.71% 0.79 100.00% 0.00%
 """
 
+def october_synthetic():
+    # Synthetic newer 2026 Aug/Sep/Oct USD/unit amounts are intentionally not
+    # published as source truth; only a real SHA-pinned PDF can verify them.
+    text=TEXT.replace("2026 年 7月","2026 年 10月")
+    text=text.replace("SITE-MKT-EXMP_2607-01","SITE-MKT-EXMP_2610-01")
+    text=text.replace(
+        "07/01/26 06/26 0.0580 8.1940",
+        "10/01/26 09/26 0.0580 8.1940 0.71% 0.63 100.00% 0.00%\n"
+        "09/01/26 08/26 0.0570 8.1940 0.70% 0.63 100.00% 0.00%\n"
+        "08/03/26 07/26 0.0560 8.1940 0.68% 0.63 100.00% 0.00%\n"
+        "07/01/26 06/26 0.0580 8.1940",
+        1)
+    for removal in (
+        "10/01/25 09/25 0.0602 8.4990 0.71% 0.94 100.00% 0.00%\n",
+        "09/01/25 08/25 0.0600 8.4800 0.71% 0.84 48.08% 51.92%\n",
+        "08/01/25 07/25 0.0599 8.4690 0.71% 0.84 84.92% 15.08%\n",
+    ):
+        text=text.replace(removal,"",1)
+    return text
+
+
 class TestFidelityGLLIAMPage(unittest.TestCase):
     def test_real_source_layout_fixture_parses_only_A_class(self):
         result=v.parse_gliam_page(TEXT)
@@ -61,6 +82,31 @@ class TestFidelityGLLIAMPage(unittest.TestCase):
                 "05/01/26 04/26 0.0580 8.1890 0.71% 1.48 45.70% 54.30%",
                 "05/01/26 04/26 0.0580 8.1890 0.71% 1.48 80.00% 20.00%"))
 
+    def test_october_synthetic_requires_all_twelve_dates_and_old_overlap(self):
+        rows,overlap,newer=v.parse_current_oct_gliam_page(october_synthetic())
+        self.assertEqual(len(rows),12)
+        self.assertEqual(overlap,9)
+        self.assertEqual(len(newer),3)
+        self.assertEqual(rows[0][0][:7],"2026-10")
+        self.assertEqual(rows[-1][0][:7],"2025-11")
+
+    def test_october_amount_change_in_reviewed_overlap_fails(self):
+        corrupted=october_synthetic().replace(
+            "07/01/26 06/26 0.0580 8.1940",
+            "07/01/26 06/26 0.0590 8.1940")
+        with self.assertRaisesRegex(v.IssuerPdfTableUnverified,"overlapping amount"):
+            v.parse_current_oct_gliam_page(corrupted)
+
+    def test_october_wrong_publisher_version_fails(self):
+        wrong=october_synthetic().replace("SITE-MKT-EXMP_2610-01","SITE-MKT-EXMP_2607-01")
+        with self.assertRaises(v.IssuerPdfTableUnverified):
+            v.parse_current_oct_gliam_page(wrong)
+
+    def test_october_wrong_b_class_mixing_fails(self):
+        wrong=october_synthetic().replace("BGIGU","GLIAM")
+        with self.assertRaises(v.IssuerPdfTableUnverified):
+            v.parse_current_oct_gliam_page(wrong)
+
     def test_wrong_pdf_edition_fails(self):
         with self.assertRaises(v.IssuerPdfTableUnverified):
             v.parse_gliam_page(TEXT.replace("2026 年 7月","2026 年 10月"))
@@ -72,8 +118,11 @@ class TestFidelityGLLIAMPage(unittest.TestCase):
         }):
             result=v.verify_single_official_version(
                 fetcher=lambda:b"%PDF-1.7 unit-test",
-                decoder=lambda data,page:TEXT)
+                decoder=lambda data,page:october_synthetic())
         self.assertEqual(result["verified_ex_date_count"],12)
+        self.assertEqual(result["newer_months_source_verified_count"],3)
+        self.assertEqual(result["independent_older_issuer_overlap_count"],9)
+        self.assertEqual(result["pdf_edition"],"2026-10")
         self.assertEqual(result["issuer_per_unit_amounts_verified_against_pdf"],12)
         self.assertEqual(result["issuer_per_unit_payouts_reconciled_with_TDCC"],0)
         self.assertFalse(result["portfolio_usage_approved"])
