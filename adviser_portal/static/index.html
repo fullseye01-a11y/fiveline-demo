@@ -123,6 +123,19 @@
             <div class="stat"><span>三年 NAV 已核准</span><strong id="allfund-history-ready">—</strong><small>尚未完成正式歷史資料驗收</small></div>
           </div>
           <button id="allfund-audit-button" type="button" class="ghost">檢查全市場基金品質</button>
+          <div class="allfund-batch-panel">
+            <h3>全市場基金批次處理清單</h3>
+            <p class="muted">依全部基金級別產生分批身分核對工作佇列，每次 100 筆；缺 ISIN、缺幣別、來源代碼衝突都分開列示。不會假裝已有歷史 NAV。</p>
+            <label>分批檢視範圍 <select id="allfund-queue-kind">
+              <option value="all">全部境內＋境外基金</option>
+              <option value="domestic">境內基金</option>
+              <option value="offshore">境外基金</option>
+            </select></label>
+            <button id="allfund-queue-button" type="button" class="ghost">開始全市場批次品質檢查</button>
+            <p id="allfund-queue-status" role="status" aria-live="polite" class="catalog-status">尚未開始。基金名錄的全部 9,767 筆候選將逐級別標示資料缺口。</p>
+            <div id="allfund-queue-results" class="allfund-queue-scroller" aria-label="每批基金資料問題"></div>
+            <button id="allfund-queue-next" type="button" class="ghost" hidden>檢查下一批 100 筆</button>
+          </div>
           <p id="allfund-audit-status" role="status" aria-live="polite" class="catalog-status">僅在你點擊時讀取名錄；不會自動下載基金歷史淨值。</p>
         </article>
         <article class="surface">
