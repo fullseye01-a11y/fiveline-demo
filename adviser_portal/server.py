@@ -220,6 +220,18 @@ def offshore_smoke_once():
             "dividend_adjustment_ready":False,
             "historical_return_approved":False,
         },ensure_ascii=False),flush=True)
+        report = readiness(uid)
+        print("ADVISER_INCOME_READINESS_SMOKE " + json.dumps({
+            "status":report.get("status"),
+            "recent_nav_observations":report.get("recent_nav_observations"),
+            "dividend_event_count":report.get("known_dividend_event_count"),
+            "dividend_proportion_verified_count":report.get("displayed_income_principal_ratio_verified_count"),
+            "cash_per_unit_issuer_reconciled":report.get("issuer_per_unit_payouts_reconciled",0),
+            "portfolio_eligible":False,
+            "annualized_total_return_ready":False,
+            "six_strategies_ready":False,
+            "client_records_used":False,
+        },ensure_ascii=False),flush=True)
     except OffshoreUnavailable as exc:
         print("ADVISER_OFFSHORE_SMOKE_SOURCE_FAILED "+type(exc).__name__,flush=True)
     except Exception as exc:
