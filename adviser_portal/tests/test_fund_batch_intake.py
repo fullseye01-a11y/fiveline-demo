@@ -100,6 +100,35 @@ class BatchIntakeTests(unittest.TestCase):
         r=self.audit([e],s)
         self.assertIn("IDENTITY_EVIDENCE_MISMATCH",r["results"][0]["blockers"])
 
+    def test_same_isin_on_two_catalog_uids_blocks_both_history_inputs(self):
+        twin={**OFF,"uid":"o2","code":"LU2156566916-SECOND",
+              "name":"名稱不同但共用相同 ISIN 的基金級別"}
+        other_snapshot=snapshot([OFF,twin])
+        one=submission(OFF,snap=other_snapshot)
+        two=submission(twin,snap=other_snapshot)
+        # Even distinct raw files would not be acceptable until the
+        # duplicative ISIN/currency/name catalog identity is reconciled.
+        r=self.audit([one,two],other_snapshot)
+        self.assertEqual(r["provisional_source_date_quality_pass_count"],0)
+        self.assertTrue(all(
+            "SHARED_ISIN_CLASS_REQUIRES_REVIEW" in x["blockers"]
+            for x in r["results"]))
+
+    def test_untrusted_invalid_url_port_error_is_safe_constant(self):
+        bad=submission(DOM)
+        bad["identity_evidence"]["issuer_identity_document_url"]="https://issuer.example.org:SECRETPORT/nav"
+        r=self.audit([bad])
+        self.assertEqual(r["results"][0]["blockers"],
+                         ["IDENTITY_OFFICIAL_HTTPS_URL_REQUIRED"])
+        self.assertNotIn("SECRETPORT",str(r))
+
+    def test_identity_evidence_fake_unapproved_flag_is_not_accepted(self):
+        bad=submission(DOM)
+        bad["identity_evidence"]["reviewer_approved"]=False
+        r=self.audit([bad])
+        self.assertEqual(r["results"][0]["blockers"],
+                         ["ISIN_REVIEWER_ATTESTATION_REQUIRED"])
+
     def test_rights_not_reviewed_cannot_be_provisional(self):
         r=self.audit([submission(OFF,rights=False)])
         self.assertEqual(r["provisional_source_date_quality_pass_count"],0)
