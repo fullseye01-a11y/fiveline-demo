@@ -331,9 +331,12 @@ def audit_store(root):
         catalog_binding=json.loads((root/'catalog-bindings.json').read_text())
         if catalog_binding['catalog_file_sha256']!=sha((root/'website-catalog.json').read_bytes()) or catalog_binding['basic_source_sha256']!=basic_sha:raise ValueError('CATALOG_BINDING_FINGERPRINT_MISMATCH')
         bound={b['class_key']:b for b in catalog_binding['bindings']}
-    checked=0;observations=0;start_late=0;end_early=0;gaps=[];counts=[];reviews=[];class_dates=defaultdict(list);partition_plans={};partition_sources=defaultdict(set);partition_reviews=defaultdict(list)
+    checked=0;observations=0;start_late=0;end_early=0;gaps=[];counts=[];reviews=[];class_dates=defaultdict(list);partition_plans={};partition_sources=defaultdict(set);partition_reviews=defaultdict(list);current_plans={}
     with closing(sqlite3.connect(root/'research.sqlite',timeout=30)) as db:
         db.execute('BEGIN')
+        for key,detail in db.execute('SELECT class_key,detail_json FROM acquisition'):
+            detail=json.loads(detail)
+            if detail.get('partition_manifest_file'):current_plans[key]=detail['partition_manifest_file']
         if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':raise ValueError('DATABASE_INTEGRITY_FAILED')
         if db.execute('SELECT 1 FROM research_observations GROUP BY class_key,valuation_date HAVING count(*)>1 LIMIT 1').fetchone():raise ValueError('DUPLICATE_CLASS_DATE')
         for raw_sha,key,meta in db.execute('SELECT raw_sha256,class_key,metadata_json FROM source_snapshots'):
@@ -359,8 +362,13 @@ def audit_store(root):
             checked+=1;observations+=len(parsed);class_dates[key].extend(d for d,n in parsed)
         for identity,plan in partition_plans.items():
             expected={(leaf['source']['raw_sha256'],leaf['source']['request']['startDate'],leaf['source']['request']['endDate']) for leaf in plan['leaves'] if leaf['status']=='READY'}
-            if expected!=partition_sources[identity]:raise ValueError('PARTITION_PRICE_SNAPSHOT_MISSING')
-            partition_reviews[identity[0]].extend({'from':leaf['start'],'to':leaf['end'],'reason':leaf['reason']} for leaf in plan['leaves'] if leaf['status']!='READY')
+            all_sources=set().union(*(sources for (key,reference),sources in partition_sources.items() if key==identity[0]))
+            if not expected<=all_sources:raise ValueError('PARTITION_PRICE_SNAPSHOT_MISSING')
+            if current_plans.get(identity[0])==identity[1]:
+                if expected!=all_sources:raise ValueError('CURRENT_PARTITION_PRICE_SNAPSHOT_MISSING')
+                partition_reviews[identity[0]].extend({'from':leaf['start'],'to':leaf['end'],'reason':leaf['reason']} for leaf in plan['leaves'] if leaf['status']!='READY')
+        if set(current_plans.items())!=set(identity for identity in partition_plans if current_plans.get(identity[0])==identity[1]):
+            raise ValueError('CURRENT_PARTITION_REFERENCE_MISSING')
         for key,days in class_dates.items():
             q=queue[key];days=sorted(days);counts.append(len(days))
             start_late+=days[0]>START.isoformat();end_early+=days[-1]<END.isoformat()

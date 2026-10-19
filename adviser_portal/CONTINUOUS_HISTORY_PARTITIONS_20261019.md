@@ -7,6 +7,7 @@
 
 ```bash
 python -m adviser_portal.fundclear_partition_history --root /private/offshore-history
+python -m adviser_portal.fundclear_gap_history --root /private/offshore-history
 python -m adviser_portal.fundclear_history_import --root /private/offshore-history --audit --recent /private/tdcc-recent.csv
 ```
 
@@ -32,3 +33,11 @@ python -m adviser_portal.fundclear_history_import --root /private/offshore-histo
 官方基本資料中的「基金成立日」只可另列為來源登載的基金日期，不能當作個別級別成立日。原先 1,225 個歷史覆蓋待查級別中，有 50 個登載日期晚於視窗起點，已在研究備份另列，未據此批准身分或日曆。
 
 所有價格仍為 `UNAPPROVED_SOURCE_OBSERVATION`，正式三年完整核准與商業權利核准維持 0／未核准。執行結果見研究備份內 `partition-recovery-report.json`、`audit-report.json` 及 `recent-reconciliation.json`。
+
+## 單日缺口追加
+
+`fundclear_gap_history` 不發送來源請求，只驗收已保存的 `one-day-gap-probe.json`。每筆回應必須精確指向原本待查日期、同一機構、父基金、級別、幣別與未變動的名錄。原待查區間內每一天都有可驗證的回應時，才可用單日紀錄細分該區間；不完整的細分仍保留原待查範圍。
+
+新價格只能補入原來沒有價格的日期，不覆寫舊 NAV。新不可變分段紀錄連結舊版本，舊原檔與原有快照均保留。驗收同時核對兩版所有成功原檔與唯一價格日期，但只用目前版本呈現剩餘待查區間；重跑相同補查不會重複入庫。幣別、日期或來源綁定衝突時拒絕新增，不以新來源覆寫舊值。
+
+本輪單日補查另取得 LU1061952187 在 2024-10-02 的一筆可解析 NAV，已追加至隔離研究資料。其他單日來源錯誤仍保留待查，不據此推定估值日曆。細節見 `one-day-gap-import-report.json`。
