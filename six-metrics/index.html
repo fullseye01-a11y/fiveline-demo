@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0b1525" />
+<title>六大財務指標｜量化評分系統</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1525;--panel:#121f32;--panel2:#172740;--border:#2d4260;--text:#edf3ff;--muted:#a5b5c9;--blue:#5aa7ff;--green:#42deb2;--red:#ff817c;--amber:#ffc66d}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(165deg,#091324,#13233a 60%,#091324);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;font-size:15px;line-height:1.5}
+button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
+.app{max-width:1220px;margin:auto;padding:18px 18px 60px}header{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:12px 0 22px;flex-wrap:wrap}
+h1{font-size:clamp(24px,4vw,34px);line-height:1.2;margin:4px 0 8px;letter-spacing:.4px}.subtitle{color:var(--muted);font-size:14px}
+.eyebrow{font-size:12px;color:var(--green);letter-spacing:2px;font-weight:750}.header-right{color:#b9d8fa;font-size:13px;border:1px solid #294665;border-radius:99px;padding:7px 12px;background:#12263b}
+.card{background:linear-gradient(180deg,#15243b,#101e31);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 10px 32px #0002}
+.toolbar{display:grid;grid-template-columns:1.15fr 1.25fr 1fr;gap:12px;margin-bottom:14px}.toolbar label,.tokenlabel{display:flex;flex-direction:column;gap:7px;color:#afc2db;font-weight:650;font-size:13px}
+.control{height:44px;border-radius:10px;border:1px solid #3a5271;background:#0d1b2e;color:#f8fbff;padding:0 12px;outline:none;min-width:0;width:100%}.control:focus{border-color:var(--blue);box-shadow:0 0 0 3px #5aa7ff22}
+.actions{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}.btn{height:44px;border:1px solid #466482;background:#1a304d;color:#edf5ff;padding:0 15px;border-radius:11px;font-weight:750}.btn:hover{filter:brightness(1.12)}.btn.primary{background:linear-gradient(110deg,#2583d7,#2476b8);border-color:#318ee2}.btn.emerald{background:#087a68;border-color:#1eaf94}.btn.ghost{background:transparent}.btn.danger{color:#ffaca7}.btn.small{height:35px;padding:0 10px;font-size:13px}
+.message{margin:12px 0;padding:10px 13px;border-left:3px solid #56a7ff;background:#132c47;border-radius:6px;color:#d1e5fb;min-height:40px}.message.error{border-color:var(--red);background:#3d222d;color:#ffd2cb}.message.success{border-color:var(--green);background:#123a39;color:#b5f7e4}
+.summary{display:grid;grid-template-columns:1.05fr 2.2fr;gap:14px;margin:14px 0}.score-box{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:220px}
+.score-label{color:#a9bfd7;font-weight:700}.big-score{font-size:68px;font-weight:850;line-height:1.14;font-variant-numeric:tabular-nums;letter-spacing:-3px}.unit{font-size:18px;font-weight:500;color:var(--muted);letter-spacing:0}.progress{width:100%;background:#283f5b;border-radius:99px;overflow:hidden;height:10px;margin:13px 0}.progress>span{display:block;height:100%;background:linear-gradient(90deg,#e78274,#f6c56d,#52d6b8);transition:width .3s}.miniinfo{font-size:12px;color:var(--muted)}.radial-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-content:stretch}.metric{background:#0d1b2d;border-radius:13px;border:1px solid #2d4260;padding:14px;min-width:0}.metric-top{display:flex;justify-content:space-between;gap:6px;color:#bacbe0;font-size:13px}.metric-grade{font-size:29px;font-weight:850;line-height:1.4}.grade-AA{color:#4ee4b3}.grade-A{color:#89caff}.grade-BB{color:#ffd37d}.grade-B{color:#ffaf78}.grade-C{color:#ff7e85}.grade-NA{color:#a2b6cd}.metric small{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:8px;overflow:auto;padding:5px 0 14px;scrollbar-width:none}.tabs button{white-space:nowrap;border:1px solid #324c69;color:#bbd1e9;background:#112039;border-radius:11px;padding:10px 15px;font-weight:750}.tabs button.active{color:#fff;background:#235383;border-color:#438cc5}
+.section-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.section-head h2{font-size:20px;margin:0}.pill{font-size:12px;background:#203c55;color:#a3dcff;border-radius:99px;padding:5px 11px}
+.entry-head{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 15px;color:var(--muted);font-size:13px}.entry-head strong{color:#e9f7ff}.entry-head .right{text-align:right}
+.data-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.data-cell{min-width:0;border:1px solid #304763;background:#0b1a2d;border-radius:12px;padding:9px 10px}.data-cell label{display:block;color:#a8c1df;font-size:12px;margin-bottom:5px}.data-cell input{height:42px;background:#11263c;border:1px solid #39526f;border-radius:8px;color:#fff;padding:0 9px;width:100%;min-width:0;font-size:16px;text-align:right;font-variant-numeric:tabular-nums}.data-cell input:focus{outline:2px solid #398ee1}.data-cell small{display:block;color:#8fa7c2;font-size:11px;margin-top:3px}
+.explain{background:#0a1b2c;border:1px solid #253e5a;padding:12px 14px;border-radius:11px;color:#c4d8ed;margin-top:13px}.explain strong{color:#fff}.switch{display:flex;align-items:center;gap:8px;padding:9px 0;color:#d5e7f8;cursor:pointer}.switch input{accent-color:#5bd7b9;width:18px;height:18px}
+.footer-section{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.footnote{color:#b7c9dd;font-size:13px;margin:5px 0}.footnote a{color:#7bbffd}.special{color:#ffd28a}
+.details{border:1px solid #2b4562;border-radius:10px;margin-top:12px;padding:2px 12px}summary{cursor:pointer;padding:9px 0;color:#b9ddfa;font-weight:750}.details div{padding:0 0 9px;color:#d3e1f2;font-size:13px}
+.input-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}.hidden{display:none!important}.copyright{font-size:12px;color:#91a6bf;margin-top:22px}
+@media(max-width:860px){.toolbar{grid-template-columns:1fr 1fr}.toolbar .actions{grid-column:1/-1}.summary{grid-template-columns:1fr}.score-box{min-height:160px}.radial-list{grid-template-columns:repeat(3,minmax(0,1fr))}.footer-section{grid-template-columns:1fr}}
+@media(max-width:560px){.app{padding:12px 11px 48px}.toolbar{grid-template-columns:1fr}.toolbar .actions{grid-column:auto}.score-box{min-height:0}.big-score{font-size:57px}.radial-list{grid-template-columns:repeat(2,minmax(0,1fr))}.data-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:14px}.entry-head{grid-template-columns:1fr}.entry-head .right{text-align:left}.btn{flex:1;padding:0 9px;font-size:13px}.header-right{font-size:11px}}
+@media print{body{background:white;color:#111}.app{max-width:100%;padding:0}.card,.metric{box-shadow:none;background:white;color:#111;border-color:#ddd}.btn,.toolbar,.tabs,.controls-optional,.message,.copyright{display:none!important}.metric-grade,.big-score{color:#111}input{color:#111!important;background:#fff!important}.explain{color:#111!important;background:white}header{padding:4px 0}.footer-section{break-inside:avoid}}
+</style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
+</head>
+<body>
+<main class="app">
+<header><div><div class="eyebrow">FUNDAMENTAL SCORING · TAIWAN STOCKS</div><h1>六大財務指標評分系統</h1><div class="subtitle">依上傳的 Excel v4 規則重建 · 五級評等 · 支援上市／上櫃股票 · iPhone 適用</div></div><div class="header-right">AA 4分　A 3分　BB 2分　B 1分　C 0分</div></header>
+<section class="card toolbar" aria-label="操作"><label>股票代號<input class="control" id="ticker" placeholder="例如 2330" maxlength="8" value="1101" inputmode="numeric" /></label><label>公司名稱／備註<input class="control" id="company" placeholder="例如 台積電" value="台泥（歷史範例）" /></label><div class="actions"><button class="btn primary" id="fetch">擷取最新財報</button><button class="btn" id="import">匯入原 Excel</button><input id="upload" class="hidden" type="file" accept=".xlsm,.xlsx,.xls,.json" /></div><label>本機已儲存的個股<select class="control" id="saved"><option value="">選擇已儲存股票</option></select></label><div class="actions"><button class="btn emerald" id="save">儲存個股</button><button class="btn" id="export">匯出 JSON</button><button class="btn" id="csv">匯出 CSV</button><button class="btn" id="print">列印／存 PDF</button></div><div class="actions"><button class="btn ghost" id="demo">載入 2019 範例</button><button class="btn ghost danger" id="clear">清空資料</button></div></section>
+<div class="message" id="msg" role="status" aria-live="polite">目前為原 Excel 中的「1101 台泥／2019 年」歷史示範資料，並非即時財報。可輸入代號擷取新財報，或上傳原始 Excel。</div>
+<section class="summary"><div class="card score-box"><div class="score-label">六大指標平均分數</div><div class="big-score"><span id="total">—</span><span class="unit"> / 4.00</span></div><div class="progress"><span id="progress" style="width:0"></span></div><div class="miniinfo" id="coverage">已評分 0 項／應評分 6 項</div><div class="miniinfo" id="updated" style="margin-top:6px">資料來源：歷史樣本</div></div><div class="radial-list" id="metrics"></div></section>
+<nav class="tabs" id="tabs" aria-label="選擇財務指標"></nav>
+<section class="card"><div class="section-head"><h2 id="section-name">指標一</h2><span class="pill" id="section-grade">尚未評分</span></div><p class="footnote" id="section-description"></p><div id="entry-extra"></div><div class="entry-head"><span>以「最新一期」往前輸入；只有完整資料才會計分</span><span class="right" id="unit-label">請輸入數值</span></div><div id="data-grid" class="data-grid"></div><div class="explain"><strong>計分判斷：</strong><span id="reason"></span></div><details class="details"><summary>展開本指標評分標準</summary><div id="rules"></div></details></section>
+<section class="footer-section"><div class="card"><h3 style="margin:0 0 10px">財報連線選項</h3><label class="tokenlabel">FinMind API Token（選填；僅此次頁面使用，不儲存）<input type="password" id="token" class="control" placeholder="免費基本資料一般可免 Token" autocomplete="off"></label><p class="footnote">「擷取最新財報」查詢 FinMind 的季損益表、月營收、現金流量表與資產負債表，並自行換算。受 API 方案、瀏覽器跨網域限制及資料完整度影響；失敗時可改手動輸入或上傳 Excel。<a href="https://finmind.github.io/tutor/TaiwanMarket/Fundamental/" target="_blank" rel="noopener">資料來源說明</a></p><p class="footnote special">資料缺漏不會以 0 分代替；財務數據不等於股價即時行情。</p></div><div class="card"><h3 style="margin:0 0 10px">計算與資料說明</h3><p class="footnote">總分為「可評分項目的分數加總 ÷ 可評分項目數」。存貨不適用時，可在第六項選擇不評分。若其他指標缺資料，總分標示為暫定分數。</p><p class="footnote">FinMind 季損益表為單季數值，現金流量表為年初累計；本程式會將現金流量表轉成單季值，再計算自由現金流量。存貨週轉率採近四季營業成本／期初期末平均存貨推估，與部分資訊平台定義可能不同。</p><p class="footnote">由於原 Excel 部分規則在 0／門檻邊界未定義，本版以「未評分／待確認」而不是猜測級別。評分僅為研究工具，並非投資建議。</p></div></section>
+<div class="copyright">版本 1.0 · 所有手動數據與儲存的個股僅保存在目前瀏覽器，不上傳網站主機。來源規則：使用者提供的《六大財務指標評分規則 v4.xlsm》。</div>
+</main>
+<script>
+'use strict';
+const SPECS=[
+ {key:'margin',name:'營業利益率穩定性',short:'營益率',unit:'%',count:4,subtitle:'最近四季營業利益率；檢查平均值與季對季下滑幅度',rules:'AA：四季均穩定、平均至少15%；或平均10–15%且最新一期上升。A：四季穩定、平均10–15%；或平均5–10%且最新一期上升。BB：非最近一季有下滑逾20%；或不屬其他級別。B：最近一季下滑20%以上，或四季平均低於5%。C：平均為負或最新一季為負。穩定代表單季跌幅未達20%。'},
+ {key:'rev',name:'月營收年增率穩定性',short:'營收成長',unit:'%',count:6,subtitle:'最近六個月的營收年增率，以相同月份去年比較',rules:'AA：六個月皆正且平均>25%，最近月不下降。A：六個月皆正、平均10–25%且最近月不下降；或平均>25%、最近月下降在50%以內。BB：其餘或曾單月負成長。B：平均正，但最近三個月連續遞減（高於A優先級）。C：平均負或最新月份負（原規則有農曆春節例外）。'},
+ {key:'eps',name:'獲利能力（近四季 EPS）',short:'獲利能力',unit:'元／股',count:4,subtitle:'最近四季各單季 EPS 合計；最新一季虧損有降級規則',rules:'AA：四季合計>5。A：合計3–5。BB：合計1–3。B：合計>0但不足1，或最新一季虧損。C：四季合計虧損。若遇配股／分割，跨季直接相加可能與重編後財報不同。'},
+ {key:'profit',name:'稅後淨利年增率',short:'獲利成長',unit:'%',count:4,subtitle:'最近四季單季稅後淨利對去年同季的成長率',rules:'AA：最近三季皆正且最近一季提升；或最近三季皆>50%。A：最近兩季皆正且最新季降幅未達50%。BB：最近兩季皆正但最新季衰退至少50%；或最新季由負轉正。B：最新季負、四季內兩季負，或近三季遞減且最新<50%。C：最新兩季皆負。'},
+ {key:'fcf',name:'自由現金流量',short:'現金流量',unit:'金額（同一單位）',count:6,subtitle:'自由現金流量＝營業活動現金流量＋投資活動現金流量；最近六季',rules:'AA：連續六季自由現金流為正。A：近六季總額正且近四季總額正。BB：近六季總額負、近四季總額正。B：近六季總額正、近四季總額負。C：近六季總額負、近四季總額負。原始規則對剛好為零的邊界未明訂。'},
+ {key:'inventory',name:'存貨週轉率',short:'存貨',unit:'次／年',count:4,subtitle:'最近四季的存貨週轉率，無庫存或低庫存產業可排除',rules:'AA：最近四季沒有20%以上跌幅且平均至少1.5次。A：最近四季沒有20%以上跌幅且平均低於1.5次。BB：最近四季連續兩季下跌、累積幅度至少20%。B：最近四季曾有單季至少20%跌幅。C：最近一季跌幅至少20%。無庫存或低庫存產業：不評分。'}
+];
+const LABELS={AA:4,A:3,BB:2,B:1,C:0};
+const empty=()=>Object.fromEntries(SPECS.map(s=>[s.key,Array(s.count).fill('')]));
+const sample=()=>({ticker:'1101',company:'台泥（2019 年範例）',source:'原 Excel 範例（2019.2Q／108年9月）',stamp:'2019-09',noInventory:false,labels:{},values:{margin:[24.69,19.85,20.62,22.85],rev:[-3.03,-4.47,-4.76,-8.28,-5.51,-3.87],eps:[1.42,.77,1.08,1.2],profit:[-1.04,47.62,64.91,140.36],fcf:[3631,588,-24797,2455,9453,-532],inventory:[2.29,1.93,2.82,2.63]}});
+let state=sample(),active=0,lastResults=[];
+const $=id=>document.getElementById(id);
+const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const finite=v=>v!==''&&v!==null&&v!==undefined&&Number.isFinite(Number(v));
+const grade=(g,reason)=>({grade:g,score:g===null?null:LABELS[g],reason});
+function evaluate(key,raw,noInventory){
+ if(key==='inventory'&&noInventory)return {grade:'不評分',score:null,reason:'產業屬性為無庫存／低庫存，依原規則排除分母。',exclude:true};
+ const s=SPECS.find(s=>s.key===key);if(!raw||raw.length<s.count||raw.slice(0,s.count).some(v=>!finite(v)))return grade(null,`資料不完整（需 ${s.count} 期），暫不計分。`);
+ const v=raw.slice(0,s.count).map(Number),avg=v.reduce((a,b)=>a+b,0)/v.length;
+ if(key==='margin'){
+  if(avg<0||v[0]<0)return grade('C','最近一季或四季平均營益率為負。');
+  if(avg<5)return grade('B',`四季平均 ${fmt(avg)}%，低於5%。`);
+  const drops=[0,1,2].map(i=>v[i+1]>0?(v[i+1]-v[i])/v[i+1]:null);
+  if(drops[0]!==null&&drops[0]>=.2)return grade('B',`最新季較前季下降 ${fmt(drops[0]*100)}%，達20%。`);
+  if(drops.slice(1).some(x=>x!==null&&x>=.2))return grade('BB','最近四季曾有非最新季單季跌幅達20%。');
+  const stable=drops.every(x=>x!==null&&x<.2),up=v[0]>v[1];
+  if(stable&& (avg>=15||(avg>=10&&up)))return grade('AA',`平均 ${fmt(avg)}%且趨勢符合AA條件。`);
+  if(stable&&(avg>=10||(avg>=5&&up)))return grade('A',`平均 ${fmt(avg)}%且符合A條件。`);
+  return grade('BB',`平均 ${fmt(avg)}%，不符合較高評等。`);
+ }
+ if(key==='rev'){
+  if(avg<0||v[0]<0)return grade('C',`六個月平均 ${fmt(avg)}%，或最近一月為負。`);
+  if(avg>0&&v[0]<v[1]&&v[1]<v[2])return grade('B','近三個月年增率逐月遞減，依原註解優先判 B。');
+  const allPositive=v.every(x=>x>0),recentUp=v[0]>=v[1];
+  if(allPositive&&avg>25&&recentUp)return grade('AA',`六個月全正，平均 ${fmt(avg)}%，最近月持平或增加。`);
+  const dropRatio=v[1]>0?(v[1]-v[0])/v[1]:Infinity;
+  if((allPositive&&avg>=10&&avg<=25&&recentUp)||(avg>25&&v[0]>=0&&dropRatio>=0&&dropRatio<=.5))return grade('A',`六個月平均 ${fmt(avg)}%，符合 A 條件。`);
+  return grade('BB',`六個月平均 ${fmt(avg)}%，未符合較高級別。`);
+ }
+ if(key==='eps'){
+  const sum=v.reduce((a,b)=>a+b,0);
+  if(sum<0)return grade('C',`最近四季 EPS 累積 ${fmt(sum)} 元，屬虧損。`);
+  if(v[0]<0)return grade('B',`最新一季 EPS ${fmt(v[0])} 元為負，依例外規定降至 B。`);
+  if(sum>5)return grade('AA',`最近四季 EPS 累積 ${fmt(sum)} 元，超過5元。`);
+  if(sum>=3)return grade('A',`最近四季 EPS 累積 ${fmt(sum)} 元。`);
+  if(sum>=1)return grade('BB',`最近四季 EPS 累積 ${fmt(sum)} 元。`);
+  if(sum>0)return grade('B',`最近四季 EPS 累積 ${fmt(sum)} 元。`);
+  return grade(null,'四季累積 EPS 剛好為 0，原規則未定義。');
+ }
+ if(key==='profit'){
+  const neg=v.map(x=>x<0);
+  if(neg[0]&&neg[1])return grade('C','最近兩季稅後淨利年增率皆為負。');
+  if((neg[0]&&!neg[1])||neg.filter(Boolean).length>=2)return grade('B','最新季負成長，或最近四季至少兩季負成長。');
+  if(v[0]<v[1]&&v[1]<v[2]&&v[0]<50)return grade('B','最近三季持續遞減且最新季低於50%。');
+  if(v.slice(0,3).every(x=>x>0)&&(v[0]>v[1]||v.slice(0,3).every(x=>x>50)))return grade('AA','最近三季皆正且最新回升，或最近三季皆超過50%。');
+  if(v[0]>0&&v[1]<0)return grade('BB','最新一季由負轉正。');
+  if(v[0]>0&&v[1]>0){const dr=(v[1]-v[0])/v[1];if(dr>=.5)return grade('BB',`最新季年增率較前季衰退 ${fmt(dr*100)}%。`);return grade('A','最近兩季皆正且未出現50%以上衰退。');}
+  return grade('BB','未符合更高或更低級別，暫按原則歸入 BB（建議複核）。');
+ }
+ if(key==='fcf'){
+  const sum6=v.reduce((a,b)=>a+b,0),sum4=v.slice(0,4).reduce((a,b)=>a+b,0);
+  if(v.every(x=>x>0))return grade('AA','六季自由現金流量皆為正。');
+  if(sum6>0&&sum4>0)return grade('A',`近六季合計 ${fmt(sum6,0)}、近四季合計 ${fmt(sum4,0)}，皆為正。`);
+  if(sum6<0&&sum4>0)return grade('BB','近六季合計負、近四季合計正。');
+  if(sum6>0&&sum4<0)return grade('B','近六季合計正、近四季合計負。');
+  if(sum6<0&&sum4<0)return grade('C','近六季與近四季合計皆負。');
+  return grade(null,'合計剛好為0，原規則未明定，請人工確認。');
+ }
+ if(key==='inventory'){
+  const drops=[0,1,2].map(i=>v[i+1]>0?(v[i+1]-v[i])/v[i+1]:null);
+  if(drops[0]!==null&&drops[0]>=.2)return grade('C',`最新季存貨週轉率下滑 ${fmt(drops[0]*100)}%，達20%。`);
+  const consecutive=drops.some((d,i)=>i<2&&d!==null&&drops[i+1]!==null&&v[i+2]>0&&v[i]>0&&v[i]<v[i+1]&&v[i+1]<v[i+2]&&(v[i+2]-v[i])/v[i+2]>=.2);  if(consecutive)return grade('BB','最近四季出現連續兩季下跌，累積幅度達20%。');
+  if(drops.some(x=>x!==null&&x>=.2))return grade('B','最近四季曾有單季20%以上的跌幅（非最新季）。');
+  if(drops.some(x=>x===null))return grade(null,'前期週轉率非正，跌幅比例無法直接判定。');
+  return grade(avg>=1.5?'AA':'A',`近四季平均 ${fmt(avg)} 次，未有單季20%以上跌幅。`);
+ }
+ return grade(null,'無效指標。');
+}
+function normalize(){for(const s of SPECS){if(!Array.isArray(state.values[s.key]))state.values[s.key]=Array(s.count).fill('');state.values[s.key]=Array.from({length:s.count},(_,i)=>state.values[s.key][i]??'');}state.labels=state.labels||{};}
+function resultAll(){normalize();return SPECS.map(s=>evaluate(s.key,state.values[s.key],state.noInventory));}
+function compute(){lastResults=resultAll();const valid=lastResults.filter(r=>r.score!==null), excluded=lastResults.filter(r=>r.exclude).length,denom=6-excluded;
+ const total=valid.length?valid.reduce((a,r)=>a+r.score,0)/valid.length:null;
+ $('total').textContent=total===null?'—':fmt(total);$('progress').style.width=`${total===null?0:total/4*100}%`;
+ $('coverage').textContent=`已評分 ${valid.length} 項／應評分 ${denom} 項`+(valid.length!==denom?'（暫定分數）':'（完整評等）');
+ $('updated').textContent='資料來源：'+(state.source||'手動輸入');$('metrics').innerHTML=SPECS.map((s,i)=>{const r=lastResults[i],g=r.grade||'—';return `<div class="metric"><div class="metric-top"><span>${i+1}. ${s.short}</span><span>${r.score===null?'—':r.score+'分'}</span></div><div class="metric-grade grade-${r.grade&&r.grade!=='不評分'?r.grade:'NA'}">${g}</div><small>${s.unit}</small></div>`}).join('');
+ if(lastResults[active]){$('section-grade').textContent=(lastResults[active].grade||'尚未評分')+(lastResults[active].score===null?'':` · ${lastResults[active].score}分`);$('reason').textContent=lastResults[active].reason;}
+}
+function refreshControls(){ $('ticker').value=state.ticker||'';$('company').value=state.company||'';drawSection();compute();}
+function drawSection(){const s=SPECS[active];$('tabs').innerHTML=SPECS.map((x,i)=>`<button class="${i===active?'active':''}" data-tab="${i}">${i+1} ${x.short}</button>`).join('');$('tabs').querySelectorAll('button').forEach(x=>x.onclick=()=>{active=+x.dataset.tab;drawSection();compute()});
+ $('section-name').textContent=`指標 ${active+1}｜${s.name}`;$('section-description').textContent=s.subtitle;$('unit-label').textContent=s.unit;$('rules').textContent=s.rules;
+ $('entry-extra').innerHTML=s.key==='inventory'?`<label class="switch"><input type="checkbox" id="noInventory" ${state.noInventory?'checked':''}><span>無庫存／低庫存產業，本項不評分</span></label>`:'';
+ if(s.key==='inventory')$('noInventory').onchange=e=>{state.noInventory=e.target.checked;drawSection();compute()};
+ $('data-grid').innerHTML=Array.from({length:s.count},(_,i)=>{const v=state.values[s.key][i],n=state.labels[s.key]?.[i]||`${i===0?'最新':`往前 ${i} 期`}`;return `<div class="data-cell"><label>${n}</label><input type="number" inputmode="decimal" step="any" data-index="${i}" value="${escapeAttr(v)}" aria-label="${s.name} ${n}" ${s.key==='inventory'&&state.noInventory?'disabled':''}><small>${s.unit}</small></div>`}).join('');
+ $('data-grid').querySelectorAll('input').forEach(el=>el.oninput=e=>{state.values[s.key][+e.target.dataset.index]=e.target.value;state.source='使用者手動調整';compute()});
+ compute();
+}
+function escapeAttr(v){return String(v??'').replace(/[&"<>]/g,c=>({'&':'&amp;','"':'&quot;','<':'&lt;','>':'&gt;'}[c]));}
+function flash(msg,kind=''){const el=$('msg');el.className='message '+kind;el.textContent=msg;}
+function keyOf(){return String(state.ticker||'').trim()||'未命名';}
+function savedList(){const el=$('saved');el.innerHTML='<option value="">選擇已儲存股票</option>';try{for(const k of Object.keys(localStorage).filter(k=>k.startsWith('sfi-v1:')).sort()){const d=JSON.parse(localStorage.getItem(k));const opt=document.createElement('option');opt.value=k;opt.textContent=`${d.ticker||'—'} ${d.company||''}`;el.appendChild(opt)}}catch(e){flash('本機儲存功能受到瀏覽器限制。','error')}}
+function download(name,content,mime){const blob=new Blob([content],{type:mime}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+function exportData(){state.ticker=$('ticker').value.trim();state.company=$('company').value.trim();download(`六大財務指標_${keyOf()}.json`,JSON.stringify({...state,exported_at:new Date().toISOString()},null,2),'application/json;charset=utf-8');flash('JSON 已匯出，可在其他裝置保留數據。','success')}
+function exportCsv(){const r=resultAll();let lines=['股票代號,公司名稱,指標,評級,分數,資料來源,數據'];SPECS.forEach((s,i)=>{const q=[state.ticker,state.company,s.name,r[i].grade||'',r[i].score??'',state.source||'',state.values[s.key].join(';')];lines.push(q.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(','))});download(`六大財務指標_${keyOf()}.csv`,'\ufeff'+lines.join('\r\n'),'text/csv;charset=utf-8');flash('CSV 評分報告已匯出。','success')}
+function loadJson(d){if(!d||typeof d!=='object'||!d.values)throw Error('檔案格式不符');state={ticker:String(d.ticker||''),company:String(d.company||''),source:d.source||'匯入資料',stamp:d.stamp||'',labels:d.labels||{},noInventory:!!d.noInventory,values:d.values};normalize();refreshControls()}
+function cell(sh,addr){if(!sh)return null;const c=sh[addr];return c?c.v??c.w:null}
+function importExcel(wb){function get(name,addr){return cell(wb.Sheets[name],addr)};const v=empty();
+ const col=(s,row,n,fn=x=>Number(x))=>Array.from({length:n},(_,i)=>{const x=get(s,String.fromCharCode(66+i)+row);return finite(x)?fn(x):''});
+ v.margin=col('營業利益率(一)',2,4);v.rev=Array.from({length:6},(_,i)=>{const x=get('營收成長性(二)','B'+(i+2));return finite(x)?Number(x)*100:''});
+ v.eps=col('獲利能力EPS(三)',2,4);v.profit=col('稅後淨利年增率(四)',2,4);v.fcf=col('自由現金流量(五)',4,6);v.inventory=col('周轉率(六)',2,4);
+ const code=get('六大財務指標','B2');const rawCompany=String(get('六大財務指標','E3')||'');
+ state={ticker:code?String(code).replace(/\.0$/,''):'',company:rawCompany||'匯入的公司',source:'匯入原 Excel（歷史資料，請確認年份）',stamp:'',noInventory:false,labels:{},values:v};refreshControls();
+ flash('已匯入原 Excel 六大指標資料；數字由本網頁重新計算，與原 Excel 舊版彙總數值可能不同。','success');
+}
+async function importFile(file){if(!file)return;const data=await file.arrayBuffer();if(file.name.toLowerCase().endsWith('.json')){loadJson(JSON.parse(new TextDecoder().decode(data)));flash('JSON 已還原。','success');return}if(!window.XLSX)throw Error('Excel 解析套件未載入，請保持連線或改用 JSON 匯入');const wb=XLSX.read(data,{type:'array',cellDates:false});importExcel(wb)}
+function sortRecords(rows){return [...rows].sort((a,b)=>String(b.date).localeCompare(String(a.date)))}
+const byType=(rows,type)=>rows.filter(x=>x.type===type);
+function pick(map,types){for(const t of types){const v=map[t];if(Number.isFinite(v))return v}return null}
+function quarter(date){const m=+date.slice(5,7),y=+date.slice(0,4);return `${y}.Q${Math.ceil(m/3)}`}
+function yoyRows(rows){const map=new Map(rows.map(r=>[`${r.revenue_year}-${r.revenue_month}`,Number(r.revenue)]));const ordered=[...rows].sort((a,b)=>b.revenue_year-a.revenue_year||b.revenue_month-a.revenue_month);
+ const out=[];for(const r of ordered){const prev=map.get(`${r.revenue_year-1}-${r.revenue_month}`);const now=Number(r.revenue);if(Number.isFinite(prev)&&prev!==0&&Number.isFinite(now)){out.push({value:(now/prev-1)*100,label:`${r.revenue_year}/${String(r.revenue_month).padStart(2,'0')}`});if(out.length===6)break}}
+ return out;
+}
+function mapQuarter(rows){const map=new Map();for(const r of rows){if(!r.date||!r.type)continue;const q=map.get(r.date)||{};const v=Number(r.value);if(Number.isFinite(v))q[r.type]=v;map.set(r.date,q)}return new Map([...map].sort(([a],[b])=>b.localeCompare(a)))}
+function getQuarterSeries(m,pickFn,num=8){let list=[];for(const [date,types] of m){const val=pickFn(types);if(val!==null&&Number.isFinite(val))list.push({date,value:val})}return list.slice(0,num)}
+function percentSeries(m,topKeys,botKeys,num=8){return getQuarterSeries(m,types=>{const top=pick(types,topKeys),bottom=pick(types,botKeys);return top!==null&&bottom!==null&&bottom!==0?top/bottom*100:null},num)}
+function getYoyByQuarter(m,keys,num=4){let dates=[...m.keys()].sort().reverse(),out=[];for(const date of dates){const prev=String(Number(date.slice(0,4))-1)+date.slice(4);const n=pick(m.get(date),keys),p=m.has(prev)?pick(m.get(prev),keys):null;
+ if(n!==null&&p!==null&&p!==0){out.push({date,value:(n/p-1)*100});if(out.length===num)break}}return out}
+function quarterlyFlows(m,typeList){const ds=[...m.keys()].sort(),result=[];let prevYear=null,prev=0;for(const d of ds){const cur=pick(m.get(d),typeList);if(cur===null)continue;const y=d.slice(0,4);const base=prevYear===y?prev:0;result.push({date:d,value:cur-base});prev=cur;prevYear=y}return new Map(result.map(r=>[r.date,r.value]))}
+function inventoryTurnover(fin,bs,num=4){const invKeys=['Inventory','Inventories','InventoriesNet'];const cogs=['CostOfGoodsSold','OperatingCosts'];const dates=[...fin.keys()].sort().reverse();const out=[];for(let i=0;i<dates.length;i++){
+ const d=dates[i],end=pick(bs.get(d)||{},invKeys);const ix=dates.slice(i,i+4),old=dates[i+4];if(ix.length!==4||!old)continue;const start=pick(bs.get(old)||{},invKeys);
+ const cs=ix.map(x=>pick(fin.get(x)||{},cogs));if(end===null||start===null||end+start<=0||cs.some(x=>x===null))continue;
+ out.push({date:d,value:cs.reduce((a,b)=>a+b,0)/((start+end)/2)});if(out.length===num)break}return out}
+function setSeries(key,series){const spec=SPECS.find(s=>s.key===key);state.values[key]=Array.from({length:spec.count},(_,i)=>series[i]?Number(series[i].value.toFixed(5)):'');state.labels[key]=Array.from({length:spec.count},(_,i)=>series[i]?series[i].label||quarter(series[i].date):`${i===0?'最新':`往前${i}期`}`)}
+async function queryFinMind(dataset,id,start,token){const url=new URL('https://api.finmindtrade.com/api/v4/data');url.searchParams.set('dataset',dataset);url.searchParams.set('data_id',id);url.searchParams.set('start_date',start);const h={};if(token)h.Authorization=`Bearer ${token}`;
+ const response=await fetch(url,{headers:h,cache:'no-store'});if(!response.ok)throw Error(`${dataset} HTTP ${response.status}`);const json=await response.json();if(!Array.isArray(json.data))throw Error(`${dataset}: ${json.msg||'資料格式不符'}`);return json.data}
+async function fetchLatest(){const id=$('ticker').value.trim(),token=$('token').value.trim();if(!/^\d{4,6}$/.test(id)){flash('請先填入 4–6 位台股代號。','error');return}
+ const btn=$('fetch');btn.disabled=true;btn.textContent='下載財報中…';flash(`正在查詢 ${id} 的已公布財務資料；如因跨網域限制失敗，請用 Excel 匯入。`);
+ try{const d=new Date(),start=`${d.getFullYear()-4}-01-01`,datasets=['TaiwanStockFinancialStatements','TaiwanStockMonthRevenue','TaiwanStockCashFlowsStatement','TaiwanStockBalanceSheet'];const result=await Promise.allSettled(datasets.map(x=>queryFinMind(x,id,start,token)));
+  if(result.every(x=>x.status==='rejected'))throw Error('所有來源請求均失敗：'+String(result[0].reason?.message||'可能為網路、Token 或跨網域限制'));
+  const values=empty();state={ticker:id,company:$('company').value.trim()||id,values,labels:{},source:'FinMind API：已公布財報與月營收（非即時）',stamp:new Date().toLocaleString('zh-TW'),noInventory:false};
+  const fin=result[0].status==='fulfilled'?mapQuarter(result[0].value):new Map();
+  if(fin.size){setSeries('margin',percentSeries(fin,['OperatingIncome','OperatingIncomeLoss','NetOperatingIncome'],['Revenue','OperatingRevenue'],4));setSeries('eps',getQuarterSeries(fin,m=>pick(m,['EPS']),4));setSeries('profit',getYoyByQuarter(fin,['IncomeAfterTaxes'],4));}
+  if(result[1].status==='fulfilled')setSeries('rev',yoyRows(result[1].value));
+  if(result[2].status==='fulfilled'){const cf=mapQuarter(result[2].value);const op=quarterlyFlows(cf,['CashFlowsFromOperatingActivities']),inv=quarterlyFlows(cf,['CashProvidedByInvestingActivities']);const dates=[...new Set([...op.keys(),...inv.keys()])].sort().reverse();const fcf=dates.filter(d=>op.has(d)&&inv.has(d)).slice(0,6).map(d=>({date:d,value:op.get(d)+inv.get(d)}));setSeries('fcf',fcf)}
+  if(fin.size&&result[3].status==='fulfilled')setSeries('inventory',inventoryTurnover(fin,mapQuarter(result[3].value),4));
+  refreshControls();const fail=result.filter(x=>x.status==='rejected').length, complete=lastResults.filter(x=>x.score!==null).length;
+  flash(`已查詢 ${id}：${complete}/6 項可評分，${fail}/4 個資料端點失敗。空白欄位代表查不到可驗證數據，請人工檢查，不能視為0。`,fail?'error':'success');
+ }catch(e){flash(`無法完成自動擷取：${e.message}。請使用手動輸入或原 Excel 匯入。`,'error')}finally{btn.disabled=false;btn.textContent='擷取最新財報'}
+}
+$('ticker').onchange=e=>{state.ticker=e.target.value.trim()};$('company').onchange=e=>{state.company=e.target.value.trim()};
+$('fetch').onclick=fetchLatest;$('import').onclick=()=>$('upload').click();$('upload').onchange=async e=>{try{await importFile(e.target.files?.[0])}catch(err){flash(`匯入失敗：${err.message}`,'error')}e.target.value=''};
+$('demo').onclick=()=>{state=sample();active=0;refreshControls();flash('已載入原 Excel 的台泥 2019 年歷史資料；此為測試案例，非最新財報。','success')};
+$('clear').onclick=()=>{const t=$('ticker').value.trim(),c=$('company').value.trim();state={ticker:t,company:c,source:'手動輸入',stamp:'',noInventory:false,labels:{},values:empty()};refreshControls();flash('已清空目前輸入資料，沒有刪除本機儲存的其他股票。')};
+$('save').onclick=()=>{state.ticker=$('ticker').value.trim();state.company=$('company').value.trim();try{localStorage.setItem('sfi-v1:'+keyOf(),JSON.stringify(state));savedList();flash(`已將 ${keyOf()} 保存在此瀏覽器。換裝置請使用「匯出 JSON」。`,'success')}catch(e){flash('本機儲存失敗，可能為無痕模式；請改用匯出 JSON。','error')}};
+$('saved').onchange=e=>{if(!e.target.value)return;try{loadJson(JSON.parse(localStorage.getItem(e.target.value)));flash(`已載入本機股票 ${keyOf()}。`,'success')}catch(e){flash('儲存資料損毀，請使用備份 JSON。','error')}};
+$('export').onclick=exportData;$('csv').onclick=exportCsv;$('print').onclick=()=>window.print();
+// Offline sample verification from uploaded Excel: AA, C, A, B, C, B => 9/6 = 1.50.
+function selfTest(){const s=sample();let r=SPECS.map(k=>evaluate(k.key,s.values[k.key],false));return {grades:r.map(x=>x.grade),score:r.reduce((a,x)=>a+x.score,0)/6,pass:JSON.stringify(r.map(x=>x.grade))===JSON.stringify(['AA','C','A','B','C','B'])}}
+window.financialScoringSelfTest=selfTest;
+refreshControls();savedList();
+</script>
+</body></html>
